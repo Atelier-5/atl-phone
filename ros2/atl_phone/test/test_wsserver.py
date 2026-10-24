@@ -85,3 +85,86 @@ def test_foreign_origin_is_refused(server):
     with pytest.raises(urllib.error.HTTPError) as e:
         urllib.request.urlopen(req, timeout=5)
     assert e.value.code == 403
+
+
+class FakeApi:
+    def __init__(self):
+        self.acts, self.reports = [], []
+
+    def state(self):
+        return {"connected": False}
+
+    def act(self, body):
+        if body.get("topic") == "bad":
+            raise ValueError("unknown topic")
+        self.acts.append(body)
+
+    def report(self, body):
+        self.reports.append(body)
+
+
+@pytest.fixture
+def api_server():
+    api = FakeApi()
+    s = PhoneServer(WEB, 0, "127.0.0.1", api=api).start()
+    s.fake = api
+    yield s
+    s.stop()
+
+
+def http(s, path, body=None, headers=None):
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(f"http://127.0.0.1:{s.port}{path}", data=data, headers=dict({"Content-Type": "application/json"}, **(headers or {})))
+    return urllib.request.urlopen(req, timeout=5)
+
+
+def test_setup_api(api_server):
+    assert json.load(http(api_server, "/api/state")) == {"connected": False}
+    assert http(api_server, "/api/act", {"topic": "expression", "value": "happy"}).status == 204
+    assert api_server.fake.acts == [{"topic": "expression", "value": "happy"}]
+    with pytest.raises(urllib.error.HTTPError) as e:
+        http(api_server, "/api/act", {"topic": "bad"})
+    assert e.value.code == 400 and "unknown topic" in e.value.read().decode()
+
+
+def test_setup_api_refuses_other_sites(api_server):
+    # a page on another site, open in this PC's browser, must not drive the robot's phone
+    for path, body in [("/api/state", None), ("/api/act", {"topic": "torch", "value": True})]:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            http(api_server, path, body, {"Origin": "http://evil.example"})
+        assert e.value.code == 403
+    assert api_server.fake.acts == []
+
+
+def test_report(api_server):
+    assert http(api_server, "/report", {"userAgent": "x", "checks": {"camera": {"ok": True}}}).status == 204
+    assert api_server.fake.reports[0]["checks"] == {"camera": {"ok": True}}
+    for bad in ([1], {"checks": 3}):
+        with pytest.raises(urllib.error.HTTPError) as e:
+            http(api_server, "/report", bad)
+        assert e.value.code == 400
+
+
+def test_no_api_no_routes(server):
+    with pytest.raises(urllib.error.HTTPError) as e:
+        http(server, "/api/state")
+    assert e.value.code == 403
+    with pytest.raises(urllib.error.HTTPError) as e:
+        http(server, "/api/act", {"topic": "torch"})
+    assert e.value.code == 404
+
+
+def test_setup_api_is_for_this_pc_only():
+    from atl_phone.wsserver import lan_address
+    ip = lan_address()
+    if ip == "127.0.0.1":
+        pytest.skip("no network: nothing but loopback to call from")
+    s = PhoneServer(WEB, 0, "0.0.0.0", api=FakeApi()).start()
+    try:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(f"http://{ip}:{s.port}/api/state", timeout=5)
+        assert e.value.code == 403
+        req = urllib.request.Request(f"http://{ip}:{s.port}/report", data=b'{"checks": {}}', headers={"Content-Type": "application/json"})
+        assert urllib.request.urlopen(req, timeout=5).status == 204  # a phone on Wi-Fi may send its check
+    finally:
+        s.stop()

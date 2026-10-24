@@ -164,6 +164,7 @@ function handle(m) {
   else if (m.t === 'say') speak(String(m.text || ''), m.lang || lang);
   else if (m.t === 'torch') torch(!!m.on);
   else if (m.t === 'vibrate' && navigator.vibrate) navigator.vibrate(Math.max(0, Math.min(2000, m.ms | 0)));
+  else if (m.t === 'open' && ['face.html', 'check.html'].indexOf(m.page) >= 0) location.href = m.page + location.search;
 }
 
 // ---- voice -----------------------------------------------------------------------------------------

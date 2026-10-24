@@ -4,7 +4,7 @@
 
     python3 -m atl_phone.contract_check [--robot thymio_1] [--port 8782] [--key ...]
 
-Prints one line per check (PASS/FAIL) and exits 1 if any failed. Run it with no real
+Prints one line per check (PASS/FAIL) and exits 1 if any failed. Also the setup page's API (on this PC). Run it with no real
 phone on the bridge: the mock phone takes over, and a real one would be closed.
 """
 import argparse
@@ -12,6 +12,7 @@ import json
 import math
 import sys
 import time
+import urllib.request
 
 import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile
@@ -109,6 +110,28 @@ class Check:
         self.ok("torch reaches the phone", m == {"t": "torch", "on": True}, m)
         m = to_phone("vibrate", Int32(data=99999), "vibrate")
         self.ok("vibrate reaches the phone, at most MAX_VIBRATE", m == {"t": "vibrate", "ms": c.MAX_VIBRATE}, m)
+
+        base = url.split("/ws")[0].replace("ws:", "http:")
+
+        def api(path, body=None):
+            req = urllib.request.Request(base + path, data=json.dumps(body).encode() if body else None,
+                                         headers={"Content-Type": "application/json"})
+            return urllib.request.urlopen(req, timeout=5)
+
+        api("/api/act", {"topic": "expression", "value": "wink"})
+        try:
+            m = phone.expect("face")
+        except TimeoutError:
+            m = None
+        self.ok("setup page: a test goes through ROS to the phone", m == {"t": "face", "expression": "wink"}, m)
+        st = json.load(api("/api/state"))
+        self.ok("setup page: the state shows the phone and what it sensed", st.get("connected") is True
+                and st["phone"].get("model") == "MOCK-PHONE" and st["seen"]["touch"][-1]["dir"] == "up"
+                and st["seen"]["battery"]["level"] == 0.42 and st["seen"]["imu"]["n"] >= 1)
+        api("/report", {"userAgent": "(Linux; Android 8.0.0; MOCK-PHONE)", "checks": {"camera": {"ok": False, "need": "core"}}})
+        st = json.load(api("/api/state"))
+        self.ok("setup page: a phone check report is kept", st["reports"][-1]["model"] == "MOCK-PHONE"
+                and st["reports"][-1]["checks"]["camera"]["ok"] is False)
 
         second = MockPhone(url)
         second.hello()

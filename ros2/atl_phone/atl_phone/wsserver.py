@@ -4,6 +4,9 @@
 
 GET /        -> face.html (any file of web/ is served as is)
 GET /ws      -> the WebSocket (RFC 6455, text frames only); ?key=... when the bridge has a pairing key
+POST /report -> a phone check's report (check.html), from any phone
+GET /api/state, POST /api/act -> the setup page's view of the phone and its tests: this PC only (loopback;
+                a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
 
 One phone at a time: a new phone takes over and the old one is closed.
 A browser on another site is refused (Origin must match Host).
@@ -11,6 +14,8 @@ A browser on another site is refused (Origin must match Host).
 import base64
 import hashlib
 import hmac
+import ipaddress
+import json
 import os
 import socket
 import ssl
@@ -22,6 +27,7 @@ from urllib.parse import parse_qs, urlsplit
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_FRAME = 64 * 1024
+MAX_POST = 64 * 1024
 
 
 def accept_key(key: str) -> str:
@@ -65,6 +71,16 @@ def read_frame(rfile, limit: int = MAX_FRAME) -> tuple:
     return opcode, data
 
 
+def lan_address() -> str:
+    """This PC's address on the local network (the phones' Wi-Fi), or 127.0.0.1."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            s.connect(("192.0.2.1", 9))  # no packet is sent; it only picks the outgoing interface
+            return s.getsockname()[0]
+        except OSError:
+            return "127.0.0.1"
+
+
 class Link:
     """The phone's connection, as the bridge sees it."""
 
@@ -101,8 +117,10 @@ class PhoneServer:
     on_open(link), on_text(text), on_close(link)."""
 
     def __init__(self, web_dir, port, bind="0.0.0.0", key="", on_open=None, on_text=None, on_close=None,
-                 cert=None, cert_key=None):
+                 cert=None, cert_key=None, api=None):
+        """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict)."""
         self.key = key
+        self.api = api
         self.on_open = on_open or (lambda link: None)
         self.on_text = on_text or (lambda text: None)
         self.on_close = on_close or (lambda link: None)
@@ -167,11 +185,14 @@ def make_handler(server: PhoneServer):
                 self.send_header("Location", "/face.html" + (f"?{url.query}" if url.query else ""))
                 self.end_headers()
                 return
+            if url.path == "/api/state":
+                if self.refused(local=True):
+                    return
+                return self.answer(200, server.api.state())
             if url.path != "/ws":
                 return super().do_GET()
-            origin = self.headers.get("Origin")
-            if origin and urlsplit(origin).netloc != self.headers.get("Host"):
-                return self.send_error(403, "foreign origin")
+            if self.refused():
+                return
             given = parse_qs(url.query).get("key", [""])[0]
             if server.key and not hmac.compare_digest(given, server.key):
                 return self.send_error(403, "wrong key")
@@ -186,6 +207,49 @@ def make_handler(server: PhoneServer):
             self.wfile.flush()
             self.close_connection = True
             self.serve_ws()
+
+        def refused(self, local=False) -> bool:
+            """A browser on another site, or (local) someone not on this PC: refused, with the answer sent."""
+            origin = self.headers.get("Origin")
+            if origin and urlsplit(origin).netloc != self.headers.get("Host"):
+                self.send_error(403, "foreign origin")
+                return True
+            if local and not (server.api and ipaddress.ip_address(self.client_address[0]).is_loopback):
+                self.send_error(403, "this PC only")
+                return True
+            return False
+
+        def answer(self, status, payload=None):
+            body = json.dumps(payload).encode() if payload is not None else b""
+            self.send_response(status)
+            if body:
+                self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_POST(self):
+            path = urlsplit(self.path).path
+            if path not in ("/report", "/api/act") or not server.api:
+                return self.send_error(404)
+            if self.refused(local=path == "/api/act"):
+                return
+            size = int(self.headers.get("Content-Length") or 0)
+            if not 0 < size <= MAX_POST:
+                return self.send_error(413)
+            try:
+                body = json.loads(self.rfile.read(size))
+                if not isinstance(body, dict):
+                    raise ValueError("not an object")
+                if path == "/report":
+                    if not isinstance(body.get("checks"), dict):
+                        raise ValueError("not a phone check report")
+                    server.api.report(body)
+                else:
+                    server.api.act(body)
+            except ValueError as e:
+                return self.answer(400, {"error": str(e)})
+            self.answer(204)
 
         def serve_ws(self):
             self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)

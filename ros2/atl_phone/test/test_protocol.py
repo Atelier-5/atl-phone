@@ -82,3 +82,9 @@ def test_every_expression_is_on_the_page():
     page = (Path(__file__).resolve().parent.parent / "web" / "face.js").read_text()
     for e in c.EXPRESSIONS:
         assert f"  {e}: " in page, e
+
+
+def test_open_page():
+    assert p.open_page("check.html") == {"t": "open", "page": "check.html"}
+    with pytest.raises(ValueError):
+        p.open_page("https://evil.example/")

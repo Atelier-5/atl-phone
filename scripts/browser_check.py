@@ -9,6 +9,7 @@
 
 ROS -> page: expressions published on the topic show on the face (read back from the page).
 Page -> ROS: the page says hello (status) and a tap reaches the touch topic.
+The setup page can send the phone to the check.
 Prints PASS/FAIL per check and exits 1 if any failed. Standard library only.
 """
 import argparse
@@ -134,6 +135,23 @@ def main() -> int:
             echo.kill()
             out = ""
         ok("a tap on the right third reaches the touch topic", '"kind": "tap"' in out and '"zone": "right"' in out, out.strip()[:100])
+
+        def act(body):
+            req = urllib.request.Request(f"http://127.0.0.1:{args.port}/api/act", data=json.dumps(body).encode(),
+                                         headers={"Content-Type": "application/json"})
+            return urllib.request.urlopen(req, timeout=5).status
+
+        act({"open": "check.html"})
+        where = None
+        for _ in range(30):
+            time.sleep(0.3)
+            try:
+                where = page.js("location.pathname")
+            except (RuntimeError, TimeoutError):
+                continue  # the page is changing
+            if where == "/check.html":
+                break
+        ok("setup page: 'open the check' sends the phone to check.html", where == "/check.html", where)
     finally:
         page.close()
     print("all passed" if not failed else f"{failed} failed")

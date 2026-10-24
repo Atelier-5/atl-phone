@@ -23,6 +23,7 @@
   .sub { color: var(--muted); margin: 0 0 12px; }
   .lang button { background: none; border: 1px solid var(--line); color: var(--fg); padding: 4px 8px; border-radius: 6px; }
   .lang button.on { border-color: var(--fg); }
+  .lang a { color: var(--fg); margin-right: 8px; }
   h2 { font-size: 1em; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 20px 0 6px; }
   .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
   .row .name { flex: 1; min-width: 0; }
@@ -40,7 +41,7 @@
 <body>
 <header>
   <h1 data-t="title">Phone check</h1>
-  <div class="lang"><button data-l="en">EN</button> <button data-l="fr">FR</button> <button data-l="de">DE</button></div>
+  <div class="lang"><a id="toface" href="face.html" data-t="face">Robot face</a> <button data-l="en">EN</button> <button data-l="fr">FR</button> <button data-l="de">DE</button></div>
 </header>
 <p class="sub" data-t="intro">Can this phone become a robot's face, eyes and ears? Tap each Test button.</p>
 <div id="verdict"></div>
@@ -58,7 +59,7 @@
 
 var T = {
   en: { title: 'Phone check', intro: "Can this phone become a robot's face, eyes and ears? Tap each Test button.",
-        all: 'Test everything', send: 'Send report to the PC', copy: 'Copy report', test: 'Test',
+        all: 'Test everything', send: 'Send report to the PC', face: 'Robot face →', copy: 'Copy report', test: 'Test',
         yes: 'yes', no: 'no', untested: '?', g_phone: 'This phone', g_face: 'Face', g_eyes: 'Eyes (camera)',
         g_ears: 'Ears and voice', g_body: 'Body (motion, light, touch)', g_link: 'Link to the robot',
         sent: 'Report saved on the PC.', copied: 'Report copied.', failed: 'Could not send: ',
@@ -68,7 +69,7 @@ var T = {
         v_wait: 'Tap “Test everything” (allow camera, microphone and motion).',
         insecure: 'Not a secure page: camera and microphone are blocked. Use USB (localhost) or HTTPS.' },
   fr: { title: 'Test du téléphone', intro: 'Ce téléphone peut-il devenir le visage, les yeux et les oreilles d’un robot ? Touchez chaque bouton Tester.',
-        all: 'Tout tester', send: 'Envoyer le rapport au PC', copy: 'Copier le rapport', test: 'Tester',
+        all: 'Tout tester', send: 'Envoyer le rapport au PC', face: 'Visage du robot →', copy: 'Copier le rapport', test: 'Tester',
         yes: 'oui', no: 'non', untested: '?', g_phone: 'Ce téléphone', g_face: 'Visage', g_eyes: 'Yeux (caméra)',
         g_ears: 'Oreilles et voix', g_body: 'Corps (mouvement, lumière, toucher)', g_link: 'Lien avec le robot',
         sent: 'Rapport enregistré sur le PC.', copied: 'Rapport copié.', failed: 'Envoi impossible : ',
@@ -78,7 +79,7 @@ var T = {
         v_wait: 'Touchez « Tout tester » (autorisez caméra, micro et mouvement).',
         insecure: 'Page non sécurisée : caméra et micro bloqués. Passez par USB (localhost) ou HTTPS.' },
   de: { title: 'Handy-Check', intro: 'Kann dieses Handy Gesicht, Augen und Ohren eines Roboters werden? Tippe auf jeden Test-Knopf.',
-        all: 'Alles testen', send: 'Bericht an den PC senden', copy: 'Bericht kopieren', test: 'Testen',
+        all: 'Alles testen', send: 'Bericht an den PC senden', face: 'Robotergesicht →', copy: 'Bericht kopieren', test: 'Testen',
         yes: 'ja', no: 'nein', untested: '?', g_phone: 'Dieses Handy', g_face: 'Gesicht', g_eyes: 'Augen (Kamera)',
         g_ears: 'Ohren und Stimme', g_body: 'Körper (Bewegung, Licht, Berührung)', g_link: 'Verbindung zum Roboter',
         sent: 'Bericht auf dem PC gespeichert.', copied: 'Bericht kopiert.', failed: 'Senden fehlgeschlagen: ',
@@ -289,6 +290,7 @@ document.getElementById('copy').onclick = function () {
 [].forEach.call(document.querySelectorAll('.lang button'), function (b) {
   b.onclick = function () { lang = b.getAttribute('data-l'); try { localStorage.setItem('atl-lang', lang); } catch (e) {} render(); };
 });
+document.getElementById('toface').href = 'face.html' + location.search;
 probeAll();
 </script>
 </body>

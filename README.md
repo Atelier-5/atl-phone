@@ -9,14 +9,29 @@
 The phone runs a web page, nothing to install; any phone whose browser is recent enough will do, whatever its
 OS (stock Android, LineageOS, …). The ROS 2 node `atl_phone/bridge` serves the page and maps it to topics.
 
+## Start here
+
+```bash
+./start.sh            # builds the image if needed, starts the bridge in Docker, opens the setup page
+```
+
+The **setup page** (`http://localhost:8782/setup.html`, on this PC only) guides through it, in EN/FR/DE:
+the bridge → connecting the phone (USB, or Wi-Fi with a QR code) → the phone check → testing each output
+(face, gaze, colour, voice, vibration, torch: you say what you saw) and each sense (touch, motion, compass,
+battery: they tick by themselves) → a summary to copy. Its tests go through ROS 2, on the contract's topics.
+
+`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY --cert DIR` · `./start.sh logs` · `./start.sh stop`
+
+## By hand
+
 ```bash
 docker build -f docker/Dockerfile -t atl-phone:kilted .
 docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted   # the bridge, for thymio_1
 docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thymio_1 \
     [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem] [lang:=fr]                    # with arguments
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
-docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 14 checks
-python3 scripts/browser_check.py --container <container>         # the face page in headless Chrome as the phone: 6 checks
+docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 17 checks
+python3 scripts/browser_check.py --container <container>         # the face page in headless Chrome as the phone: 7 checks
 ./test.sh                                                        # protocol, WebSocket, check server: no ROS, no phone
 ```
 

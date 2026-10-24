@@ -1,3 +1,5 @@
 reports/
 __pycache__/
 .pytest_cache/
+certs/
+.idea/

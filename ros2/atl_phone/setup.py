@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Atelier-5
+import os
 from glob import glob
 
 from setuptools import setup
@@ -12,7 +13,8 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{package}"]),
         (f"share/{package}", ["package.xml"]),
-        (f"share/{package}/web", glob("web/*")),
+        (f"share/{package}/web", [f for f in glob("web/*") if os.path.isfile(f)]),
+        (f"share/{package}/web/vendor", glob("web/vendor/*")),
         (f"share/{package}/launch", glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools"],

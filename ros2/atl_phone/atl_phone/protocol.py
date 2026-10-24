@@ -3,7 +3,7 @@
 """protocol.py — the JSON messages between the phone page and the bridge, checked both ways (no ROS here).
 
 Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery", ...}
-Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate", ...}
+Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open", ...}
 
 A phone is not trusted: parse() returns a clean message or raises ValueError,
 and every number is finite and clamped.
@@ -16,6 +16,7 @@ from . import contract as c
 ZONES = ("left", "centre", "right")
 TOUCHES = ("tap", "long", "swipe")
 DIRS = ("left", "right", "up", "down")
+PAGES = ("face.html", "check.html")   # where the setup page may send the phone
 
 
 def _num(v, lo=-1e6, hi=1e6) -> float:
@@ -106,3 +107,7 @@ def torch(on: bool) -> dict:
 
 def vibrate(ms: int) -> dict:
     return {"t": "vibrate", "ms": int(_num(ms, 0, c.MAX_VIBRATE))}
+
+
+def open_page(page: str) -> dict:
+    return {"t": "open", "page": _one_of(page, PAGES)}
