@@ -265,7 +265,9 @@ function probeAll() {
     try { var r = c.probe(); report.checks[c.id] = { ok: r.ok, note: r.note, need: c.need, tested: false }; }
     catch (e) { report.checks[c.id] = { ok: false, note: String(e), need: c.need, tested: false }; }
   });
-  report.when = new Date().toISOString(); report.userAgent = navigator.userAgent; render();
+  report.when = new Date().toISOString(); report.userAgent = navigator.userAgent; report.phone_id = phoneId(); render();
+  var uad = navigator.userAgentData;  // the real model (the user agent says "K"), on a secure page
+  if (uad && uad.getHighEntropyValues) uad.getHighEntropyValues(['model']).then(function (v) { if (v.model) report.model = v.model; }).catch(function () {});
 }
 async function run(c) {
   if (!c.test) return;
@@ -277,6 +279,16 @@ document.getElementById('all').onclick = async function () {
   for (var i = 0; i < checks.length; i++) if (checks[i].test && checks[i].id !== 'nfc') await run(checks[i]);
   stopCamera();
 };
+function phoneId() {  // a random id kept in this browser: it ties this phone's check report to its face, and says nothing about the phone
+  try {
+    var id = localStorage.getItem('atl-phone-id');
+    if (!/^[0-9a-f]{16}$/.test(id || '')) {
+      id = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(8)), function (b) { return (b + 256).toString(16).slice(1); }).join('');
+      localStorage.setItem('atl-phone-id', id);
+    }
+    return id;
+  } catch (e) { return ''; }  // storage blocked: the setup page falls back to the model
+}
 function text() { return JSON.stringify(report, null, 2); }
 document.getElementById('send').onclick = function () {
   fetch('report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: text() })

@@ -147,7 +147,7 @@ function el(tag, attrs, kids) {
 }
 
 var STEPS = ['bridge', 'connect', 'check', 'test', 'summary'];
-var step = 0, S = null, bridgeUp = null, lastModel = '';
+var step = 0, S = null, bridgeUp = null, lastModel = '', lastId = '';
 var answers = {};          // outputs: true / false, as the person says
 var touched = {};          // touches seen: tap-left, tap-centre, tap-right, long, swipe
 var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {}, turned = false;  // tilted to another side, or turned
@@ -163,7 +163,7 @@ function act(body) {
 function poll() {
   fetch('/api/state').then(function (r) { return r.json(); }).then(function (s) {
     S = s; bridgeUp = true;
-    if (s.phone && s.phone.model) lastModel = s.phone.model;  // the summary still names it once the phone is gone
+    if (s.phone && s.phone.model) { lastModel = s.phone.model; lastId = s.phone.id || ''; }  // still known once it is gone
     update();
   }).catch(function () { bridgeUp = false; update(); }).then(function () { setTimeout(poll, 250); });
 }
@@ -229,10 +229,12 @@ function update() {
   }
 }
 
-function report() {
+function report() {  // this phone's latest check report: by its id, else (storage blocked) by model; no phone yet: the latest
   if (!S || !S.reports.length) return null;
-  var model = S.phone && S.phone.model, rs = S.reports.filter(function (r) { return !model || r.model === model; });
-  return rs.length ? rs[rs.length - 1] : S.reports[S.reports.length - 1];
+  var id = (S.phone && S.phone.id) || lastId, model = (S.phone && S.phone.model) || lastModel;
+  if (!id && !model) return S.reports[S.reports.length - 1];
+  var rs = S.reports.filter(function (r) { return id ? r.id === id : r.model === model; });
+  return rs.length ? rs[rs.length - 1] : null;
 }
 function coreMissing(r) { return Object.keys(r.checks).filter(function (k) { return r.checks[k].need === 'core' && r.checks[k].ok === false; }); }
 var reportShown = null;

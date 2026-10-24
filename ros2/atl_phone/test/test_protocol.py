@@ -14,10 +14,15 @@ def parse(**m):
 
 def test_hello():
     m = parse(t="hello", ua="x" * 500, caps={"motion": 1, "tts": 0}, screen=[1280, 720, 9])
-    assert m == {"t": "hello", "ua": "x" * 300, "model": "", "secure": True,
+    assert m == {"t": "hello", "id": "", "ua": "x" * 300, "model": "", "secure": True,
                  "caps": {"motion": True, "tts": False}, "screen": [1280, 720]}
-    m = parse(t="hello", ua="", model=" Pixel 3 ", secure=False)
-    assert (m["model"], m["secure"]) == ("Pixel 3", False)
+    m = parse(t="hello", ua="", model=" Pixel 3 ", secure=False, id="0123456789abcdef")
+    assert (m["model"], m["secure"], m["id"]) == ("Pixel 3", False, "0123456789abcdef")
+
+
+@pytest.mark.parametrize("v", ["0123456789ABCDEF", "0123", "0123456789abcdef0", "../../etc/passwd!", 7, None])
+def test_a_phone_id_is_16_hex_digits_or_nothing(v):
+    assert p.phone_id(v) == ""
 
 
 def test_camera():

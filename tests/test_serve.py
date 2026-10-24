@@ -32,6 +32,12 @@ def post(url, body: bytes):
     return urllib.request.urlopen(req, timeout=5)
 
 
+def test_model_in_prefers_the_client_hint():
+    assert serve.model_in({"model": "SM-A505FN", "userAgent": "(Linux; Android 10; K)"}) == "SM-A505FN"
+    assert serve.model_in({"model": " ../x ", "userAgent": UA}) == ".._x"
+    assert serve.model_in({"userAgent": UA}) == "SM-G950F"
+
+
 def test_model_of():
     assert serve.model_of(UA) == "SM-G950F"
     assert serve.model_of("Mozilla/5.0 (X11; Linux x86_64)") == "unknown"

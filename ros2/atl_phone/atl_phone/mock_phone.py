@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 
 from .wsserver import accept_key, frame, read_frame
 
+ID = "0123456789abcdef"  # the page's random per-browser id
 UA = "Mozilla/5.0 (Linux; Android 8.0.0; MOCK-PHONE) AppleWebKit/537.36 Chrome/119.0 Mobile Safari/537.36"
 
 
@@ -62,7 +63,7 @@ class MockPhone:
         self.sock.sendall(frame(json.dumps(msg).encode(), mask=True))
 
     def hello(self):
-        self.send(t="hello", ua=UA, caps={"motion": True, "tts": True, "vibrate": True}, screen=[1280, 720])
+        self.send(t="hello", id=ID, ua=UA, caps={"motion": True, "tts": True, "vibrate": True}, screen=[1280, 720])
 
     def expect(self, t: str, timeout: float = 3.0) -> dict:
         """The next message of kind t (others are skipped)."""

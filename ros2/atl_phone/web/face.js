@@ -143,8 +143,18 @@ function caps() {
            wakelock: 'wakeLock' in navigator, camera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
            barcode: 'BarcodeDetector' in window };
 }
+function phoneId() {  // a random id kept in this browser: it ties this phone's check report to its face, and says nothing about the phone
+  try {
+    var id = localStorage.getItem('atl-phone-id');
+    if (!/^[0-9a-f]{16}$/.test(id || '')) {
+      id = Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(8)), function (b) { return (b + 256).toString(16).slice(1); }).join('');
+      localStorage.setItem('atl-phone-id', id);
+    }
+    return id;
+  } catch (e) { return ''; }  // storage blocked: the setup page falls back to the model
+}
 function hello() {  // Chrome hides the model in the user agent ("K"); client hints still tell it, on a secure page
-  var h = { t: 'hello', ua: navigator.userAgent, secure: !!window.isSecureContext, caps: caps(), screen: [screen.width, screen.height] };
+  var h = { t: 'hello', id: phoneId(), ua: navigator.userAgent, secure: !!window.isSecureContext, caps: caps(), screen: [screen.width, screen.height] };
   var uad = navigator.userAgentData;
   (uad && uad.getHighEntropyValues ? uad.getHighEntropyValues(['model']).catch(function () { return {}; }) : Promise.resolve({}))
     .then(function (v) { h.model = v.model || ''; send(h); sendBattery(); });

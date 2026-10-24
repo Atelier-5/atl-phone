@@ -13,6 +13,7 @@ and every number is finite and clamped.
 """
 import json
 import math
+import re
 
 from . import contract as c
 
@@ -46,6 +47,11 @@ def _text(v, n=200) -> str:
     return v[:n]
 
 
+def phone_id(v) -> str:
+    """The page's random id for this browser (16 hex digits), or "" when it has none or sends something else."""
+    return v if isinstance(v, str) and re.fullmatch(r"[0-9a-f]{16}", v) else ""
+
+
 def parse(raw: str) -> dict:
     """A message from the phone, checked."""
     try:
@@ -58,7 +64,7 @@ def parse(raw: str) -> dict:
     if t == "hello":
         caps = m.get("caps") if isinstance(m.get("caps"), dict) else {}
         screen = m.get("screen") if isinstance(m.get("screen"), (list, tuple)) else [0, 0]
-        return {"t": "hello", "ua": _text(m.get("ua", ""), 300),
+        return {"t": "hello", "id": phone_id(m.get("id")), "ua": _text(m.get("ua", ""), 300),
                 "model": _text(m.get("model") or "", 40).strip(),   # from client hints: the UA may hide it ("K")
                 "secure": bool(m.get("secure", True)),              # a page that is not secure: no camera, motion, battery
                 "caps": {_text(k, 40): bool(v) for k, v in list(caps.items())[:40]},

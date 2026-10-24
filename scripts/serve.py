@@ -32,12 +32,20 @@ def model_of(user_agent: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", name)[:40] or "unknown"
 
 
+def model_in(report: dict) -> str:
+    """The model the check page found (client hints), else the one in its user agent; safe as a file name."""
+    m = report.get("model")
+    if isinstance(m, str) and m.strip():
+        return re.sub(r"[^A-Za-z0-9._-]+", "_", m.strip())[:40]
+    return model_of(report.get("userAgent", ""))
+
+
 def summary(report: dict) -> str:
     checks = report.get("checks", {})
     yes = sorted(k for k, v in checks.items() if v.get("ok") is True)
     no = sorted(k for k, v in checks.items() if v.get("ok") is False)
     core_missing = sorted(k for k, v in checks.items() if v.get("ok") is False and v.get("need") == "core")
-    return (f"{model_of(report.get('userAgent', ''))}: {len(yes)} yes, {len(no)} no"
+    return (f"{model_in(report)}: {len(yes)} yes, {len(no)} no"
             + (f"; core missing: {', '.join(core_missing)}" if core_missing else "; core complete"))
 
 
@@ -56,7 +64,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_error(400, str(e))
         REPORTS.mkdir(exist_ok=True)
         when = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        path = REPORTS / f"{when}-{model_of(report.get('userAgent', ''))}.json"
+        path = REPORTS / f"{when}-{model_in(report)}.json"
         path.write_text(json.dumps(report, indent=2) + "\n")
         print("report:", summary(report), "->", path.relative_to(ROOT), flush=True)
         self.send_response(204)

@@ -22,7 +22,7 @@ from sensor_msgs.msg import BatteryState, Imu
 from std_msgs.msg import Bool, ColorRGBA, Float32, Int32, String
 
 from . import contract as c
-from .mock_phone import MockPhone
+from .mock_phone import ID as MOCK_ID, MockPhone
 
 
 class Check:
@@ -139,10 +139,13 @@ class Check:
         cam = json.load(api("/api/state"))["seen"].get("camera", {})
         self.ok("setup page: the camera test reaches the phone, and its report comes back", m == {"t": "camera", "on": True}
                 and cam.get("size") == [1280, 720] and cam.get("codes") == ["atl-phone camera test"], (m, cam))
-        api("/report", {"userAgent": "(Linux; Android 8.0.0; MOCK-PHONE)", "checks": {"camera": {"ok": False, "need": "core"}}})
+        api("/report", {"userAgent": "(Linux; Android 10; K)", "model": "SM-A505FN", "phone_id": MOCK_ID,
+                         "checks": {"camera": {"ok": False, "need": "core"}}})
         st = json.load(api("/api/state"))
-        self.ok("setup page: a phone check report is kept", st["reports"][-1]["model"] == "MOCK-PHONE"
-                and st["reports"][-1]["checks"]["camera"]["ok"] is False)
+        r = st["reports"][-1]
+        self.ok("setup page: a phone check report is kept, with the page's model and the phone's id",
+                r["model"] == "SM-A505FN" and r["checks"]["camera"]["ok"] is False
+                and r["id"] == st["phone"].get("id") == MOCK_ID, (r["id"], st["phone"].get("id"), r["model"]))
 
         second = MockPhone(url)
         second.hello()

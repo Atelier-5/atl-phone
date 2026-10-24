@@ -103,7 +103,7 @@ class Bridge(Node):
             return
         t = m["t"]
         if t == "hello":
-            self.phone.update(model=m["model"] or model_of(m["ua"]), ua=m["ua"], secure=m["secure"],
+            self.phone.update(id=m["id"], model=m["model"] or model_of(m["ua"]), ua=m["ua"], secure=m["secure"],
                               caps=m["caps"], screen=m["screen"])
             self.get_logger().info(f"phone says hello: {self.phone['model']}")
             self.status()
@@ -190,7 +190,9 @@ class Bridge(Node):
         self.tests[topic].publish(msg)
 
     def report(self, body: dict):
-        r = {"model": model_of(str(body.get("userAgent", ""))), "at": time.time(),
+        model = body.get("model") if isinstance(body.get("model"), str) else ""
+        r = {"id": p.phone_id(body.get("phone_id")),  # the setup page matches a report to its phone by this id
+             "model": model.strip()[:40] or model_of(str(body.get("userAgent", ""))), "at": time.time(),
              "checks": {str(k)[:40]: {"ok": v.get("ok"), "note": str(v.get("note", ""))[:200], "need": v.get("need")}
                         for k, v in list(body["checks"].items())[:60] if isinstance(v, dict)}}
         self.reports = (self.reports + [r])[-10:]
