@@ -11,8 +11,9 @@ OS (stock Android, LineageOS, …). The ROS 2 node `atl_phone/bridge` serves the
 
 ```bash
 docker build -f docker/Dockerfile -t atl-phone:kilted .
-docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted \
-    ros2 launch atl_phone phone.launch.py robot:=thymio_1        # [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem] [lang:=fr]
+docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted   # the bridge, for thymio_1
+docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thymio_1 \
+    [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem] [lang:=fr]                    # with arguments
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
 docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 14 checks
 python3 scripts/browser_check.py --container <container>         # the face page in headless Chrome as the phone: 6 checks
