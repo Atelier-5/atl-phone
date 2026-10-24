@@ -73,6 +73,20 @@ def test_a_new_phone_takes_over(server):
     second.close()
 
 
+def test_the_old_phone_is_not_heard_after_a_takeover(server):
+    first = MockPhone(url(server))
+    assert server.events.get(timeout=3) == "open"
+    second = MockPhone(url(server))
+    assert server.events.get(timeout=3) == "open"
+    assert first.closed.wait(3)
+    first.send(t="hello", ua="the old phone")  # sent before it saw the close: its thread is still reading
+    second.send(t="hello", ua="the new phone")
+    assert server.events.get(timeout=3)["ua"] == "the new phone"
+    with pytest.raises(queue.Empty):
+        server.events.get(timeout=0.5)
+    second.close()
+
+
 def test_no_authority_no_ca_crt(server):
     with pytest.raises(urllib.error.HTTPError) as e:
         urllib.request.urlopen(f"http://127.0.0.1:{server.port}/ca.crt", timeout=5)

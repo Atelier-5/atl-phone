@@ -127,8 +127,15 @@ def main() -> int:
                 page.shot(args.shots / f"live-{e}.png")
 
         echo = ros(args.container, "topic", "echo", "--once", "--no-daemon", f"{ns}/touch", "std_msgs/msg/String", wait=False)
-        time.sleep(3)  # the echo must be subscribed before the tap
-        page.tap(700, 225)
+        # the echo must be subscribed before a tap reaches it, and starting it takes long on a busy PC:
+        # tap once a second until it has one
+        for _ in range(15):
+            page.tap(700, 225)
+            try:
+                echo.wait(timeout=1)
+                break
+            except subprocess.TimeoutExpired:
+                pass
         try:
             out, _ = echo.communicate(timeout=10)
         except subprocess.TimeoutExpired:

@@ -9,7 +9,7 @@ GET /ca.crt  -> this PC's certificate authority, for a phone to install once (wh
 GET /api/state, POST /api/act -> the setup page's view of the phone and its tests: this PC only (loopback;
                 a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
 
-One phone at a time: a new phone takes over and the old one is closed.
+One phone at a time: a new phone takes over and the old one is closed; a frame the old one had already sent is dropped.
 A browser on another site is refused (Origin must match Host).
 """
 import base64
@@ -159,10 +159,18 @@ class PhoneServer:
         return bool(self.link and self.link.open)
 
     def take_over(self, link):
-        with self.lock:
+        with self.lock:  # waits for a message being delivered (deliver), so none of the old phone's lands after this
             old, self.link = self.link, link
         if old:
             old.close(4000)  # another phone took over
+
+    def deliver(self, link, text: str) -> bool:
+        """on_text, if link is still the phone. A frame read after a takeover is the old phone's: dropped."""
+        with self.lock:
+            if self.link is not link:
+                return False
+            self.on_text(text)
+            return True
 
     def release(self, link) -> bool:
         with self.lock:
@@ -275,7 +283,7 @@ def make_handler(server: PhoneServer):
                 while link.open:
                     opcode, data = read_frame(self.rfile)
                     if opcode == 1:
-                        server.on_text(data.decode("utf-8", "replace"))
+                        server.deliver(link, data.decode("utf-8", "replace"))
                     elif opcode == 9:
                         with link.lock:
                             self.wfile.write(frame(data, opcode=10))
