@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+import json
+
+import pytest
+
+from atl_phone import contract as c
+from atl_phone import protocol as p
+
+
+def parse(**m):
+    return p.parse(json.dumps(m))
+
+
+def test_hello():
+    m = parse(t="hello", ua="x" * 500, caps={"motion": 1, "tts": 0}, screen=[1280, 720, 9])
+    assert m == {"t": "hello", "ua": "x" * 300, "caps": {"motion": True, "tts": False}, "screen": [1280, 720]}
+
+
+def test_imu_is_clamped():
+    m = parse(t="imu", acc=[0, 0, 1e9], gyro=[0.1, -0.2, 0.3])
+    assert m == {"t": "imu", "acc": (0.0, 0.0, 200.0), "gyro": (0.1, -0.2, 0.3)}
+
+
+def test_heading_wraps():
+    assert parse(t="heading", deg=359.5)["deg"] == 359.5
+    assert parse(t="heading", deg=360)["deg"] == 0.0
+    assert parse(t="heading", deg=370)["deg"] == 10.0
+    assert parse(t="heading", deg=-90)["deg"] == 270.0
+
+
+def test_clamped_numbers_stay_floats():
+    # min(max(370.0, 0), 360) is the int 360: rclpy publishes an int in a float field by aborting the process
+    m = parse(t="imu", acc=[1e9, -1e9, 3], gyro=[0, 0, 0])
+    assert all(type(v) is float for v in m["acc"] + m["gyro"])
+    assert type(parse(t="battery", level=7)["level"]) is float
+    assert type(p.gaze(5, 0)["x"]) is float
+
+
+def test_touch():
+    assert parse(t="touch", kind="tap", zone="centre") == {"t": "touch", "kind": "tap", "zone": "centre"}
+    assert parse(t="touch", kind="swipe", zone="right", dir="down")["dir"] == "down"
+
+
+@pytest.mark.parametrize("raw", [
+    "nope", "[1]", '{"t": "teleport"}',
+    '{"t": "imu", "acc": [0, 0], "gyro": [0, 0, 0]}',
+    '{"t": "imu", "acc": [0, 0, NaN], "gyro": [0, 0, 0]}',
+    '{"t": "imu", "acc": [true, 0, 0], "gyro": [0, 0, 0]}',
+    '{"t": "touch", "kind": "tap", "zone": "elsewhere"}',
+    '{"t": "touch", "kind": "swipe", "zone": "left"}',
+    '{"t": "battery", "level": "full"}',
+])
+def test_refuses(raw):
+    with pytest.raises(ValueError):
+        p.parse(raw)
+
+
+def test_to_the_phone():
+    assert p.face("love") == {"t": "face", "expression": "love"}
+    assert p.gaze(3, -3) == {"t": "gaze", "x": 1.0, "y": -1.0}
+    assert p.color(1, 0.5, 0) == {"t": "color", "rgb": [255, 128, 0]}
+    assert p.torch(1) == {"t": "torch", "on": True}
+    assert p.vibrate(-5) == {"t": "vibrate", "ms": 0}
+    assert p.vibrate(10 ** 6) == {"t": "vibrate", "ms": c.MAX_VIBRATE}
+    with pytest.raises(ValueError):
+        p.face("grumpy")
+
+
+def test_say():
+    assert p.say("Hello") == {"t": "say", "text": "Hello", "lang": "en"}
+    assert p.say("Hallo", "de")["lang"] == "de"
+    assert p.say('{"text": "Salut", "lang": "fr"}') == {"t": "say", "text": "Salut", "lang": "fr"}
+    assert len(p.say("a" * 1000)["text"]) == c.MAX_SAY
+    for bad in ["   ", '{"text": "Hi", "lang": "xx"}', "{broken"]:
+        with pytest.raises(ValueError):
+            p.say(bad)
+
+
+def test_every_expression_is_on_the_page():
+    from pathlib import Path
+    page = (Path(__file__).resolve().parent.parent / "web" / "face.js").read_text()
+    for e in c.EXPRESSIONS:
+        assert f"  {e}: " in page, e

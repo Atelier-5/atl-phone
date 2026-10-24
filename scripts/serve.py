@@ -20,7 +20,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-WEB = ROOT / "web"
+WEB = ROOT / "ros2" / "atl_phone" / "web"
 REPORTS = ROOT / "reports"
 MAX_REPORT = 64 * 1024
 

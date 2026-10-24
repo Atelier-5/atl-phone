@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Atelier-5 -->
+<!-- The robot's face: eyes on the whole screen; the phone's senses go to the bridge (contract atl-phone/0.1).
+     face.html?offline=1&expression=happy&still=1 draws one expression without a bridge (for pictures);
+     ?autostart=1 skips the start tap; ?key=... when the bridge has a pairing key; ?lang=en|fr|de. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Robot face</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none;
+               -webkit-user-select: none; user-select: none; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           gap: 16px; background: #000; color: #ddd; font: 18px/1.4 system-ui, sans-serif; text-align: center; padding: 16px; }
+  #start button { font: inherit; font-size: 1.3em; padding: 14px 32px; border-radius: 12px; border: 0;
+                  background: #3fd8ff; color: #000; }
+  #start small { color: #888; max-width: 30em; }
+  .dot { position: fixed; top: 8px; width: 10px; height: 10px; border-radius: 50%; }
+  #link { left: 8px; background: #b3261e; }
+  #link.on { background: #1f7a3f; }
+  /* the camera is on (torch): the face says so, always */
+  #eye { right: 8px; width: auto; height: auto; border-radius: 6px; padding: 2px 6px; background: #e0b341; color: #000;
+         font: 12px system-ui, sans-serif; display: none; }
+</style>
+</head>
+<body>
+<canvas id="face"></canvas>
+<div id="link" class="dot" title="bridge"></div>
+<div id="eye" class="dot">● cam</div>
+<div id="start">
+  <button id="go">▶</button>
+  <div id="hint"></div>
+  <small id="note"></small>
+</div>
+<script src="face.js"></script>
+</body>
+</html>

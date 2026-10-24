@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>atl_phone</name>
+  <version>0.1.0</version>
+  <description>An old phone as the robot's face, eyes and ears: the face page and its bridge to ROS 2 (contract atl-phone/0.1).</description>
+  <maintainer email="autretechlab@gmail.com">Atelier-5</maintainer>
+  <license>GPL-3.0-or-later</license>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
