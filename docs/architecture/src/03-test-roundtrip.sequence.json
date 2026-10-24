@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
+      "revision": "98611314bfb2025e2d318857b93546aff9288124"
     },
     "legend": {
       "entries": {
@@ -106,13 +106,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 166,
-          "end_line": 175
+          "line": 176,
+          "end_line": 185
         },
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 190,
-          "end_line": 242
+          "line": 200,
+          "end_line": 252
         }
       ]
     }
@@ -315,7 +315,7 @@
       "dot": "slate",
       "title": "Privacy",
       "items": [
-        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 190–242)."
+        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 200–252)."
       ]
     }
   ]

@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
+      "revision": "98611314bfb2025e2d318857b93546aff9288124"
     },
     "legend": {
       "entries": {
@@ -197,8 +197,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 284,
-          "end_line": 293
+          "line": 294,
+          "end_line": 303
         }
       ]
     },
@@ -228,12 +228,12 @@
         {
           "path": "ros2/atl_phone/web/face.js",
           "line": 140,
-          "end_line": 158
+          "end_line": 168
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 58,
-          "end_line": 65
+          "line": 64,
+          "end_line": 71
         }
       ]
     },
@@ -247,13 +247,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/check.html",
-          "line": 281,
-          "end_line": 282
+          "line": 293,
+          "end_line": 294
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
           "line": 192,
-          "end_line": 198
+          "end_line": 200
         }
       ]
     },
@@ -302,8 +302,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 244,
-          "end_line": 278
+          "line": 254,
+          "end_line": 288
         }
       ]
     },
@@ -332,8 +332,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 371,
-          "end_line": 401
+          "line": 373,
+          "end_line": 403
         }
       ]
     },
@@ -377,8 +377,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 362,
-          "end_line": 376
+          "line": 364,
+          "end_line": 378
         }
       ]
     }
@@ -528,7 +528,7 @@
       "title": "Reading this",
       "items": [
         "The phone check (check.html) is optional; its report comes back by POST /report and is kept (the last 10).",
-        "Paths cite commit 6b29b5a; the repository is local only (not pushed)."
+        "Paths cite commit 9861131; the repository is local only (not pushed)."
       ]
     }
   ]

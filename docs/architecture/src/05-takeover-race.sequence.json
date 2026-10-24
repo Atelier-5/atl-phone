@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
+      "revision": "98611314bfb2025e2d318857b93546aff9288124"
     },
     "legend": {
       "entries": {
@@ -34,8 +34,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 152,
-          "end_line": 165
+          "line": 162,
+          "end_line": 175
         }
       ]
     },
@@ -99,8 +99,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 146,
-          "end_line": 158
+          "line": 156,
+          "end_line": 168
         }
       ]
     }
@@ -225,7 +225,7 @@
       "title": "What holds",
       "items": [
         "The swap of PhoneServer.link is under a lock, and release() only clears the link it owns, so the old thread cannot drop phone B (wsserver.py 161–180).",
-        "Phone A's page ignores code 4000 and does not reconnect (face.js 161).",
+        "Phone A's page ignores code 4000 and does not reconnect (face.js 171).",
         "deliver() hands a frame to on_text only while its link is the current one, under the same lock as take_over (wsserver.py 161–180)."
       ]
     },

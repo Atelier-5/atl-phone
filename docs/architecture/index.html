@@ -49,7 +49,7 @@
     ROS 2 node in Docker, serves that page and maps its WebSocket to topics under <code>/&lt;robot&gt;/phone/</code>
     (contract <code>atl-phone/0.1</code>). The brain stays on the PC. These five diagrams show how a phone gets connected
     and tested, what the bridge remembers, and where it can go wrong.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>6b29b5a</code>; the build checked each citation
+  <p class="lead">Every box cites the lines it comes from, at commit <code>9861131</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -94,12 +94,14 @@
     <tr><td>Between a disconnect and the next phone, <code>/api/state</code> still shows the old senses:
       <code>closed()</code> clears the phone, not <code>seen</code>. The setup page relies on <code>connected</code>, and
       keeps what passed once, so its marks stay right.</td>
-      <td><code>bridge_node.py</code> 87–96, <code>setup.js</code> 362–376 · <a href="04-phone-link.html">04</a></td>
+      <td><code>bridge_node.py</code> 87–96, <code>setup.js</code> 364–378 · <a href="04-phone-link.html">04</a></td>
       <td><span class="tag ok">by design</span></td></tr>
-    <tr><td>A check report is matched to the connected phone by model text only; Chrome's reduced user agent reports
-      <code>K</code>, so two phones can share a name.</td>
-      <td><code>bridge_node.py</code> 192–210 · <a href="02-bridge-state.html">02</a></td>
-      <td><span class="tag warn">open · minor</span></td></tr>
+    <tr><td>A check report was matched to the connected phone by model text only. Two phones of a kind looked the same,
+      and the first real phone did not match itself: its hello named it <code>SM-A505FN</code> (client hints), its report
+      "Android 10 phone" (the user agent says <code>K</code>), so the page fell back to the latest report of any phone.
+      Now the face and check pages keep a random id in the browser and both messages carry it.</td>
+      <td><code>face.js</code> 146–155, <code>bridge_node.py</code> 192–200, <code>setup.js</code> 232–238 · <a href="02-bridge-state.html">02</a></td>
+      <td><span class="tag ok">fixed in 9861131</span></td></tr>
     <tr><td>The state dicts are shared between threads without a lock. A stress test (200 000 <code>json.dumps</code> of
       a dict while another thread adds keys, Python 3.12.3 in the image) raised no error; the bridge replaces values, it
       does not mutate them in place.</td>
@@ -107,7 +109,7 @@
       <td><span class="tag ok">checked · no issue</span></td></tr>
     <tr><td>A phone on plain http over Wi-Fi gets no camera, motion, compass or battery; it now says so in its hello and
       the setup page marks them blocked, with the fix (USB, or <code>--cert</code>).</td>
-      <td><code>face.js</code> 146–151, <code>setup.js</code> 371–376 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>face.js</code> 156–161, <code>setup.js</code> 373–378 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">handled in e8570a6</span></td></tr>
     <tr><td>Wi-Fi with camera and motion needs HTTPS. <code>./start.sh --make-cert</code> makes this PC's own certificate
       authority once; the bridge offers <code>/ca.crt</code> and each phone installs it once. The authority's key is not
@@ -126,7 +128,7 @@ python3 build.py            # every diagram; python3 build.py 05- for one
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 6b29b5a</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 9861131</footer>
 </main>
 </body>
 </html>

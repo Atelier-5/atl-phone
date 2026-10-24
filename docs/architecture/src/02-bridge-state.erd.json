@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
+      "revision": "98611314bfb2025e2d318857b93546aff9288124"
     }
   },
   "layout": {
@@ -114,6 +114,10 @@
           "references": "link.peer"
         },
         {
+          "name": "id",
+          "type": "16 hex (page storage)"
+        },
+        {
           "name": "model",
           "type": "str ≤40 (hint or UA)"
         },
@@ -142,8 +146,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 58,
-          "end_line": 65
+          "line": 64,
+          "end_line": 71
         }
       ]
     },
@@ -209,8 +213,14 @@
           "key": "pk"
         },
         {
+          "name": "id",
+          "type": "16 hex, or \"\"",
+          "key": "fk",
+          "references": "phone.id"
+        },
+        {
           "name": "model",
-          "type": "str (UA)"
+          "type": "str (hint, else UA)"
         },
         {
           "name": "at",
@@ -221,7 +231,7 @@
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
           "line": 192,
-          "end_line": 198
+          "end_line": 200
         }
       ]
     },
@@ -264,8 +274,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 193,
-          "end_line": 195
+          "line": 196,
+          "end_line": 197
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
@@ -315,7 +325,7 @@
       "id": "r-match",
       "from": "report",
       "to": "phone",
-      "label": "same model?",
+      "label": "same id",
       "fromCardinality": "many",
       "fromOptional": true,
       "toCardinality": "one",
@@ -339,8 +349,9 @@
       "dot": "amber",
       "title": "Interpretation",
       "items": [
-        "A report is matched to the phone only by model text, in setup.js report(); with Chrome's reduced UA (\"K\") two phones can share a model name.",
-        "The dicts are read by HTTP threads and written by the phone's thread without a lock. A stress test of json.dumps against a writer adding keys (200 000 runs, Python 3.12.3) raised no error: the values are replaced, not mutated."
+        "A report is matched to its phone by a random id the face and check pages keep in the browser (setup.js report()); by model only when storage is blocked. Until 9861131 it was by model alone, and one phone did not even match itself: hello named it from client hints, the report from the user agent (\"K\").",
+        "The dicts are read by HTTP threads and written by the phone's thread without a lock. A stress test of json.dumps against a writer adding keys (200 000 runs, Python 3.12.3) raised no error: the values are replaced, not mutated.",
+        "The id lives per address: the same phone has one id over USB (localhost) and another over Wi-Fi."
       ]
     }
   ]
