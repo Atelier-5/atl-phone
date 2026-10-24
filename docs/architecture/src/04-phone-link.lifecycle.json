@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "98611314bfb2025e2d318857b93546aff9288124"
+      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
     }
   },
   "mainPath": [
@@ -28,8 +28,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 294,
-          "end_line": 303
+          "line": 407,
+          "end_line": 416
         }
       ]
     },
@@ -42,8 +42,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 162,
-          "end_line": 164
+          "line": 163,
+          "end_line": 165
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
@@ -66,8 +66,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 87,
-          "end_line": 91
+          "line": 113,
+          "end_line": 117
         }
       ]
     },
@@ -81,13 +81,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 105,
-          "end_line": 109
+          "line": 131,
+          "end_line": 135
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 81,
-          "end_line": 85
+          "line": 106,
+          "end_line": 111
         }
       ]
     },
@@ -113,13 +113,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 169,
-          "end_line": 173
+          "line": 170,
+          "end_line": 174
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 93,
-          "end_line": 96
+          "line": 119,
+          "end_line": 122
         }
       ]
     },
@@ -137,8 +137,8 @@
         },
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 171,
-          "end_line": 171
+          "line": 172,
+          "end_line": 172
         }
       ]
     },
@@ -150,8 +150,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 184,
-          "end_line": 184
+          "line": 187,
+          "end_line": 187
         }
       ]
     }
@@ -235,7 +235,7 @@
       "title": "One phone per bridge",
       "items": [
         "take_over() swaps in the new Link, then closes the old one with code 4000 (wsserver.py 161–165).",
-        "A page closed with 4000 does not reconnect, so two phones never fight over the bridge (face.js 171)."
+        "A page closed with 4000 does not reconnect, so two phones never fight over the bridge (face.js 172)."
       ]
     },
     {
@@ -243,7 +243,7 @@
       "title": "State that outlives the link",
       "items": [
         "closed() clears phone but keeps seen; the next opened() resets seen. Between the two, /api/state shows the old senses with connected: false.",
-        "The setup page keeps its own passed map, so a sense that worked once stays ticked across a reconnect (setup.js 374–378)."
+        "The setup page keeps its own passed map, so a sense that worked once stays ticked across a reconnect (setup.js 416–420)."
       ]
     },
     {

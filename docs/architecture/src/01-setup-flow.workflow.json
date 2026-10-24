@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "98611314bfb2025e2d318857b93546aff9288124"
+      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
     },
     "legend": {
       "entries": {
@@ -99,14 +99,14 @@
       "sources": [
         {
           "path": "start.sh",
-          "line": 45,
-          "end_line": 51,
+          "line": 51,
+          "end_line": 57,
           "label": "hash label"
         },
         {
           "path": "start.sh",
-          "line": 72,
-          "end_line": 83,
+          "line": 79,
+          "end_line": 90,
           "label": "run + wait"
         }
       ]
@@ -126,13 +126,13 @@
         },
         {
           "path": "start.sh",
-          "line": 40,
-          "end_line": 43
+          "line": 46,
+          "end_line": 49
         },
         {
           "path": "start.sh",
-          "line": 62,
-          "end_line": 71
+          "line": 68,
+          "end_line": 77
         }
       ]
     },
@@ -147,8 +147,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 28,
-          "end_line": 71
+          "line": 33,
+          "end_line": 85
         }
       ]
     },
@@ -162,8 +162,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 158,
-          "end_line": 168
+          "line": 173,
+          "end_line": 183
         }
       ]
     },
@@ -182,8 +182,8 @@
         },
         {
           "path": "ros2/atl_phone/web/setup.html",
-          "line": 106,
-          "end_line": 140
+          "line": 110,
+          "end_line": 144
         }
       ]
     },
@@ -197,8 +197,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 294,
-          "end_line": 303
+          "line": 407,
+          "end_line": 416
         }
       ]
     },
@@ -227,13 +227,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 140,
-          "end_line": 168
+          "line": 141,
+          "end_line": 169
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 64,
-          "end_line": 71
+          "line": 67,
+          "end_line": 74
         }
       ]
     },
@@ -247,13 +247,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/check.html",
-          "line": 293,
-          "end_line": 294
+          "line": 310,
+          "end_line": 311
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 192,
-          "end_line": 200
+          "line": 244,
+          "end_line": 252
         }
       ]
     },
@@ -267,8 +267,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 160,
-          "end_line": 190
+          "line": 202,
+          "end_line": 242
         }
       ]
     },
@@ -283,12 +283,12 @@
         {
           "path": "ros2/atl_phone/atl_phone/contract.py",
           "line": 15,
-          "end_line": 31
+          "end_line": 38
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 48,
-          "end_line": 64
+          "line": 56,
+          "end_line": 78
         }
       ]
     },
@@ -302,8 +302,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 254,
-          "end_line": 288
+          "line": 367,
+          "end_line": 401
         }
       ]
     },
@@ -317,8 +317,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 98,
-          "end_line": 158
+          "line": 124,
+          "end_line": 200
         }
       ]
     },
@@ -332,8 +332,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 373,
-          "end_line": 403
+          "line": 415,
+          "end_line": 446
         }
       ]
     },
@@ -347,8 +347,8 @@
       "sources": [
         {
           "path": "start.sh",
-          "line": 53,
-          "end_line": 57
+          "line": 59,
+          "end_line": 63
         }
       ]
     },
@@ -377,8 +377,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 364,
-          "end_line": 378
+          "line": 404,
+          "end_line": 420
         }
       ]
     }
@@ -528,7 +528,7 @@
       "title": "Reading this",
       "items": [
         "The phone check (check.html) is optional; its report comes back by POST /report and is kept (the last 10).",
-        "Paths cite commit 9861131; the repository is local only (not pushed)."
+        "Paths cite commit a259a7a; the repository is local only (not pushed)."
       ]
     }
   ]

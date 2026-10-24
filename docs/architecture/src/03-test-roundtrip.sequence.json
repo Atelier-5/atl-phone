@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "98611314bfb2025e2d318857b93546aff9288124"
+      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
     },
     "legend": {
       "entries": {
@@ -31,8 +31,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 158,
-          "end_line": 168
+          "line": 173,
+          "end_line": 183
         }
       ]
     },
@@ -57,13 +57,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 73,
-          "end_line": 79
+          "line": 87,
+          "end_line": 93
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 141,
-          "end_line": 190
+          "line": 169,
+          "end_line": 242
         }
       ]
     },
@@ -76,7 +76,7 @@
         {
           "path": "ros2/atl_phone/atl_phone/contract.py",
           "line": 15,
-          "end_line": 31
+          "end_line": 38
         }
       ]
     },
@@ -106,13 +106,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 176,
-          "end_line": 185
+          "line": 177,
+          "end_line": 188
         },
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 200,
-          "end_line": 252
+          "line": 203,
+          "end_line": 269
         }
       ]
     }
@@ -300,7 +300,7 @@
       "title": "Why through ROS",
       "items": [
         "act() publishes on the contract topic and the bridge's own subscription forwards it: a passing setup test proves topic → bridge → WebSocket → page.",
-        "open and camera have no topic, so they go straight to the phone (bridge_node.py 162–165)."
+        "open and camera have no topic, so they go straight to the phone (bridge_node.py 204–208)."
       ]
     },
     {
@@ -308,14 +308,14 @@
       "title": "Fixed: output tests with no phone",
       "items": [
         "Until d2b04ac an output test answered 204 with no phone connected, so the page looked as if it was sent (out() ignores server.send's result).",
-        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 167–168). Robot programs' own messages are still dropped quietly."
+        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 215–216). Robot programs' own messages are still dropped quietly."
       ]
     },
     {
       "dot": "slate",
       "title": "Privacy",
       "items": [
-        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 200–252)."
+        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 203–269)."
       ]
     }
   ]

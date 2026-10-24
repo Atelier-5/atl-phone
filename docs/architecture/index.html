@@ -47,9 +47,10 @@
   <h1>The phone bridge, drawn from its code</h1>
   <p class="lead">An old Android phone is a robot's face, eyes and ears. It runs a web page; the <code>atl_phone</code> bridge, a
     ROS 2 node in Docker, serves that page and maps its WebSocket to topics under <code>/&lt;robot&gt;/phone/</code>
-    (contract <code>atl-phone/0.1</code>). The brain stays on the PC. These five diagrams show how a phone gets connected
-    and tested, what the bridge remembers, and where it can go wrong.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>9861131</code>; the build checked each citation
+    (contract <code>atl-phone/0.2</code>). The brain stays on the PC. These seven diagrams show how a phone gets connected
+    and tested, what the bridge remembers, where it can go wrong, and the Desk Guardian: a ROS 2 node that knows only
+    topics and runs the same against a mock phone, the Thymio twin in Webots, and the real phone.</p>
+  <p class="lead">Every box cites the lines it comes from, at commit <code>a259a7a</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -73,6 +74,14 @@
       <span class="kind">sequence · race</span>
       <p>One frame already in flight from the old phone used to land as the new phone's; the swap and the delivery now
         share one lock.</p></div>
+    <div class="card"><span class="n">06</span><a href="06-desk-guardian.html">The Desk Guardian's states</a>
+      <span class="kind">lifecycle</span>
+      <p>Guarding, alert, friend, intruder; lifted and the desk's edge come first. Friends are face numbers, forgotten
+        when the phone forgets.</p></div>
+    <div class="card"><span class="n">07</span><a href="07-guardian-story.html">The guardian sees a face, then its owner</a>
+      <span class="kind">sequence</span>
+      <p>Phone, bridge, guardian and Thymio, topic by topic: where the face is goes in, a turn of the wheels comes out;
+        pictures and signatures never leave the phone.</p></div>
   </div>
 
   <h2>Review findings</h2>
@@ -89,46 +98,71 @@
       ignores the result of <code>server.send</code>. It misled the first real-phone test (a Galaxy A50): the phone was on
       the check page while its outputs were tried. <code>act()</code> now refuses them with "no phone", and step 4 shows
       whether a phone is connected.</td>
-      <td><code>bridge_node.py</code> 160–168 · <a href="03-test-roundtrip.html">03</a></td>
+      <td><code>bridge_node.py</code> 202–216 · <a href="03-test-roundtrip.html">03</a></td>
       <td><span class="tag ok">fixed in d2b04ac</span></td></tr>
     <tr><td>Between a disconnect and the next phone, <code>/api/state</code> still shows the old senses:
       <code>closed()</code> clears the phone, not <code>seen</code>. The setup page relies on <code>connected</code>, and
       keeps what passed once, so its marks stay right.</td>
-      <td><code>bridge_node.py</code> 87–96, <code>setup.js</code> 364–378 · <a href="04-phone-link.html">04</a></td>
+      <td><code>bridge_node.py</code> 113–122, <code>setup.js</code> 404–420 · <a href="04-phone-link.html">04</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>A check report was matched to the connected phone by model text only. Two phones of a kind looked the same,
       and the first real phone did not match itself: its hello named it <code>SM-A505FN</code> (client hints), its report
       "Android 10 phone" (the user agent says <code>K</code>), so the page fell back to the latest report of any phone.
       Now the face and check pages keep a random id in the browser and both messages carry it.</td>
-      <td><code>face.js</code> 146–155, <code>bridge_node.py</code> 192–200, <code>setup.js</code> 232–238 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>face.js</code> 147–156, <code>bridge_node.py</code> 244–252, <code>setup.js</code> 247–253 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">fixed in 9861131</span></td></tr>
     <tr><td>The state dicts are shared between threads without a lock. A stress test (200 000 <code>json.dumps</code> of
       a dict while another thread adds keys, Python 3.12.3 in the image) raised no error; the bridge replaces values, it
       does not mutate them in place.</td>
-      <td><code>bridge_node.py</code> 110–158 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>bridge_node.py</code> 138–200 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">checked · no issue</span></td></tr>
     <tr><td>A phone on plain http over Wi-Fi gets no camera, motion, compass or battery; it now says so in its hello and
       the setup page marks them blocked, with the fix (USB, or <code>--cert</code>).</td>
-      <td><code>face.js</code> 156–161, <code>setup.js</code> 373–378 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>face.js</code> 157–162, <code>setup.js</code> 415–420 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">handled in e8570a6</span></td></tr>
     <tr><td>Wi-Fi with camera and motion needs HTTPS. <code>./start.sh --make-cert</code> makes this PC's own certificate
       authority once; the bridge offers <code>/ca.crt</code> and each phone installs it once. The authority's key is not
       mounted into the container. A phone that has the authority installed trusts anything this PC's key signs, so the
       setup page says how to remove it when a phone leaves the class.</td>
-      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 62–71, <code>wsserver.py</code> 199–210 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 68–77, <code>wsserver.py</code> 199–210 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">added in d2b04ac</span></td></tr>
+    <tr><td>Telling faces apart ("familiar") is a signature kept in the phone's page only. A program can ask for it but
+      not allow it: the facilitator does (<code>familiar:=true</code> or the setup page), and until then the bridge sets
+      every face's number to null, whatever the phone sends. The contract check sends a number and a 128-number
+      descriptor and sees neither reach ROS.</td>
+      <td><code>bridge_node.py</code> 95–104, 178–185, <code>protocol.py</code> 101–112 · <a href="02-bridge-state.html">02</a></td>
+      <td><span class="tag ok">by design</span></td></tr>
+    <tr><td>The phone reuses face numbers once it forgets its signatures (familiar off, page reloaded). The guardian
+      kept number 1 as its friend, so a second run of its story greeted a new face as the owner. It now forgets its
+      friends when the bridge's status shows the phone forgot.</td>
+      <td><code>guardian_node.py</code> 74–80, <code>guardian.py</code> 117–120 · <a href="06-desk-guardian.html">06</a></td>
+      <td><span class="tag ok">fixed in a259a7a</span></td></tr>
+    <tr><td>The guardian, in the bridge's container, heard nothing from atl-bot-thymio's: Fast DDS uses shared memory
+      between processes on one host, and containers do not share <code>/dev/shm</code>. <code>start.sh</code> now makes
+      it use UDP.</td>
+      <td><code>start.sh</code> 78–80 · <a href="07-guardian-story.html">07</a></td>
+      <td><span class="tag ok">fixed in a259a7a</span></td></tr>
+    <tr><td>Both ground sensors over nothing count as lifted, so a Thymio that reaches the desk's edge head-on stops and
+      asks to be put down instead of backing off (atl-bot-thymio's behaviours read it the same way). Safe, but not the
+      cliff reaction. The guardian itself never drives forward, so it reaches an edge only by turning.</td>
+      <td><code>guardian.py</code> 87–101 · <a href="06-desk-guardian.html">06</a></td>
+      <td><span class="tag warn">open · minor</span></td></tr>
+    <tr><td>While the robot is lifted or backing off from the edge, a long touch is not kept for later: petting during
+      those 2.2 s is lost.</td>
+      <td><code>guardian.py</code> 152–176 · <a href="06-desk-guardian.html">06</a></td>
+      <td><span class="tag warn">open · minor</span></td></tr>
   </table>
   </div>
 
   <h2>Rebuild</h2>
   <pre>cd docs/architecture
-python3 build.py            # every diagram; python3 build.py 05- for one
+python3 build.py            # every diagram; python3 build.py 06- for one
 </pre>
   <p class="lead">The sources are <code>src/*.json</code>; <code>receipts/</code> keeps each run's validation, browser
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 9861131</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit a259a7a</footer>
 </main>
 </body>
 </html>

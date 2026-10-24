@@ -1,5 +1,5 @@
 {
-  "revision": "98611314bfb2025e2d318857b93546aff9288124",
+  "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c",
   "diagrams": {
     "01-setup-flow.workflow.json": {
       "output": "01-setup-flow.html",
@@ -47,6 +47,28 @@
     },
     "05-takeover-race.sequence.json": {
       "output": "05-takeover-race.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "06-desk-guardian.lifecycle.json": {
+      "output": "06-desk-guardian.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "07-guardian-story.sequence.json": {
+      "output": "07-guardian-story.html",
       "status": "pass",
       "gates": {
         "validate": "pass",

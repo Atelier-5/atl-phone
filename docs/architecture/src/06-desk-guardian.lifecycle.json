@@ -1,0 +1,241 @@
+{
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "atl-phone: the Desk Guardian's states",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "06-desk-guardian.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+    }
+  },
+  "mainPath": [
+    "guarding",
+    "alert",
+    "friend"
+  ],
+  "states": [
+    {
+      "id": "guarding",
+      "type": "start",
+      "label": "Guarding",
+      "sublabel": "sleepy, looks around",
+      "step": "01",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 196,
+          "end_line": 202
+        }
+      ]
+    },
+    {
+      "id": "alert",
+      "type": "decision",
+      "label": "Alert",
+      "sublabel": "turns to the face",
+      "step": "02",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 181,
+          "end_line": 193
+        }
+      ]
+    },
+    {
+      "id": "friend",
+      "type": "success",
+      "label": "Friend",
+      "sublabel": "owner card, or its number",
+      "step": "03",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 140,
+          "end_line": 149
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 177,
+          "end_line": 180
+        }
+      ]
+    },
+    {
+      "id": "intruder",
+      "type": "failure",
+      "label": "Intruder",
+      "sublabel": "close 5 s: angry, buzz",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 184,
+          "end_line": 189
+        }
+      ]
+    },
+    {
+      "id": "scared",
+      "type": "waiting",
+      "label": "Scared",
+      "sublabel": "lifted: wheels stop",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 87,
+          "end_line": 92
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 152,
+          "end_line": 161
+        }
+      ]
+    },
+    {
+      "id": "edge",
+      "type": "active",
+      "label": "Edge",
+      "sublabel": "back off, turn away",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 95,
+          "end_line": 101
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 162,
+          "end_line": 170
+        }
+      ]
+    },
+    {
+      "id": "petted",
+      "type": "neutral",
+      "label": "Petted",
+      "sublabel": "long touch: love",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 173,
+          "end_line": 176
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t-face",
+      "from": "guarding",
+      "to": "alert",
+      "label": "a face"
+    },
+    {
+      "id": "t-card",
+      "from": "alert",
+      "to": "friend",
+      "label": "owner card"
+    },
+    {
+      "id": "t-close",
+      "from": "alert",
+      "to": "intruder",
+      "label": "close ≥ 5 s"
+    },
+    {
+      "id": "t-back",
+      "from": "intruder",
+      "to": "alert",
+      "label": "steps back"
+    },
+    {
+      "id": "t-lost-a",
+      "from": "alert",
+      "to": "guarding",
+      "label": "no face 30 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "t-lost-f",
+      "from": "friend",
+      "to": "guarding",
+      "label": "no face 30 s",
+      "variant": "dashed"
+    },
+    {
+      "id": "t-known",
+      "from": "guarding",
+      "to": "friend",
+      "label": "its number",
+      "note": "familiar only"
+    },
+    {
+      "id": "t-lift",
+      "from": "guarding",
+      "to": "scared",
+      "label": "lifted 0.2 s",
+      "variant": "security"
+    },
+    {
+      "id": "t-down",
+      "from": "scared",
+      "to": "guarding",
+      "label": "put down, 1 s"
+    },
+    {
+      "id": "t-edge",
+      "from": "guarding",
+      "to": "edge",
+      "label": "one sensor over",
+      "variant": "security"
+    },
+    {
+      "id": "t-edge-done",
+      "from": "edge",
+      "to": "guarding",
+      "label": "2.2 s"
+    },
+    {
+      "id": "t-pet",
+      "from": "guarding",
+      "to": "petted",
+      "label": "long touch"
+    },
+    {
+      "id": "t-pet-done",
+      "from": "petted",
+      "to": "guarding",
+      "label": "3 s"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Who wins",
+      "items": [
+        "Each step checks the body first: lifted, then the desk's edge, then a long touch, then faces (guardian.py 152–193). From any state, a lift or an edge comes first; the diagram draws those from Guarding only.",
+        "Both ground sensors over nothing counts as lifted, so a head-on edge stops the robot rather than backing it off (guardian.py 87–92)."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Friends are numbers",
+      "items": [
+        "The owner card shown with a face makes that face's number a friend; without familiar, the face in view is a friend until it has been gone 10 s (guardian.py 140–149).",
+        "When the phone forgets its faces (familiar off, another page or phone), the guardian forgets its friends too: the numbers may go to someone else (guardian_node.py 74–80)."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "One brain, three worlds",
+      "items": [
+        "It reads only topics (guardian_node.py 96–129): guardian_check plays it with a mock phone and a fake Thymio, scripts/guardian_twin_check.py on the Thymio twin in Webots, ./start.sh --guardian with the real phone."
+      ]
+    }
+  ]
+}

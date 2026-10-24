@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "atl-phone: the Desk Guardian sees a face, then its owner",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "07-guardian-story.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+    },
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "what the guardian acts on, and does"
+        },
+        "dashed": {
+          "label": "a sense, reported"
+        }
+      }
+    }
+  },
+  "segments": [
+    {
+      "from": 160,
+      "to": 600,
+      "label": "A face on its left"
+    },
+    {
+      "from": 620,
+      "to": 790,
+      "label": "The owner card"
+    },
+    {
+      "from": 810,
+      "to": 900,
+      "label": "The phone forgets"
+    }
+  ],
+  "participants": [
+    {
+      "id": "phone",
+      "type": "frontend",
+      "label": "face.js look",
+      "sublabel": "real phone, or mock",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 303,
+          "end_line": 318
+        },
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 320,
+          "end_line": 365
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Bridge",
+      "sublabel": "bridge_node.py",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 95,
+          "end_line": 104
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 178,
+          "end_line": 188
+        }
+      ]
+    },
+    {
+      "id": "guardian",
+      "type": "backend",
+      "label": "Guardian",
+      "sublabel": "guardian_node.py",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian_node.py",
+          "line": 74,
+          "end_line": 80
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian_node.py",
+          "line": 96,
+          "end_line": 129
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian.py",
+          "line": 132,
+          "end_line": 207
+        }
+      ]
+    },
+    {
+      "id": "thymio",
+      "type": "external",
+      "label": "Thymio",
+      "sublabel": "fake, twin, or real",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian_check.py",
+          "line": 37,
+          "end_line": 40
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian_check.py",
+          "line": 57,
+          "end_line": 66
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-look",
+      "from": "guardian",
+      "to": "bridge",
+      "y": 180,
+      "label": "look, look/familiar: true",
+      "note": "asked again every 2 s; the bridge passes on only changes"
+    },
+    {
+      "id": "m-look2",
+      "from": "bridge",
+      "to": "phone",
+      "y": 240,
+      "label": "{t: look, on, familiar}",
+      "note": "familiar only if the facilitator allowed it"
+    },
+    {
+      "id": "m-faces",
+      "from": "phone",
+      "to": "bridge",
+      "y": 300,
+      "label": "{t: faces, faces: [{x 0.6, size 0.2, familiar 1}]}",
+      "variant": "dashed",
+      "note": "about 4 Hz; frames and signatures stay in the page"
+    },
+    {
+      "id": "m-faces2",
+      "from": "bridge",
+      "to": "guardian",
+      "y": 360,
+      "label": "phone/faces",
+      "variant": "emphasis",
+      "note": "the number is set to null unless familiar is allowed"
+    },
+    {
+      "id": "m-ground",
+      "from": "thymio",
+      "to": "guardian",
+      "y": 420,
+      "label": "prox/ground [700, 700]",
+      "variant": "dashed",
+      "note": "20 Hz; none for 1 s: no Thymio, no cmd_vel"
+    },
+    {
+      "id": "m-face",
+      "from": "guardian",
+      "to": "bridge",
+      "y": 480,
+      "label": "face/expression surprised · say \"Who's there?\" · face/gaze"
+    },
+    {
+      "id": "m-face2",
+      "from": "bridge",
+      "to": "phone",
+      "y": 520,
+      "label": "{t: face} {t: say} {t: gaze}"
+    },
+    {
+      "id": "m-cmd",
+      "from": "guardian",
+      "to": "thymio",
+      "y": 560,
+      "label": "cmd_vel angular +0.9",
+      "variant": "emphasis",
+      "note": "x > 0 is the robot's left: it turns to the face"
+    },
+    {
+      "id": "m-code",
+      "from": "phone",
+      "to": "bridge",
+      "y": 650,
+      "label": "{t: code, text: atl-guardian:owner}",
+      "variant": "dashed",
+      "note": "the owner card, held up to the front camera"
+    },
+    {
+      "id": "m-code2",
+      "from": "bridge",
+      "to": "guardian",
+      "y": 710,
+      "label": "phone/codes"
+    },
+    {
+      "id": "m-happy",
+      "from": "guardian",
+      "to": "bridge",
+      "y": 750,
+      "label": "face/expression happy · say \"Hello, boss!\"",
+      "note": "face number 1 becomes a friend"
+    },
+    {
+      "id": "m-forget",
+      "from": "bridge",
+      "to": "guardian",
+      "y": 840,
+      "label": "status {familiar: false} (latched)",
+      "note": "familiar taken back, or another page or phone"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Only topics between them",
+      "items": [
+        "The guardian never sees the page or Webots: phone/faces, codes, touch and imu in; the face, say and look out; prox/ground in and cmd_vel out on the Thymio's side (guardian_node.py 96–129).",
+        "So the same run is guardian_check's story (a mock phone and a fake Thymio, guardian_check.py 57–66), the twin in Webots (scripts/guardian_twin_check.py), or the real phone on a Thymio."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "What leaves the phone",
+      "items": [
+        "Where each face is and how big, and a number when familiar is allowed: four fields, clamped by protocol.py. Pictures and signatures stay in the page (face.js 303–365)."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Checked",
+      "items": [
+        "guardian_check: 13 steps, from guarding to petted, three runs in a row on a259a7a. guardian_twin_check: the twin turns to a face, stops when lifted, backs off at the edge (4 checks, three runs)."
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # The phone bridge's architecture pack
 
-Open `index.html`: the five diagrams, what each one answers, and the review findings.
+Open `index.html`: the seven diagrams, what each one answers, and the review findings.
 
 | | Diagram | Type |
 |---|---|---|
@@ -9,6 +9,8 @@ Open `index.html`: the five diagrams, what each one answers, and the review find
 | 03 | One setup test, there and back | sequence |
 | 04 | The phone's link to the bridge | lifecycle |
 | 05 | A second phone takes over (race) | sequence |
+| 06 | The Desk Guardian's states | lifecycle |
+| 07 | The guardian sees a face, then its owner | sequence |
 
 - `src/*.json`: the Archify sources. Each box cites repository lines at the commit in `meta.repository`.
 - `*.html`: the rendered diagrams, standalone (open them from disk). `*.delivery.json`: their provenance.
