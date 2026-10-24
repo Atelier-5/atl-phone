@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Atelier-5
 """bridge — the phone on ROS 2: serves the face page, and maps its WebSocket to the contract's topics.
 
-    ros2 run atl_phone bridge --ros-args -p robot:=thymio_1 [-p port:=8782] [-p key:=...] [-p cert:=c.pem -p cert_key:=k.pem]
+    ros2 run atl_phone bridge --ros-args -p robot:=thymio_1 [-p port:=8782] [-p key:=...] [-p cert:=c.pem -p cert_key:=k.pem [-p ca:=ca.crt]]
 
 Over USB (adb reverse) the phone opens http://localhost:8782; over Wi-Fi it needs
 https (cert), or the camera and microphone stay blocked. The setup page, on this PC,
@@ -34,6 +34,7 @@ class Bridge(Node):
         key = self.declare_parameter("key", "").value
         cert = self.declare_parameter("cert", "").value or None
         cert_key = self.declare_parameter("cert_key", "").value or None
+        ca = self.declare_parameter("ca", "").value or None
         self.lang = self.declare_parameter("lang", "en").value
         web = self.declare_parameter("web", get_package_share_directory("atl_phone") + "/web").value
         self.t = c.topics(self.robot)
@@ -63,11 +64,11 @@ class Bridge(Node):
                       {"expression": String, "gaze": Point, "color": ColorRGBA, "say": String, "torch": Bool, "vibrate": Int32}.items()}
 
         self.server = PhoneServer(web, port, bind, key, on_open=self.opened, on_text=self.text, on_close=self.closed,
-                                  cert=cert, cert_key=cert_key, api=self).start()
+                                  cert=cert, cert_key=cert_key, api=self, ca=ca).start()
         self.status()
         q = f"?key={key}" if key else ""
         self.get_logger().info(f"{c.CONTRACT} for /{self.robot}: {self.server.scheme}://<this PC>:{self.server.port}/{q}"
-                               f" (USB: adb reverse tcp:{port} tcp:{port}, then http://localhost:{port}/{q})")
+                               f" (USB: adb reverse tcp:{port} tcp:{port}, then {self.server.scheme}://localhost:{port}/{q})")
 
     def out(self, make, *args):
         try:
@@ -151,7 +152,8 @@ class Bridge(Node):
         q = f"?key={self.key}" if self.key else ""
         port, scheme = self.server.port, self.server.scheme
         return {"contract": c.CONTRACT, "robot": self.robot, "now": time.time(),
-                "urls": {"usb": f"http://localhost:{port}/{q}", "wifi": f"{scheme}://{lan_address()}:{port}/{q}"},
+                "urls": {"usb": f"{scheme}://localhost:{port}/{q}", "wifi": f"{scheme}://{lan_address()}:{port}/{q}",
+                         "ca": f"{scheme}://{lan_address()}:{port}/ca.crt" if self.server.ca else None},
                 "secure_wifi": scheme == "https", "connected": self.server.connected,
                 "phone": self.phone, "seen": self.seen, "reports": self.reports, "expressions": c.EXPRESSIONS}
 
@@ -162,6 +164,8 @@ class Bridge(Node):
             if not self.server.send(json.dumps(m)):
                 raise ValueError("no phone")
             return
+        if not self.server.connected:  # the topic would take it, and nobody would show it: say so instead
+            raise ValueError("no phone")
         topic, v = body.get("topic"), body.get("value")
         if topic == "expression":
             msg = String(data=p.face(v)["expression"])

@@ -15,7 +15,12 @@ var T = {
     usb3: 'Plug the phone into this PC and allow it on the phone.',
     usb4: 'On this PC, in the atl-phone folder:', usb5: 'The face opens on the phone: tap ▶.',
     usb_why: 'USB makes the page the phone’s “localhost”: a secure page, so camera, microphone and motion work without certificates. The cable charges the phone too.',
-    wifi_warn: 'Without HTTPS the face works, but camera, microphone and motion are blocked on Wi-Fi. Use USB, or start the bridge with a certificate: ./start.sh --cert DIR',
+    wifi_warn: 'Without HTTPS the face works, but camera, microphone and motion are blocked on Wi-Fi. Use USB, or start the bridge with its own certificate: ./start.sh --make-cert',
+    ca_h: 'Once per phone: let it trust this PC', ca_then: 'Then, every time: the face',
+    ca1: 'Put the phone on the same Wi-Fi and scan this code. Chrome warns once that the connection is not private: Advanced › Proceed. The file atl-phone-ca.crt downloads.',
+    ca2: 'Settings › Security › Encryption & credentials › Install a certificate › CA certificate, and pick atl-phone-ca.crt. Menus differ per phone: search Settings for “certificate”. On older phones, opening the file installs it.',
+    ca3: 'Close Chrome completely and open it again.',
+    ca_note: 'The phone then trusts pages signed by this PC. When it leaves the class, remove it: Settings › … › Trusted credentials › User.',
     wifi1: 'Put the phone on the same Wi-Fi as this PC.', wifi2: 'Scan the code with the phone’s camera, or type the address:',
     open_check: 'Open the check on the phone', chk2: 'On the phone: “Test everything”, allow camera, microphone and motion.',
     chk3: 'Then “Send report to the PC”, and “Robot face →” to come back.',
@@ -30,10 +35,10 @@ var T = {
     vibrate: 'Vibration', vibrate_btn: 'Buzz', vibrate_q: 'Did you feel it?', torch: 'Torch', on: 'On', off: 'Off',
     torch_q: 'Did the light come on? (the face shows ● cam)', yes: 'yes', no: 'no',
     touch: 'Touch', touch_hint: 'On the phone: tap left, centre and right; press long; swipe.',
-    motion: 'Motion', motion_hint: 'Tilt the phone.', compass: 'Compass', compass_hint: 'Turn the phone, lying flat.',
+    motion: 'Motion', motion_hint: 'Tilt or turn the phone.', compass: 'Compass', compass_hint: 'Turn the phone, lying flat.',
     battery: 'Battery', charging: 'charging', none_yet: 'nothing yet', not_here: 'this phone has none',
     summary_lead: 'What works on this phone. Copy it into your notes or the robot’s build.', untested: 'not tested', skipped: 'skipped',
-    down: 'down:',
+    down: 'down:', test_no_phone: 'No phone connected: the tests cannot reach it. Open the face on the phone (step 2).',
     camera: 'Camera', show: 'Show on the phone', hide: 'Hide', camera_q: 'Did the phone show what its camera sees?',
     camera_hint: 'The phone shows its back camera’s picture on its own screen, for a minute. Nothing leaves the phone.',
     code: 'Reading codes', code_hint: 'With the picture on: hold the phone’s back camera to this code.', code_read: 'read:',
@@ -53,7 +58,12 @@ var T = {
     usb3: 'Branchez le téléphone sur ce PC et autorisez-le sur le téléphone.',
     usb4: 'Sur ce PC, dans le dossier atl-phone :', usb5: 'Le visage s’ouvre sur le téléphone : touchez ▶.',
     usb_why: 'Par USB, la page est le « localhost » du téléphone : une page sécurisée, donc caméra, micro et mouvement marchent sans certificat. Le câble charge aussi le téléphone.',
-    wifi_warn: 'Sans HTTPS, le visage marche, mais caméra, micro et mouvement sont bloqués en Wi-Fi. Passez par USB, ou lancez le pont avec un certificat : ./start.sh --cert DOSSIER',
+    wifi_warn: 'Sans HTTPS, le visage marche, mais caméra, micro et mouvement sont bloqués en Wi-Fi. Passez par USB, ou lancez le pont avec son propre certificat : ./start.sh --make-cert',
+    ca_h: 'Une fois par téléphone : qu’il fasse confiance à ce PC', ca_then: 'Ensuite, à chaque fois : le visage',
+    ca1: 'Mettez le téléphone sur le même Wi-Fi et scannez ce code. Chrome prévient une fois que la connexion n’est pas privée : Paramètres avancés › Continuer. Le fichier atl-phone-ca.crt se télécharge.',
+    ca2: 'Paramètres › Sécurité › Chiffrement et identifiants › Installer un certificat › Certificat CA, et choisissez atl-phone-ca.crt. Les menus varient selon le téléphone : cherchez « certificat » dans les Paramètres. Sur les vieux téléphones, ouvrir le fichier l’installe.',
+    ca3: 'Fermez complètement Chrome et rouvrez-le.',
+    ca_note: 'Le téléphone fait alors confiance aux pages signées par ce PC. Quand il quitte la classe, retirez-le : Paramètres › … › Identifiants de confiance › Utilisateur.',
     wifi1: 'Mettez le téléphone sur le même Wi-Fi que ce PC.', wifi2: 'Scannez le code avec la caméra du téléphone, ou tapez l’adresse :',
     open_check: 'Ouvrir le test sur le téléphone', chk2: 'Sur le téléphone : « Tout tester », autorisez caméra, micro et mouvement.',
     chk3: 'Puis « Envoyer le rapport au PC », et « Visage du robot → » pour revenir.',
@@ -68,10 +78,10 @@ var T = {
     vibrate: 'Vibration', vibrate_btn: 'Vibrer', vibrate_q: 'L’avez-vous senti ?', torch: 'Lampe', on: 'Allumer', off: 'Éteindre',
     torch_q: 'La lampe s’est-elle allumée ? (le visage montre ● cam)', yes: 'oui', no: 'non',
     touch: 'Toucher', touch_hint: 'Sur le téléphone : touchez à gauche, au centre et à droite ; appuyez longtemps ; glissez.',
-    motion: 'Mouvement', motion_hint: 'Inclinez le téléphone.', compass: 'Boussole', compass_hint: 'Tournez le téléphone, posé à plat.',
+    motion: 'Mouvement', motion_hint: 'Inclinez ou tournez le téléphone.', compass: 'Boussole', compass_hint: 'Tournez le téléphone, posé à plat.',
     battery: 'Batterie', charging: 'en charge', none_yet: 'rien encore', not_here: 'ce téléphone n’en a pas',
     summary_lead: 'Ce qui marche sur ce téléphone. Copiez-le dans vos notes ou dans le montage du robot.', untested: 'pas testé', skipped: 'passé',
-    down: 'en bas :',
+    down: 'en bas :', test_no_phone: 'Aucun téléphone connecté : les essais ne l’atteignent pas. Ouvrez le visage sur le téléphone (étape 2).',
     camera: 'Caméra', show: 'Montrer sur le téléphone', hide: 'Cacher', camera_q: 'Le téléphone a-t-il montré ce que voit sa caméra ?',
     camera_hint: 'Le téléphone montre l’image de sa caméra arrière sur son propre écran, pendant une minute. Rien ne quitte le téléphone.',
     code: 'Lire des codes', code_hint: 'Image allumée : tenez la caméra arrière du téléphone devant ce code.', code_read: 'lu :',
@@ -91,7 +101,12 @@ var T = {
     usb3: 'Handy an diesen PC anschließen und auf dem Handy erlauben.',
     usb4: 'Auf diesem PC, im Ordner atl-phone:', usb5: 'Das Gesicht öffnet sich auf dem Handy: auf ▶ tippen.',
     usb_why: 'Per USB ist die Seite der „localhost“ des Handys: eine sichere Seite, also gehen Kamera, Mikrofon und Bewegung ohne Zertifikat. Das Kabel lädt das Handy auch.',
-    wifi_warn: 'Ohne HTTPS geht das Gesicht, aber Kamera, Mikrofon und Bewegung sind im WLAN gesperrt. USB nutzen, oder die Brücke mit Zertifikat starten: ./start.sh --cert ORDNER',
+    wifi_warn: 'Ohne HTTPS geht das Gesicht, aber Kamera, Mikrofon und Bewegung sind im WLAN gesperrt. USB nutzen, oder die Brücke mit eigenem Zertifikat starten: ./start.sh --make-cert',
+    ca_h: 'Einmal pro Handy: diesem PC vertrauen', ca_then: 'Danach, jedes Mal: das Gesicht',
+    ca1: 'Das Handy ins selbe WLAN bringen und diesen Code scannen. Chrome warnt einmal, die Verbindung sei nicht privat: Erweitert › Weiter. Die Datei atl-phone-ca.crt wird geladen.',
+    ca2: 'Einstellungen › Sicherheit › Verschlüsselung & Anmeldedaten › Zertifikat installieren › CA-Zertifikat, dann atl-phone-ca.crt wählen. Die Menüs sind je Handy anders: in den Einstellungen nach „Zertifikat“ suchen. Auf alten Handys installiert es sich beim Öffnen der Datei.',
+    ca3: 'Chrome ganz schließen und neu öffnen.',
+    ca_note: 'Das Handy vertraut dann Seiten, die dieser PC signiert. Verlässt es die Klasse, wieder entfernen: Einstellungen › … › Vertrauenswürdige Anmeldedaten › Nutzer.',
     wifi1: 'Das Handy ins selbe WLAN wie diesen PC bringen.', wifi2: 'Den Code mit der Handykamera scannen, oder die Adresse eintippen:',
     open_check: 'Check auf dem Handy öffnen', chk2: 'Auf dem Handy: „Alles testen“, Kamera, Mikrofon und Bewegung erlauben.',
     chk3: 'Dann „Bericht an den PC senden“, und „Robotergesicht →“ für zurück.',
@@ -106,10 +121,10 @@ var T = {
     vibrate: 'Vibration', vibrate_btn: 'Brummen', vibrate_q: 'Hast du es gespürt?', torch: 'Lampe', on: 'An', off: 'Aus',
     torch_q: 'Ging das Licht an? (das Gesicht zeigt ● cam)', yes: 'ja', no: 'nein',
     touch: 'Berührung', touch_hint: 'Auf dem Handy: links, Mitte und rechts tippen; lange drücken; wischen.',
-    motion: 'Bewegung', motion_hint: 'Das Handy kippen.', compass: 'Kompass', compass_hint: 'Das Handy flach liegend drehen.',
+    motion: 'Bewegung', motion_hint: 'Das Handy kippen oder drehen.', compass: 'Kompass', compass_hint: 'Das Handy flach liegend drehen.',
     battery: 'Akku', charging: 'lädt', none_yet: 'noch nichts', not_here: 'dieses Handy hat keinen',
     summary_lead: 'Was auf diesem Handy funktioniert. In deine Notizen oder den Roboterbau kopieren.', untested: 'nicht getestet', skipped: 'übersprungen',
-    down: 'unten:',
+    down: 'unten:', test_no_phone: 'Kein Handy verbunden: die Tests erreichen es nicht. Das Gesicht auf dem Handy öffnen (Schritt 2).',
     camera: 'Kamera', show: 'Auf dem Handy zeigen', hide: 'Verbergen', camera_q: 'Hat das Handy gezeigt, was seine Kamera sieht?',
     camera_hint: 'Das Handy zeigt das Bild seiner Rückkamera auf dem eigenen Bildschirm, eine Minute lang. Nichts verlässt das Handy.',
     code: 'Codes lesen', code_hint: 'Bei laufendem Bild: die Rückkamera des Handys vor diesen Code halten.', code_read: 'gelesen:',
@@ -132,10 +147,10 @@ function el(tag, attrs, kids) {
 }
 
 var STEPS = ['bridge', 'connect', 'check', 'test', 'summary'];
-var step = 0, S = null, bridgeUp = null;
+var step = 0, S = null, bridgeUp = null, lastModel = '';
 var answers = {};          // outputs: true / false, as the person says
 var touched = {};          // touches seen: tap-left, tap-centre, tap-right, long, swipe
-var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {};
+var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {}, turned = false;  // tilted to another side, or turned
 var passed = {};           // senses that worked once stay ticked, even if the phone reconnects
 var CODE = 'atl-phone camera test';
 
@@ -147,7 +162,9 @@ function act(body) {
 }
 function poll() {
   fetch('/api/state').then(function (r) { return r.json(); }).then(function (s) {
-    S = s; bridgeUp = true; update();
+    S = s; bridgeUp = true;
+    if (s.phone && s.phone.model) lastModel = s.phone.model;  // the summary still names it once the phone is gone
+    update();
   }).catch(function () { bridgeUp = false; update(); }).then(function () { setTimeout(poll, 250); });
 }
 
@@ -191,6 +208,8 @@ function update() {
     // 2: connect
     $('wifi-url').textContent = S.urls.wifi; $('wifi-warn').style.display = S.secure_wifi ? 'none' : 'block';
     drawQr(S.urls.wifi);
+    $('ca-steps').style.display = S.urls.ca ? 'block' : 'none';
+    if (S.urls.ca && qrCaFor !== S.urls.ca) { qrCaFor = S.urls.ca; drawQr(S.urls.ca, $('qr-ca'), 4); }
     var ps = $('phone-status'), caps = $('phone-caps');
     if (S.connected) {
       var ph = S.phone || {};
@@ -204,6 +223,8 @@ function update() {
     renderReport();
     // 4: live senses
     updateInputs();
+    $('test-status').textContent = S.connected ? '✓ ' + t('connected') + ' ' + ((S.phone || {}).model || '…') : '⚠ ' + t('test_no_phone');
+    $('test-status').className = 'status' + (S.connected ? '' : ' off');
     if (STEPS[step] === 'summary') renderSummary();
   }
 }
@@ -316,6 +337,7 @@ function updateInputs() {
     var a = imu.acc, ax = ['x', 'y', 'z'], big = 0;
     for (var i = 1; i < 3; i++) if (Math.abs(a[i]) > Math.abs(a[big])) big = i;
     tilt[(a[big] > 0 ? '+' : '-') + ax[big]] = true;
+    if (Math.max.apply(null, imu.gyro.map(Math.abs)) > 1) turned = true;  // rad/s: a clear turn, not sensor noise
     live.motion.textContent = 'acc' + a.map(fmt).join('') + ' m/s²  gyro' + imu.gyro.map(fmt).join('') + ' rad/s  ' +
       Math.round(imuRate) + ' Hz  ' + t('down') + ' ' + (a[big] > 0 ? '-' : '+') + ax[big];
   } else live.motion.textContent = t('none_yet');
@@ -356,7 +378,7 @@ function inputNow(k) {
   var seen = (S && S.seen) || {}, caps = (S && S.phone && S.phone.caps) || {};
   if (k === 'code') return seen.camera && seen.camera.codes ? true : caps.barcode === false ? 'na' : null;
   if (k === 'touch') return GESTURES.every(function (x) { return touched[x]; }) || null;
-  if (k === 'motion') return seen.imu ? (Object.keys(tilt).length >= 2 || null) : (caps.motion === false ? false : null);
+  if (k === 'motion') return seen.imu ? (Object.keys(tilt).length >= 2 || turned || null) : (caps.motion === false ? false : null);
   if (k === 'compass') return seen.heading ? true : caps.compass === false ? 'na' : null;
   if (k === 'battery') return seen.battery ? true : caps.battery === false ? 'na' : null;
 }
@@ -382,7 +404,7 @@ function results() {
 // ---- 5: summary --------------------------------------------------------------------------------------
 function summaryText() {
   var r = results(), ph = (S && S.phone) || {}, rep = report();
-  var lines = ['Phone: ' + (ph.model || '?') + ' (' + (S ? S.robot : '?') + ', ' + (S ? S.contract : '') + ')', 'Date: ' + new Date().toISOString().slice(0, 10)];
+  var lines = ['Phone: ' + (ph.model || lastModel || '?') + ' (' + (S ? S.robot : '?') + ', ' + (S ? S.contract : '') + ')', 'Date: ' + new Date().toISOString().slice(0, 10)];
   if (rep) lines.push('Check: ' + (coreMissing(rep).length ? 'missing ' + coreMissing(rep).join(', ') : 'core complete'));
   if (insecure()) lines.push('Page: not secure (http over Wi-Fi): camera, motion, compass, battery blocked');
   Object.keys(r).forEach(function (k) {
@@ -394,7 +416,7 @@ function summaryText() {
 }
 function renderSummary() {
   var r = results(), ph = (S && S.phone) || {}, tb = $('summary'); tb.innerHTML = '';
-  $('summary-lead').textContent = t('summary_lead') + (ph.model ? ' · ' + ph.model : '');
+  $('summary-lead').textContent = t('summary_lead') + ((ph.model || lastModel) ? ' · ' + (ph.model || lastModel) : '');
   var rep = report();
   tb.appendChild(el('tr', {}, [el('td', {}, [el('span', { class: 'mark ' + (rep ? (coreMissing(rep).length ? 'no' : 'yes') : ''), text: rep ? (coreMissing(rep).length ? '✗' : '✓') : '–' })]),
     el('td', { text: t('s3') }), el('td', { class: 'hint', text: rep ? (coreMissing(rep).length ? t('core_missing') + ' ' + coreMissing(rep).join(', ') : t('core_ok')) : t('skipped') })]));
@@ -405,7 +427,7 @@ function renderSummary() {
 }
 
 // ---- the page ----------------------------------------------------------------------------------------
-var qrFor = null;
+var qrFor = null, qrCaFor = null;
 function drawQr(text, c, s) {
   if (!c) { if (qrFor === text) return; qrFor = text; c = $('qr'); s = 5; }
   if (typeof qrcode !== 'function') return;

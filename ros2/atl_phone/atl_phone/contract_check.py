@@ -12,6 +12,7 @@ import json
 import math
 import sys
 import time
+import urllib.error
 import urllib.request
 
 import rclpy
@@ -148,6 +149,12 @@ class Check:
         self.ok("a second phone takes over and the first is closed", phone.closed.wait(3.0))
         second.close()
         self.ok("status: disconnected when the phone is gone", bool(self.status(False)))
+        try:
+            api("/api/act", {"topic": "expression", "value": "happy"})
+            refused = None
+        except urllib.error.HTTPError as e:
+            refused = (e.code, json.load(e).get("error"))
+        self.ok("setup page: with no phone, an output test is refused", refused == (400, "no phone"), refused)
 
         print(f"{'all passed' if not self.failed else f'{self.failed} failed'}")
         self.n.destroy_node()

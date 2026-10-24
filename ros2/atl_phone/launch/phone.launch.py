@@ -2,14 +2,14 @@
 # Copyright (C) 2026 Atelier-5
 """The phone on a robot: the bridge that serves the face page and maps it to /<robot>/phone/...
 
-    ros2 launch atl_phone phone.launch.py [robot:=thymio_1] [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem] [lang:=en]
+    ros2 launch atl_phone phone.launch.py [robot:=thymio_1] [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=en]
 """
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-ARGS = {"robot": "thymio_1", "port": "8782", "key": "", "cert": "", "cert_key": "", "lang": "en"}
+ARGS = {"robot": "thymio_1", "port": "8782", "key": "", "cert": "", "cert_key": "", "ca": "", "lang": "en"}
 
 
 def generate_launch_description():

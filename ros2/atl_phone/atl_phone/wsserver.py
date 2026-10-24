@@ -5,6 +5,7 @@
 GET /        -> face.html (any file of web/ is served as is)
 GET /ws      -> the WebSocket (RFC 6455, text frames only); ?key=... when the bridge has a pairing key
 POST /report -> a phone check's report (check.html), from any phone
+GET /ca.crt  -> this PC's certificate authority, for a phone to install once (when the bridge has one)
 GET /api/state, POST /api/act -> the setup page's view of the phone and its tests: this PC only (loopback;
                 a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
 
@@ -117,9 +118,11 @@ class PhoneServer:
     on_open(link), on_text(text), on_close(link)."""
 
     def __init__(self, web_dir, port, bind="0.0.0.0", key="", on_open=None, on_text=None, on_close=None,
-                 cert=None, cert_key=None, api=None):
-        """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict)."""
+                 cert=None, cert_key=None, api=None, ca=None):
+        """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict).
+        ca: the authority that signed cert, offered at /ca.crt (public: it is what a phone needs to trust the bridge)."""
         self.key = key
+        self.ca = ca
         self.api = api
         self.on_open = on_open or (lambda link: None)
         self.on_text = on_text or (lambda text: None)
@@ -184,6 +187,18 @@ def make_handler(server: PhoneServer):
                 self.send_response(302)
                 self.send_header("Location", "/face.html" + (f"?{url.query}" if url.query else ""))
                 self.end_headers()
+                return
+            if url.path == "/ca.crt":
+                if not server.ca:
+                    return self.send_error(404)
+                with open(server.ca, "rb") as f:
+                    body = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/x-x509-ca-cert")
+                self.send_header("Content-Disposition", 'attachment; filename="atl-phone-ca.crt"')
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
                 return
             if url.path == "/api/state":
                 if self.refused(local=True):

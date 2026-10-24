@@ -73,6 +73,12 @@ def test_a_new_phone_takes_over(server):
     second.close()
 
 
+def test_no_authority_no_ca_crt(server):
+    with pytest.raises(urllib.error.HTTPError) as e:
+        urllib.request.urlopen(f"http://127.0.0.1:{server.port}/ca.crt", timeout=5)
+    assert e.value.code == 404
+
+
 def test_wrong_key_is_refused(server):
     with pytest.raises(ConnectionError, match="403"):
         MockPhone(url(server, key="guess"))

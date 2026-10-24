@@ -22,7 +22,13 @@ battery, reading a code: they tick by themselves) → a summary to copy. Its tes
 topics; the camera test goes to the phone directly and its picture stays on the phone's screen. A phone on plain
 http (Wi-Fi without `--cert`) shows its camera, motion, compass and battery as *blocked*: use USB, or HTTPS.
 
-`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY --cert DIR` · `./start.sh logs` · `./start.sh stop`
+`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY` · `./start.sh logs` · `./start.sh stop`
+
+**Wi-Fi with camera and motion:** `./start.sh --make-cert`. It makes this PC's own certificate authority once
+(`certs/`, git-ignored; `scripts/make_cert.sh`) and the bridge's certificate for this PC's addresses, renewed when the
+address changes. Each phone installs the authority once: the setup page's Wi-Fi tab has a QR code for `ca.crt` and the
+steps. Then the bridge speaks only https, over USB too. The authority's key never leaves `certs/`.
+Your own certificate instead: `--cert DIR` (`cert.pem`, `key.pem`, and `ca.crt` if the phones should get it).
 
 ## By hand
 
@@ -30,7 +36,7 @@ http (Wi-Fi without `--cert`) shows its camera, motion, compass and battery as *
 docker build -f docker/Dockerfile -t atl-phone:kilted .
 docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted   # the bridge, for thymio_1
 docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thymio_1 \
-    [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem] [lang:=fr]                    # with arguments
+    [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=fr]                    # with arguments
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
 docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 17 checks
 python3 scripts/browser_check.py --container <container>         # the face page in headless Chrome as the phone: 7 checks
@@ -39,7 +45,7 @@ python3 scripts/browser_check.py --container <container>         # the face page
 
 **How the phone connects.** Camera, microphone and motion need a *secure* page. Over **USB**, `adb reverse` makes the
 bridge the phone's `localhost`, which counts as secure, and the cable charges the phone: the way to set up at the desk.
-Over **Wi-Fi** the bridge needs HTTPS (`cert`, `cert_key`; e.g. a local CA made with mkcert, installed once on each phone).
+Over **Wi-Fi** the bridge needs HTTPS (`cert`, `cert_key`, `ca`): `./start.sh --make-cert`, with the authority installed once on each phone.
 On the phone, tap ▶: full screen, landscape, the screen stays on. A `key` pairs the bridge with its phones (`/?key=...`).
 
 ## The contract: `atl-phone/0.1` (`atl_phone/contract.py`)
