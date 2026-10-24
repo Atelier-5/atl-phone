@@ -2,14 +2,14 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "atl-phone: a second phone takes over (race)",
+    "title": "atl-phone: a second phone takes over (race, fixed)",
     "locale": "en",
     "quality_profile": "showcase",
     "output": "05-takeover-race.html",
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
     },
     "legend": {
       "entries": {
@@ -47,8 +47,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 269,
-          "end_line": 289
+          "line": 277,
+          "end_line": 297
         }
       ]
     },
@@ -61,7 +61,7 @@
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
           "line": 161,
-          "end_line": 172
+          "end_line": 180
         }
       ]
     },
@@ -86,8 +86,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 269,
-          "end_line": 289
+          "line": 277,
+          "end_line": 297
         }
       ]
     },
@@ -130,7 +130,7 @@
       "from": "ta",
       "to": "br",
       "y": 210,
-      "label": "on_text → seen.imu"
+      "label": "deliver → on_text → seen.imu"
     },
     {
       "id": "r-b-up",
@@ -176,11 +176,11 @@
     {
       "id": "r-stale",
       "from": "ta",
-      "to": "br",
+      "to": "srv",
       "y": 470,
-      "label": "on_text(A's frame)",
+      "label": "deliver(A, frame)",
       "variant": "security",
-      "note": "link.open is checked only before the read; on_text has no link, so A's data lands in B's seen or phone"
+      "note": "under the lock: link is B now, so the frame is dropped; before 6b29b5a it reached on_text as B's"
     },
     {
       "id": "r-b-hello",
@@ -194,7 +194,7 @@
       "from": "tb",
       "to": "br",
       "y": 570,
-      "label": "phone.update(model B)"
+      "label": "deliver → phone.update(model B)"
     },
     {
       "id": "r-a-end",
@@ -224,24 +224,26 @@
       "dot": "emerald",
       "title": "What holds",
       "items": [
-        "The swap of PhoneServer.link is under a lock, and release() only clears the link it owns, so the old thread cannot drop phone B (wsserver.py 161–172).",
-        "Phone A's page ignores code 4000 and does not reconnect (face.js 161)."
+        "The swap of PhoneServer.link is under a lock, and release() only clears the link it owns, so the old thread cannot drop phone B (wsserver.py 161–180).",
+        "Phone A's page ignores code 4000 and does not reconnect (face.js 161).",
+        "deliver() hands a frame to on_text only while its link is the current one, under the same lock as take_over (wsserver.py 161–180)."
       ]
     },
     {
-      "dot": "rose",
-      "title": "Finding: a stale frame after takeover",
+      "dot": "emerald",
+      "title": "Fixed in 6b29b5a: the stale frame",
       "items": [
-        "serve_ws checks link.open at the top of its loop, then blocks in read_frame; a frame read after the close still goes to server.on_text (wsserver.py 275–278).",
-        "Bridge.text(raw) does not know which link sent it (bridge_node.py 98–109). A late imu or touch from A is published as B's; a late hello from A would overwrite B's model until B's hello arrives.",
-        "Impact is small (one frame, during a takeover); the fix is to pass the link to on_text and drop messages whose link is not current."
+        "serve_ws checks link.open before it blocks in read_frame, so a frame the old phone sent before the close is still read (wsserver.py 283–286).",
+        "Before the fix it went to on_text, which cannot tell links apart: a late imu or touch from A was published as B's, a late hello overwrote B's model.",
+        "Now take_over and deliver share PhoneServer.lock: a frame being delivered finishes before the swap, and any frame read after it is dropped."
       ]
     },
     {
       "dot": "slate",
       "title": "Evidence level",
       "items": [
-        "Read from the code at d2b04ac; not reproduced. The contract check covers the takeover itself (a second MockPhone closes the first), not the late frame."
+        "Reproduced by test_the_old_phone_is_not_heard_after_a_takeover (test_wsserver.py): it fails on d2b04ac and passes on 6b29b5a.",
+        "The contract check covers the takeover itself (a second MockPhone closes the first)."
       ]
     }
   ]

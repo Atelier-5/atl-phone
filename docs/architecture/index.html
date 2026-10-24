@@ -49,7 +49,7 @@
     ROS 2 node in Docker, serves that page and maps its WebSocket to topics under <code>/&lt;robot&gt;/phone/</code>
     (contract <code>atl-phone/0.1</code>). The brain stays on the PC. These five diagrams show how a phone gets connected
     and tested, what the bridge remembers, and where it can go wrong.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>d2b04ac</code>; the build checked each citation
+  <p class="lead">Every box cites the lines it comes from, at commit <code>6b29b5a</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -71,19 +71,20 @@
       <p>Start screen, handshake, ready; dropped links retry at 1 s up to 5 s; a phone that was taken over stays quiet.</p></div>
     <div class="card"><span class="n">05</span><a href="05-takeover-race.html">A second phone takes over</a>
       <span class="kind">sequence · race</span>
-      <p>The lock makes the swap safe, but one frame already in flight from the old phone can still land as the new
-        phone's.</p></div>
+      <p>One frame already in flight from the old phone used to land as the new phone's; the swap and the delivery now
+        share one lock.</p></div>
   </div>
 
   <h2>Review findings</h2>
   <div class="wrap">
   <table>
     <tr><th>Finding</th><th>Evidence</th><th>Status</th></tr>
-    <tr><td>After a takeover, a frame the old phone sent before the close is still parsed, and it is credited to the new
-      phone: <code>on_text</code> does not know which link a message came from. Fix: pass the link and drop messages whose
-      link is not current.</td>
-      <td><code>wsserver.py</code> 273–278, <code>bridge_node.py</code> 98–109 · <a href="05-takeover-race.html">05</a></td>
-      <td><span class="tag bad">open · read, not reproduced</span></td></tr>
+    <tr><td>After a takeover, a frame the old phone had sent before the close was still parsed and credited to the new
+      phone (<code>on_text</code> did not know which link a message came from), so a late hello could overwrite the new
+      phone's model. Now <code>deliver()</code> passes a frame on only while its link is current, under the same lock as
+      the takeover. A test reproduces the race.</td>
+      <td><code>wsserver.py</code> 161–180, 283–286 · <a href="05-takeover-race.html">05</a></td>
+      <td><span class="tag ok">fixed in 6b29b5a</span></td></tr>
     <tr><td>Output tests (face, gaze, colour, say, torch, vibrate) answered 204 even with no phone, because <code>out()</code>
       ignores the result of <code>server.send</code>. It misled the first real-phone test (a Galaxy A50): the phone was on
       the check page while its outputs were tried. <code>act()</code> now refuses them with "no phone", and step 4 shows
@@ -112,7 +113,7 @@
       authority once; the bridge offers <code>/ca.crt</code> and each phone installs it once. The authority's key is not
       mounted into the container. A phone that has the authority installed trusts anything this PC's key signs, so the
       setup page says how to remove it when a phone leaves the class.</td>
-      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 62–71, <code>wsserver.py</code> 191–202 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 62–71, <code>wsserver.py</code> 199–210 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">added in d2b04ac</span></td></tr>
   </table>
   </div>
@@ -125,7 +126,7 @@ python3 build.py            # every diagram; python3 build.py 05- for one
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit d2b04ac</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 6b29b5a</footer>
 </main>
 </body>
 </html>

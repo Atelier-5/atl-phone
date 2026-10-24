@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
     },
     "legend": {
       "entries": {
@@ -212,8 +212,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 207,
-          "end_line": 235
+          "line": 215,
+          "end_line": 243
         }
       ]
     },
@@ -362,8 +362,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 226,
-          "end_line": 235
+          "line": 234,
+          "end_line": 243
         }
       ]
     },
@@ -511,7 +511,7 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 226–235).",
+        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 234–243).",
         "A phone over plain http says secure: false in hello; the setup page then shows camera, motion, compass and battery as blocked, not failed."
       ]
     },
@@ -528,7 +528,7 @@
       "title": "Reading this",
       "items": [
         "The phone check (check.html) is optional; its report comes back by POST /report and is kept (the last 10).",
-        "Paths cite commit d2b04ac; the repository is local only (not pushed)."
+        "Paths cite commit 6b29b5a; the repository is local only (not pushed)."
       ]
     }
   ]

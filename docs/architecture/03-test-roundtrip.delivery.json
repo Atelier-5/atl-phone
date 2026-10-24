@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "2350f2e2-e26d-4ce9-9eef-3126d98ff00a",
+  "receiptId": "fef05173-f552-4b95-8314-b10388127e44",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/03-test-roundtrip.sequence.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/03-test-roundtrip.html",
   "specification": {
-    "sha256": "dd517eb4ff840fe5621928b812d51c6692a1f730d3271d8bb29dd2c6f0b1fc8e",
+    "sha256": "0970cbdb16cb0db31132389c4ac8ed6685cee9bbdf47571a1a5f7062f102fd6a",
     "bytes": 7396
   },
   "artifact": {
-    "sha256": "187d484440259ce571ac49b9071480db85f14661226be7313bd8935484711aa6",
+    "sha256": "cad7719e853e3039667f97422f3a30bef1844840de01e2541af024c13d030aca",
     "bytes": 825377
   }
 }

@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+      "revision": "6b29b5ad03e5e8f67582381ad74db3ccad22fde9"
     }
   },
   "layout": {
@@ -57,7 +57,7 @@
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
           "line": 116,
-          "end_line": 172
+          "end_line": 180
         }
       ]
     },
@@ -269,8 +269,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 259,
-          "end_line": 262
+          "line": 267,
+          "end_line": 270
         }
       ]
     }
