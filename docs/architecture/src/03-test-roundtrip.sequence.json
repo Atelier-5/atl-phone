@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "atl-phone: one setup test, there and back",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "03-test-roundtrip.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+    },
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "the test's main call"
+        },
+        "dashed": {
+          "label": "report from the phone"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "setup",
+      "type": "frontend",
+      "label": "setup.js",
+      "sublabel": "on this PC",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/setup.js",
+          "line": 158,
+          "end_line": 168
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "type": "security",
+      "label": "HTTP handler",
+      "sublabel": "loopback, same Origin",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 184,
+          "end_line": 267
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Bridge node",
+      "sublabel": "act · out · text",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 73,
+          "end_line": 79
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 141,
+          "end_line": 190
+        }
+      ]
+    },
+    {
+      "id": "ros",
+      "type": "messagebus",
+      "label": "ROS 2",
+      "sublabel": "/thymio_1/phone/*",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/contract.py",
+          "line": 15,
+          "end_line": 31
+        }
+      ]
+    },
+    {
+      "id": "link",
+      "type": "backend",
+      "label": "Link + ws thread",
+      "sublabel": "one phone",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 85,
+          "end_line": 113
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 269,
+          "end_line": 289
+        }
+      ]
+    },
+    {
+      "id": "phone",
+      "type": "frontend",
+      "label": "face.js",
+      "sublabel": "on the phone",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 166,
+          "end_line": 175
+        },
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 190,
+          "end_line": 242
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 432,
+      "label": "Output test: through ROS"
+    },
+    {
+      "from": 440,
+      "to": 640,
+      "label": "Camera test: straight to the phone"
+    },
+    {
+      "from": 660,
+      "to": 880,
+      "label": "What came back"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-act",
+      "from": "setup",
+      "to": "http",
+      "y": 180,
+      "label": "POST /api/act {topic, value}",
+      "variant": "emphasis",
+      "note": "refused (403) unless loopback and same Origin"
+    },
+    {
+      "id": "m-act2",
+      "from": "http",
+      "to": "bridge",
+      "y": 230,
+      "label": "act(body): a phone?",
+      "note": "none connected → 400 \"no phone\", shown on the page"
+    },
+    {
+      "id": "m-pub",
+      "from": "bridge",
+      "to": "ros",
+      "y": 260,
+      "label": "tests[topic].publish",
+      "variant": "emphasis",
+      "note": "the topic a robot program would use; bad values raise ValueError → 400"
+    },
+    {
+      "id": "m-sub",
+      "from": "ros",
+      "to": "bridge",
+      "y": 330,
+      "label": "subscription → out(make)"
+    },
+    {
+      "id": "m-send",
+      "from": "bridge",
+      "to": "link",
+      "y": 360,
+      "label": "server.send(json)",
+      "note": "a robot program's message with no phone is dropped"
+    },
+    {
+      "id": "m-frame",
+      "from": "link",
+      "to": "phone",
+      "y": 410,
+      "label": "{t: 'face', …}"
+    },
+    {
+      "id": "m-204",
+      "from": "http",
+      "to": "setup",
+      "y": 422,
+      "label": "204",
+      "variant": "return"
+    },
+    {
+      "id": "m-cam",
+      "from": "setup",
+      "to": "http",
+      "y": 460,
+      "label": "POST /api/act {camera: true}"
+    },
+    {
+      "id": "m-cam2",
+      "from": "http",
+      "to": "bridge",
+      "y": 490,
+      "label": "act → p.camera(on)"
+    },
+    {
+      "id": "m-cam3",
+      "from": "bridge",
+      "to": "link",
+      "y": 520,
+      "label": "server.send",
+      "note": "no topic; send fails → 400 \"no phone\""
+    },
+    {
+      "id": "m-cam4",
+      "from": "link",
+      "to": "phone",
+      "y": 570,
+      "label": "{t: 'camera', on: true}",
+      "note": "getUserMedia; the picture shows on the phone only, 60 s"
+    },
+    {
+      "id": "m-rep",
+      "from": "phone",
+      "to": "link",
+      "y": 680,
+      "label": "{t: 'camera', ok, size, code}",
+      "variant": "dashed"
+    },
+    {
+      "id": "m-text",
+      "from": "link",
+      "to": "bridge",
+      "y": 710,
+      "label": "on_text → parse → seen",
+      "note": "senses (imu, touch…) also go to ROS; camera only to seen"
+    },
+    {
+      "id": "m-poll",
+      "from": "setup",
+      "to": "http",
+      "y": 770,
+      "label": "GET /api/state, every 250 ms"
+    },
+    {
+      "id": "m-state",
+      "from": "http",
+      "to": "bridge",
+      "y": 800,
+      "label": "state()"
+    },
+    {
+      "id": "m-json",
+      "from": "bridge",
+      "to": "http",
+      "y": 830,
+      "label": "phone, seen, reports",
+      "variant": "return"
+    },
+    {
+      "id": "m-tick",
+      "from": "http",
+      "to": "setup",
+      "y": 860,
+      "label": "ticks ✓ / ! / ✗",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "bridge",
+      "from": 225,
+      "to": 270,
+      "type": "backend"
+    },
+    {
+      "participant": "bridge",
+      "from": 325,
+      "to": 370,
+      "type": "backend"
+    },
+    {
+      "participant": "phone",
+      "from": 565,
+      "to": 685,
+      "type": "frontend"
+    },
+    {
+      "participant": "bridge",
+      "from": 795,
+      "to": 835,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Why through ROS",
+      "items": [
+        "act() publishes on the contract topic and the bridge's own subscription forwards it: a passing setup test proves topic → bridge → WebSocket → page.",
+        "open and camera have no topic, so they go straight to the phone (bridge_node.py 162–165)."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Fixed: output tests with no phone",
+      "items": [
+        "Until d2b04ac an output test answered 204 with no phone connected, so the page looked as if it was sent (out() ignores server.send's result).",
+        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 167–168). Robot programs' own messages are still dropped quietly."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Privacy",
+      "items": [
+        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 190–242)."
+      ]
+    }
+  ]
+}

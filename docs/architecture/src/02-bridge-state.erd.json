@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "atl-phone: what the bridge keeps in memory",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "02-bridge-state.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 72,
+    "gapY": 38
+  },
+  "entities": [
+    {
+      "id": "server",
+      "label": "PhoneServer",
+      "sublabel": "wsserver.py",
+      "tag": "link",
+      "row": 0,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "link",
+          "type": "Link | None",
+          "key": "fk",
+          "references": "link.peer"
+        },
+        {
+          "name": "lock",
+          "type": "threading.Lock"
+        },
+        {
+          "name": "key",
+          "type": "str (pairing)"
+        },
+        {
+          "name": "scheme",
+          "type": "http | https"
+        },
+        {
+          "name": "port",
+          "type": "int (8782)"
+        },
+        {
+          "name": "ca",
+          "type": "path | None (/ca.crt)"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 116,
+          "end_line": 172
+        }
+      ]
+    },
+    {
+      "id": "link",
+      "label": "Link",
+      "sublabel": "one per WebSocket",
+      "tag": "link",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        {
+          "name": "peer",
+          "type": "str (client IP)",
+          "key": "pk"
+        },
+        {
+          "name": "open",
+          "type": "bool"
+        },
+        {
+          "name": "lock",
+          "type": "threading.Lock"
+        },
+        {
+          "name": "wfile",
+          "type": "socket file"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 85,
+          "end_line": 113
+        }
+      ]
+    },
+    {
+      "id": "phone",
+      "label": "Bridge.phone",
+      "sublabel": "cleared on close",
+      "tag": "current phone",
+      "row": 0,
+      "col": 1,
+      "width": 264,
+      "attributes": [
+        {
+          "name": "peer",
+          "type": "str",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "link.peer"
+        },
+        {
+          "name": "model",
+          "type": "str ≤40 (hint or UA)"
+        },
+        {
+          "name": "ua",
+          "type": "str ≤300"
+        },
+        {
+          "name": "secure",
+          "type": "bool"
+        },
+        {
+          "name": "caps",
+          "type": "dict[str, bool] ≤40"
+        },
+        {
+          "name": "screen",
+          "type": "[int, int]"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 87,
+          "end_line": 109
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/protocol.py",
+          "line": 58,
+          "end_line": 65
+        }
+      ]
+    },
+    {
+      "id": "seen",
+      "label": "Bridge.seen",
+      "sublabel": "reset on open, kept on close",
+      "tag": "current phone",
+      "row": 1,
+      "col": 1,
+      "width": 270,
+      "attributes": [
+        {
+          "name": "peer",
+          "type": "str (implicit)",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "link.peer"
+        },
+        {
+          "name": "imu",
+          "type": "{acc, gyro, n, at}"
+        },
+        {
+          "name": "heading",
+          "type": "{deg, at}"
+        },
+        {
+          "name": "touch",
+          "type": "list ≤20 touches"
+        },
+        {
+          "name": "battery",
+          "type": "{level, charging}"
+        },
+        {
+          "name": "camera",
+          "type": "{on, ok, size, codes…}"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 110,
+          "end_line": 147
+        }
+      ]
+    },
+    {
+      "id": "report",
+      "label": "Bridge.reports[]",
+      "sublabel": "the last 10",
+      "tag": "phone checks",
+      "row": 0,
+      "col": 2,
+      "width": 230,
+      "attributes": [
+        {
+          "name": "index",
+          "type": "int (list position)",
+          "key": "pk"
+        },
+        {
+          "name": "model",
+          "type": "str (UA)"
+        },
+        {
+          "name": "at",
+          "type": "float (epoch s)"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 192,
+          "end_line": 198
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "label": "report.checks{}",
+      "sublabel": "≤60 per report",
+      "tag": "phone checks",
+      "row": 1,
+      "col": 2,
+      "width": 230,
+      "attributes": [
+        {
+          "name": "report",
+          "type": "int",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "report.index"
+        },
+        {
+          "name": "name",
+          "type": "str ≤40",
+          "key": "pk"
+        },
+        {
+          "name": "ok",
+          "type": "bool | null"
+        },
+        {
+          "name": "need",
+          "type": "core | …"
+        },
+        {
+          "name": "note",
+          "type": "str ≤200"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 193,
+          "end_line": 195
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 259,
+          "end_line": 262
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "r-current",
+      "from": "server",
+      "to": "link",
+      "label": "the one phone",
+      "fromCardinality": "one",
+      "toCardinality": "one",
+      "toOptional": true
+    },
+    {
+      "id": "r-phone",
+      "from": "phone",
+      "to": "link",
+      "label": "hello of",
+      "fromCardinality": "one",
+      "fromOptional": true,
+      "toCardinality": "one"
+    },
+    {
+      "id": "r-seen",
+      "from": "seen",
+      "to": "link",
+      "label": "sensed by",
+      "fromCardinality": "one",
+      "toCardinality": "one",
+      "identifying": false,
+      "variant": "dashed"
+    },
+    {
+      "id": "r-checks",
+      "from": "check",
+      "to": "report",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "r-match",
+      "from": "report",
+      "to": "phone",
+      "label": "same model?",
+      "fromCardinality": "many",
+      "fromOptional": true,
+      "toCardinality": "one",
+      "toOptional": true,
+      "identifying": false,
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Facts",
+      "items": [
+        "Nothing is stored on disk: phone, seen and reports live in the Bridge node and go out whole on GET /api/state (bridge_node.py 151–158).",
+        "phone and seen have no id of their own; they belong to whichever Link is current. opened() replaces both, closed() clears phone but leaves seen (bridge_node.py 87–96).",
+        "Every value is checked and clamped by protocol.parse before it lands here.",
+        "seen.camera also holds error and torch; codes keeps the last 5 read. Each sense records its time in at."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Interpretation",
+      "items": [
+        "A report is matched to the phone only by model text, in setup.js report(); with Chrome's reduced UA (\"K\") two phones can share a model name.",
+        "The dicts are read by HTTP threads and written by the phone's thread without a lock. A stress test of json.dumps against a writer adding keys (200 000 runs, Python 3.12.3) raised no error: the values are replaced, not mutated."
+      ]
+    }
+  ]
+}

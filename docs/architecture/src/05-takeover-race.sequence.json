@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "atl-phone: a second phone takes over (race)",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "05-takeover-race.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+    },
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": "takeover"
+        },
+        "dashed": {
+          "label": "frame in flight"
+        },
+        "security": {
+          "label": "the race"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "pa",
+      "type": "external",
+      "label": "Phone A",
+      "sublabel": "was connected",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 152,
+          "end_line": 165
+        }
+      ]
+    },
+    {
+      "id": "ta",
+      "type": "backend",
+      "label": "ws thread A",
+      "sublabel": "serve_ws loop",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 269,
+          "end_line": 289
+        }
+      ]
+    },
+    {
+      "id": "srv",
+      "type": "security",
+      "label": "PhoneServer",
+      "sublabel": "link + lock",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 161,
+          "end_line": 172
+        }
+      ]
+    },
+    {
+      "id": "br",
+      "type": "database",
+      "label": "Bridge state",
+      "sublabel": "phone · seen",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 87,
+          "end_line": 109
+        }
+      ]
+    },
+    {
+      "id": "tb",
+      "type": "backend",
+      "label": "ws thread B",
+      "sublabel": "serve_ws loop",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 269,
+          "end_line": 289
+        }
+      ]
+    },
+    {
+      "id": "pb",
+      "type": "external",
+      "label": "Phone B",
+      "sublabel": "new phone",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 146,
+          "end_line": 158
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 380,
+      "label": "Takeover"
+    },
+    {
+      "from": 400,
+      "to": 620,
+      "label": "One stale frame"
+    }
+  ],
+  "messages": [
+    {
+      "id": "r-a-imu",
+      "from": "pa",
+      "to": "ta",
+      "y": 180,
+      "label": "imu frames, 30 Hz"
+    },
+    {
+      "id": "r-a-seen",
+      "from": "ta",
+      "to": "br",
+      "y": 210,
+      "label": "on_text → seen.imu"
+    },
+    {
+      "id": "r-b-up",
+      "from": "pb",
+      "to": "tb",
+      "y": 240,
+      "label": "GET /ws (upgrade)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "r-take",
+      "from": "tb",
+      "to": "srv",
+      "y": 270,
+      "label": "take_over(B)",
+      "variant": "emphasis",
+      "note": "under the lock: link := B; then A.close(4000)"
+    },
+    {
+      "id": "r-close",
+      "from": "srv",
+      "to": "pa",
+      "y": 320,
+      "label": "close frame 4000",
+      "variant": "security"
+    },
+    {
+      "id": "r-open",
+      "from": "tb",
+      "to": "br",
+      "y": 350,
+      "label": "on_open: phone = {peer B}, seen = {}"
+    },
+    {
+      "id": "r-late",
+      "from": "pa",
+      "to": "ta",
+      "y": 420,
+      "label": "frame sent before the close",
+      "variant": "dashed",
+      "note": "already in thread A's read_frame()"
+    },
+    {
+      "id": "r-stale",
+      "from": "ta",
+      "to": "br",
+      "y": 470,
+      "label": "on_text(A's frame)",
+      "variant": "security",
+      "note": "link.open is checked only before the read; on_text has no link, so A's data lands in B's seen or phone"
+    },
+    {
+      "id": "r-b-hello",
+      "from": "pb",
+      "to": "tb",
+      "y": 540,
+      "label": "hello (model B)"
+    },
+    {
+      "id": "r-b-upd",
+      "from": "tb",
+      "to": "br",
+      "y": 570,
+      "label": "phone.update(model B)"
+    },
+    {
+      "id": "r-a-end",
+      "from": "ta",
+      "to": "srv",
+      "y": 600,
+      "label": "release(A) → False: no on_close",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "srv",
+      "from": 265,
+      "to": 325,
+      "type": "security"
+    },
+    {
+      "participant": "ta",
+      "from": 415,
+      "to": 605,
+      "type": "backend"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "What holds",
+      "items": [
+        "The swap of PhoneServer.link is under a lock, and release() only clears the link it owns, so the old thread cannot drop phone B (wsserver.py 161–172).",
+        "Phone A's page ignores code 4000 and does not reconnect (face.js 161)."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Finding: a stale frame after takeover",
+      "items": [
+        "serve_ws checks link.open at the top of its loop, then blocks in read_frame; a frame read after the close still goes to server.on_text (wsserver.py 275–278).",
+        "Bridge.text(raw) does not know which link sent it (bridge_node.py 98–109). A late imu or touch from A is published as B's; a late hello from A would overwrite B's model until B's hello arrives.",
+        "Impact is small (one frame, during a takeover); the fix is to pass the link to on_text and drop messages whose link is not current."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Evidence level",
+      "items": [
+        "Read from the code at d2b04ac; not reproduced. The contract check covers the takeover itself (a second MockPhone closes the first), not the late frame."
+      ]
+    }
+  ]
+}

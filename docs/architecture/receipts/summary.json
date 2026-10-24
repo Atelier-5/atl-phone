@@ -1,0 +1,60 @@
+{
+  "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26",
+  "diagrams": {
+    "01-setup-flow.workflow.json": {
+      "output": "01-setup-flow.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "02-bridge-state.erd.json": {
+      "output": "02-bridge-state.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "03-test-roundtrip.sequence.json": {
+      "output": "03-test-roundtrip.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "04-phone-link.lifecycle.json": {
+      "output": "04-phone-link.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "05-takeover-race.sequence.json": {
+      "output": "05-takeover-race.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    }
+  }
+}

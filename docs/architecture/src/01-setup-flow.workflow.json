@@ -1,0 +1,535 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "atl-phone: from ./start.sh to a tested phone",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "01-setup-flow.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "d2b04ac5a9fd8f4f6e203927e6dc61b4c5678c26"
+    },
+    "legend": {
+      "entries": {
+        "frontend": {
+          "label": "Web page"
+        },
+        "backend": {
+          "label": "Bridge code"
+        },
+        "security": {
+          "label": "Gate or refusal"
+        },
+        "messagebus": {
+          "label": "ROS 2 topics"
+        },
+        "database": {
+          "label": "Bridge memory"
+        },
+        "external": {
+          "label": "Command on this PC"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "pc",
+      "label": "This PC: the operator"
+    },
+    {
+      "id": "bridge",
+      "label": "Bridge (Docker) and its files"
+    },
+    {
+      "id": "phone",
+      "label": "Phone browser"
+    },
+    {
+      "id": "stop",
+      "label": "Refusals and blocks",
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "boot",
+      "label": "Start",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "link",
+      "label": "Connect",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "try",
+      "label": "Check, test, sum up",
+      "fromCol": 4,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "start",
+    "node",
+    "setup",
+    "connect",
+    "face",
+    "ws",
+    "hello",
+    "tests",
+    "topics",
+    "senses",
+    "state",
+    "summary"
+  ],
+  "nodes": [
+    {
+      "id": "start",
+      "lane": "pc",
+      "col": 0,
+      "type": "external",
+      "label": "./start.sh",
+      "sublabel": "build only if sources changed",
+      "sources": [
+        {
+          "path": "start.sh",
+          "line": 45,
+          "end_line": 51,
+          "label": "hash label"
+        },
+        {
+          "path": "start.sh",
+          "line": 72,
+          "end_line": 83,
+          "label": "run + wait"
+        }
+      ]
+    },
+    {
+      "id": "certs",
+      "lane": "bridge",
+      "col": 0,
+      "type": "security",
+      "label": "make_cert.sh",
+      "sublabel": "runs on this PC, CA once",
+      "sources": [
+        {
+          "path": "scripts/make_cert.sh",
+          "line": 24,
+          "end_line": 55
+        },
+        {
+          "path": "start.sh",
+          "line": 40,
+          "end_line": 43
+        },
+        {
+          "path": "start.sh",
+          "line": 62,
+          "end_line": 71
+        }
+      ]
+    },
+    {
+      "id": "node",
+      "lane": "bridge",
+      "col": 1,
+      "type": "backend",
+      "label": "Bridge node",
+      "sublabel": "PhoneServer on :8782",
+      "tag": "phone_bridge",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 28,
+          "end_line": 71
+        }
+      ]
+    },
+    {
+      "id": "setup",
+      "lane": "pc",
+      "col": 1,
+      "type": "frontend",
+      "label": "setup.html",
+      "sublabel": "polls /api/state, 250 ms",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/setup.js",
+          "line": 158,
+          "end_line": 168
+        }
+      ]
+    },
+    {
+      "id": "connect",
+      "lane": "pc",
+      "col": 2,
+      "type": "frontend",
+      "label": "Connect",
+      "sublabel": "USB: adb reverse · Wi-Fi: QR",
+      "sources": [
+        {
+          "path": "scripts/usb.sh",
+          "line": 11,
+          "end_line": 15
+        },
+        {
+          "path": "ros2/atl_phone/web/setup.html",
+          "line": 106,
+          "end_line": 140
+        }
+      ]
+    },
+    {
+      "id": "face",
+      "lane": "phone",
+      "col": 2,
+      "type": "frontend",
+      "label": "face.html ▶",
+      "sublabel": "fullscreen, wake lock",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 284,
+          "end_line": 293
+        }
+      ]
+    },
+    {
+      "id": "ws",
+      "lane": "bridge",
+      "col": 3,
+      "type": "security",
+      "label": "GET /ws",
+      "sublabel": "Origin = Host, key (hmac)",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 207,
+          "end_line": 235
+        }
+      ]
+    },
+    {
+      "id": "hello",
+      "lane": "phone",
+      "col": 3,
+      "type": "frontend",
+      "label": "hello",
+      "sublabel": "caps, secure, model, screen",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 140,
+          "end_line": 158
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/protocol.py",
+          "line": 58,
+          "end_line": 65
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "lane": "phone",
+      "col": 4,
+      "type": "frontend",
+      "label": "check.html",
+      "sublabel": "probe, then POST /report",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/check.html",
+          "line": 281,
+          "end_line": 282
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 192,
+          "end_line": 198
+        }
+      ]
+    },
+    {
+      "id": "tests",
+      "lane": "pc",
+      "col": 4,
+      "type": "frontend",
+      "label": "Test it",
+      "sublabel": "POST /api/act",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 160,
+          "end_line": 190
+        }
+      ]
+    },
+    {
+      "id": "topics",
+      "lane": "bridge",
+      "col": 4,
+      "type": "messagebus",
+      "label": "/thymio_1/phone/*",
+      "sublabel": "the contract's topics",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/contract.py",
+          "line": 15,
+          "end_line": 31
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 48,
+          "end_line": 64
+        }
+      ]
+    },
+    {
+      "id": "senses",
+      "lane": "phone",
+      "col": 5,
+      "type": "frontend",
+      "label": "Senses",
+      "sublabel": "imu, touch, battery, camera",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 244,
+          "end_line": 278
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "lane": "bridge",
+      "col": 5,
+      "type": "database",
+      "label": "phone · seen · reports",
+      "sublabel": "in memory, per bridge",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 98,
+          "end_line": 158
+        }
+      ]
+    },
+    {
+      "id": "summary",
+      "lane": "pc",
+      "col": 5,
+      "type": "frontend",
+      "label": "Summary",
+      "sublabel": "✓ ✗ … ! per part",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/setup.js",
+          "line": 371,
+          "end_line": 401
+        }
+      ]
+    },
+    {
+      "id": "taken",
+      "lane": "stop",
+      "col": 0,
+      "type": "security",
+      "label": "Port taken",
+      "sublabel": "exit 1, names the owner",
+      "sources": [
+        {
+          "path": "start.sh",
+          "line": 53,
+          "end_line": 57
+        }
+      ]
+    },
+    {
+      "id": "refused",
+      "lane": "stop",
+      "col": 3,
+      "type": "security",
+      "label": "403",
+      "sublabel": "foreign Origin / wrong key",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 226,
+          "end_line": 235
+        }
+      ]
+    },
+    {
+      "id": "blocked",
+      "lane": "stop",
+      "col": 4,
+      "type": "security",
+      "label": "Blocked",
+      "sublabel": "page not secure",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/setup.js",
+          "line": 362,
+          "end_line": 376
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-run",
+      "from": "start",
+      "to": "node",
+      "label": "docker run"
+    },
+    {
+      "id": "e-serve",
+      "from": "node",
+      "to": "setup",
+      "label": "serves"
+    },
+    {
+      "id": "e-connect",
+      "from": "setup",
+      "to": "connect"
+    },
+    {
+      "id": "e-open",
+      "from": "connect",
+      "to": "face",
+      "label": "opens URL"
+    },
+    {
+      "id": "e-ws",
+      "from": "face",
+      "to": "ws",
+      "label": "WebSocket",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-hello",
+      "from": "ws",
+      "to": "hello",
+      "label": "101"
+    },
+    {
+      "id": "e-tests",
+      "from": "hello",
+      "to": "tests",
+      "label": "status"
+    },
+    {
+      "id": "e-pub",
+      "from": "tests",
+      "to": "topics",
+      "label": "publish",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-out",
+      "from": "topics",
+      "to": "senses",
+      "label": "to phone"
+    },
+    {
+      "id": "e-seen",
+      "from": "senses",
+      "to": "state",
+      "label": "on_text"
+    },
+    {
+      "id": "e-poll",
+      "from": "state",
+      "to": "summary",
+      "label": "/api/state"
+    },
+    {
+      "id": "e-check",
+      "from": "hello",
+      "to": "check",
+      "label": "open check",
+      "role": "branch",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-taken",
+      "from": "start",
+      "to": "taken",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "e-refused",
+      "from": "ws",
+      "to": "refused",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "e-blocked",
+      "from": "hello",
+      "to": "blocked",
+      "label": "secure: false",
+      "role": "error",
+      "variant": "security"
+    },
+    {
+      "id": "e-certs",
+      "from": "start",
+      "to": "certs",
+      "label": "--make-cert",
+      "role": "branch",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-certs-node",
+      "from": "certs",
+      "to": "node",
+      "label": "cert, key, ca.crt",
+      "role": "branch",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "What moves",
+      "items": [
+        "Outputs (face, gaze, colour, say, torch, vibrate) go from the setup page through /api/act onto the contract's own ROS topics, so the test runs the same chain a robot program would.",
+        "Senses go the other way: WebSocket frame → protocol.parse → ROS publisher, and a copy into seen for the setup page."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Gates",
+      "items": [
+        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 226–235).",
+        "A phone over plain http says secure: false in hello; the setup page then shows camera, motion, compass and battery as blocked, not failed."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Wi-Fi over HTTPS",
+      "items": [
+        "./start.sh --make-cert makes this PC's certificate authority once and the bridge's certificate for its addresses (renewed when the address changes). Only cert.pem, key.pem and ca.crt are mounted; ca.key stays in certs/.",
+        "The bridge offers the authority at GET /ca.crt; the setup page's Wi-Fi tab has its QR code and the install steps. With a certificate the bridge speaks https only, over USB too."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Reading this",
+      "items": [
+        "The phone check (check.html) is optional; its report comes back by POST /report and is kept (the last 10).",
+        "Paths cite commit d2b04ac; the repository is local only (not pushed)."
+      ]
+    }
+  ]
+}
