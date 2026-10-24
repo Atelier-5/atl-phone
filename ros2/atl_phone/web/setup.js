@@ -45,7 +45,12 @@ var T = {
     no_reader: 'this phone’s browser cannot read codes; the card scanner (step 3) brings its own reader',
     blocked: 'blocked: the phone’s page is not secure. Connect by USB, or start with --cert',
     insecure: 'This phone uses a page that is not secure (http over Wi-Fi): its camera, motion, compass and battery are blocked. Connect it by USB, or start the bridge with a certificate (./start.sh --cert DIR).',
-    no_torch: 'the phone says it has no torch', cam_error: 'the camera did not open:', size: 'picture'
+    no_torch: 'the phone says it has no torch', cam_error: 'the camera did not open:', size: 'picture',
+    look: 'Look (front camera)', look_hint: 'The front camera finds faces, on the phone; only where they are comes here. Stand in front of the phone.',
+    familiar_allow: 'Allow telling faces apart (this session only)', forget: 'Forget the faces', faces_n: 'faces:',
+    familiar_note: 'The phone then keeps a signature of each face in its memory, to give the same face the same number. Nothing is stored or sent, and it is forgotten on reload. Ask the people at the table, and the parents, first.',
+    look_error: 'look did not start:', look_wait: 'the back camera is in use: look waits',
+    owner: 'The Desk Guardian’s owner card: hold it up to the front camera, with your face in view (./start.sh --guardian).', code_seen: 'read:'
   },
   fr: {
     title: 'Installer le téléphone', s1: 'Le pont', s2: 'Connecter le téléphone', s3: 'Test du téléphone', s4: 'L’essayer', s5: 'Bilan',
@@ -88,7 +93,12 @@ var T = {
     no_reader: 'le navigateur de ce téléphone ne lit pas les codes ; le lecteur de cartes (étape 3) apporte le sien',
     blocked: 'bloqué : la page du téléphone n’est pas sécurisée. Connectez par USB, ou lancez avec --cert',
     insecure: 'Ce téléphone utilise une page non sécurisée (http en Wi-Fi) : sa caméra, son mouvement, sa boussole et sa batterie sont bloqués. Connectez-le par USB, ou lancez le pont avec un certificat (./start.sh --cert DOSSIER).',
-    no_torch: 'le téléphone dit ne pas avoir de lampe', cam_error: 'la caméra ne s’est pas ouverte :', size: 'image'
+    no_torch: 'le téléphone dit ne pas avoir de lampe', cam_error: 'la caméra ne s’est pas ouverte :', size: 'image',
+    look: 'Regard (caméra avant)', look_hint: 'La caméra avant trouve les visages, sur le téléphone ; seul l’endroit où ils sont arrive ici. Placez-vous devant le téléphone.',
+    familiar_allow: 'Permettre de distinguer les visages (cette séance seulement)', forget: 'Oublier les visages', faces_n: 'visages :',
+    familiar_note: 'Le téléphone garde alors une signature de chaque visage dans sa mémoire, pour donner le même numéro au même visage. Rien n’est enregistré ni envoyé, et tout est oublié au rechargement. Demandez d’abord aux personnes à la table, et aux parents.',
+    look_error: 'le regard n’a pas démarré :', look_wait: 'la caméra arrière est utilisée : le regard attend',
+    owner: 'La carte du propriétaire pour le Gardien du bureau : montrez-la à la caméra avant, avec votre visage (./start.sh --guardian).', code_seen: 'lu :'
   },
   de: {
     title: 'Handy einrichten', s1: 'Die Brücke', s2: 'Handy verbinden', s3: 'Handy-Check', s4: 'Ausprobieren', s5: 'Zusammenfassung',
@@ -131,7 +141,12 @@ var T = {
     no_reader: 'der Browser dieses Handys liest keine Codes; der Kartenleser (Schritt 3) bringt einen eigenen mit',
     blocked: 'gesperrt: die Seite des Handys ist nicht sicher. Per USB verbinden, oder mit --cert starten',
     insecure: 'Dieses Handy nutzt eine nicht sichere Seite (http im WLAN): Kamera, Bewegung, Kompass und Akku sind gesperrt. Per USB verbinden, oder die Brücke mit Zertifikat starten (./start.sh --cert ORDNER).',
-    no_torch: 'das Handy sagt, es hat keine Lampe', cam_error: 'die Kamera ging nicht auf:', size: 'Bild'
+    no_torch: 'das Handy sagt, es hat keine Lampe', cam_error: 'die Kamera ging nicht auf:', size: 'Bild',
+    look: 'Schauen (Frontkamera)', look_hint: 'Die Frontkamera findet Gesichter, auf dem Handy; nur wo sie sind, kommt hier an. Stell dich vor das Handy.',
+    familiar_allow: 'Gesichter unterscheiden erlauben (nur in dieser Sitzung)', forget: 'Gesichter vergessen', faces_n: 'Gesichter:',
+    familiar_note: 'Das Handy behält dann eine Signatur jedes Gesichts im Speicher, damit dasselbe Gesicht dieselbe Nummer bekommt. Nichts wird gespeichert oder gesendet, und beim Neuladen ist alles vergessen. Frag zuerst die Leute am Tisch, und die Eltern.',
+    look_error: 'Schauen startete nicht:', look_wait: 'die Rückkamera ist belegt: Schauen wartet',
+    owner: 'Die Besitzerkarte des Schreibtischwächters: vor die Frontkamera halten, mit deinem Gesicht im Bild (./start.sh --guardian).', code_seen: 'gelesen:'
   }
 };
 var lang = 'en';
@@ -152,7 +167,7 @@ var answers = {};          // outputs: true / false, as the person says
 var touched = {};          // touches seen: tap-left, tap-centre, tap-right, long, swipe
 var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {}, turned = false;  // tilted to another side, or turned
 var passed = {};           // senses that worked once stay ticked, even if the phone reconnects
-var CODE = 'atl-phone camera test';
+var CODE = 'atl-phone camera test', OWNER = 'atl-guardian:owner';  // OWNER: guardian.py OWNER_CARD
 
 // ---- talking to the bridge ---------------------------------------------------------------------------
 function act(body) {
@@ -319,6 +334,19 @@ function buildInputs() {
     el('div', { class: 'row' }, [live.compassMark, el('span', { class: 'hint', text: t('compass_hint') })]), live.compass])])]));
   live.batteryBar = el('i'); live.battery = el('span', { class: 'live' }); live.batteryMark = el('span', { class: 'mark' });
   o.appendChild(card('battery', [el('div', { class: 'row' }, [live.batteryMark, el('span', { class: 'bar' }, [live.batteryBar]), live.battery])]));
+  live.lookBox = el('div', { class: 'pad faces' }); live.look = el('div', { class: 'live' }); live.lookMark = el('span', { class: 'mark' });
+  live.allow = el('input', { type: 'checkbox', onchange: function () { act({ allow_familiar: live.allow.checked }); } });
+  var owner = el('canvas', { class: 'qr' }); drawQr(OWNER, owner, 3); live.lookCode = el('div', { class: 'live' });
+  o.appendChild(card('look', [el('div', { class: 'hint', text: t('look_hint') }), el('div', { class: 'row' }, [
+    el('button', { class: 'b', text: t('on'), onclick: function () { act({ topic: 'look', value: true }); } }),
+    el('button', { class: 'b ghost', text: t('off'), onclick: function () { act({ topic: 'look', value: false }); } })]),
+    el('div', { class: 'row' }, [live.lookBox, el('div', {}, [el('div', { class: 'row' }, [live.lookMark, live.look])])]),
+    el('label', { class: 'row' }, [live.allow, el('span', { text: t('familiar_allow') })]),
+    el('div', { class: 'hint', text: t('familiar_note') }),
+    el('div', { class: 'row' }, [
+      el('button', { class: 'b ghost small', text: 'familiar ' + t('on').toLowerCase(), onclick: function () { act({ topic: 'familiar', value: true }); } }),
+      el('button', { class: 'b ghost small', text: t('forget'), onclick: function () { act({ topic: 'forget' }); } })]),
+    el('div', { class: 'qr' }, [owner, el('div', {}, [el('div', { class: 'hint', text: t('owner') }), live.lookCode])])]));
 }
 function setMark(m, v) {
   m.className = 'mark ' + (v === true ? 'yes' : v === false ? 'no' : v === 'na' ? '' : 'wait');
@@ -360,6 +388,18 @@ function updateInputs() {
   live.code.textContent = c && c.codes ? t('code_read') + ' ' + c.codes[c.codes.length - 1] :
     insecure() ? '' : noteOf('code', inputResult('code')) || t('none_yet');  // blocked: said once, above
   setMark(live.codeMark, inputResult('code'));
+  live.allow.checked = !!S.familiar_allowed;
+  var lk = seen.look || {}, fs = seen.faces && now - seen.faces.at < 2 ? seen.faces.faces : [];
+  live.lookBox.innerHTML = '';
+  fs.forEach(function (f) {
+    var d = Math.max(12, f.size * 100);
+    live.lookBox.appendChild(el('span', { style: 'left:' + (f.x + 1) * 50 + '%;top:' + (1 - f.y) * 50 + '%;width:' + d + 'px;height:' + d + 'px;margin:' + (-d / 2) + 'px',
+      text: f.familiar ? String(f.familiar) : '' }));
+  });
+  live.look.textContent = insecure() ? t('blocked') : lk.ok === false ? t('look_error') + ' ' + (lk.error || '?') :
+    lk.on && c && c.on ? t('look_wait') : S.look || fs.length ? t('faces_n') + ' ' + fs.length + (S.familiar ? ' · familiar' : '') : '';
+  setMark(live.lookMark, inputResult('look'));
+  live.lookCode.textContent = seen.codes ? t('code_seen') + ' ' + seen.codes[seen.codes.length - 1] : '';
 }
 function insecure() { return !!(S && S.connected && S.phone && S.phone.secure === false); }
 function noteOf(k, v) {  // why a result is not a plain yes or no
@@ -368,9 +408,11 @@ function noteOf(k, v) {  // why a result is not a plain yes or no
   if (v === null) return partial(k) || t('untested');
   var c = S && S.seen && S.seen.camera;
   if (k === 'camera' && v === false && c && c.error) return t('cam_error') + ' ' + c.error;
+  var lk = S && S.seen && S.seen.look;
+  if (k === 'look' && v === false && lk && lk.error) return t('look_error') + ' ' + lk.error;
   return '';
 }
-var NEED_SECURE = { camera: 1, torch: 1, code: 1, motion: 1, compass: 1, battery: 1 };
+var NEED_SECURE = { camera: 1, torch: 1, code: 1, motion: 1, compass: 1, battery: 1, look: 1 };
 function inputResult(k) {
   var v = passed[k] || inputNow(k);
   if (v === true) passed[k] = true;
@@ -383,6 +425,7 @@ function inputNow(k) {
   if (k === 'motion') return seen.imu ? (Object.keys(tilt).length >= 2 || turned || null) : (caps.motion === false ? false : null);
   if (k === 'compass') return seen.heading ? true : caps.compass === false ? 'na' : null;
   if (k === 'battery') return seen.battery ? true : caps.battery === false ? 'na' : null;
+  if (k === 'look') return seen.faces && seen.faces.n > 0 ? true : seen.look && seen.look.ok === false ? false : null;
 }
 var GESTURES = ['tap-left', 'tap-centre', 'tap-right', 'long', 'swipe'];
 function partial(k) {  // a test begun but not finished: what is still missing
@@ -399,7 +442,7 @@ function results() {
   });
   if (r.torch === null && cam.torch === false && cam.ok !== false) r.torch = 'na';
   if (r.camera === null && cam.ok === false) r.camera = false;
-  ['touch', 'motion', 'compass', 'battery', 'code'].forEach(function (k) { r[k] = inputResult(k); });
+  ['touch', 'motion', 'compass', 'battery', 'code', 'look'].forEach(function (k) { r[k] = inputResult(k); });
   return r;
 }
 

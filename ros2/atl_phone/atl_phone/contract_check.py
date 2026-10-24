@@ -19,7 +19,7 @@ import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from geometry_msgs.msg import Point
 from sensor_msgs.msg import BatteryState, Imu
-from std_msgs.msg import Bool, ColorRGBA, Float32, Int32, String
+from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Int32, String
 
 from . import contract as c
 from .mock_phone import ID as MOCK_ID, MockPhone
@@ -34,11 +34,11 @@ class Check:
         self.got = {}
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         for name, kind, qos in [("status", String, latched), ("imu", Imu, 10), ("heading", Float32, 10),
-                                ("touch", String, 10), ("battery", BatteryState, latched)]:
+                                ("touch", String, 10), ("battery", BatteryState, latched), ("faces", String, 10), ("codes", String, 10)]:
             self.n.create_subscription(kind, self.t[name], lambda m, k=name: self.got.setdefault(k, []).append(m), qos)
         self.pub = {name: self.n.create_publisher(kind, self.t[name], 10) for name, kind in
                     [("expression", String), ("gaze", Point), ("color", ColorRGBA), ("say", String),
-                     ("torch", Bool), ("vibrate", Int32)]}
+                     ("torch", Bool), ("vibrate", Int32), ("look", Bool), ("familiar", Bool), ("forget", Empty)]}
         self.failed = 0
 
     def ok(self, name: str, good: bool, detail=""):
@@ -111,6 +111,21 @@ class Check:
         self.ok("torch reaches the phone", m == {"t": "torch", "on": True}, m)
         m = to_phone("vibrate", Int32(data=99999), "vibrate")
         self.ok("vibrate reaches the phone, at most MAX_VIBRATE", m == {"t": "vibrate", "ms": c.MAX_VIBRATE}, m)
+
+        m = to_phone("look", Bool(data=True), "look")
+        self.ok("look reaches the phone (familiar off: not allowed)", m == {"t": "look", "on": True, "familiar": False}, m)
+        self.pub["familiar"].publish(Bool(data=True))
+        phone.send(t="faces", faces=[{"x": 0.5, "y": 0.1, "size": 0.3, "familiar": 2, "descriptor": [0.5] * 128}])
+        f = self.wait("faces")
+        self.ok("faces reach ROS: where they are, nothing else, no numbers while familiar is not allowed",
+                bool(f) and json.loads(f.data) == {"n": 1, "faces": [{"x": 0.5, "y": 0.1, "size": 0.3, "familiar": None}]}, f and f.data)
+        phone.send(t="code", text="atl-guardian:owner")
+        f = self.wait("codes")
+        self.ok("a code the front camera read reaches ROS", bool(f) and json.loads(f.data) == {"text": "atl-guardian:owner"}, f and f.data)
+        m = to_phone("forget", Empty(), "forget")
+        self.ok("look/forget reaches the phone", m == {"t": "forget"}, m)
+        m = to_phone("look", Bool(data=False), "look")
+        self.ok("look off reaches the phone", m == {"t": "look", "on": False, "familiar": False}, m)
 
         base = url.split("/ws")[0].replace("ws:", "http:")
 

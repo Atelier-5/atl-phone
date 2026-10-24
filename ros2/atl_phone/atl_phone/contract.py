@@ -8,7 +8,7 @@ that carries the phone, /<robot>/phone/..., so a robot with a phone keeps its
 own contract and gains these. Bump CONTRACT when a topic changes.
 """
 
-CONTRACT = "atl-phone/0.1"
+CONTRACT = "atl-phone/0.2"         # 0.2: the front camera (look), faces, codes
 PORT = 8782                 # the bridge's page and WebSocket (atl-ide 8780, the Thymio gateway 8781)
 
 
@@ -21,6 +21,10 @@ def topics(robot: str) -> dict:
         "heading": f"{ns}/heading",         # std_msgs/Float32, degrees clockwise from magnetic north (compass), when the phone has one
         "touch": f"{ns}/touch",             # std_msgs/String JSON {"kind": "tap"|"long"|"swipe", "zone": "left"|"centre"|"right", "dir"?}
         "battery": f"{ns}/battery",         # sensor_msgs/BatteryState: the phone's own battery
+        "faces": f"{ns}/faces",             # std_msgs/String JSON {"n", "faces": [{"x", "y", "size", "familiar"}]}, while looking (about 4 Hz):
+                                            #   x right, y up, each -1..1 as the face sees it; size: the face's height / the picture's;
+                                            #   familiar: null, or 1..MAX_FACES, the same number for the same face this session (opt-in)
+        "codes": f"{ns}/codes",             # std_msgs/String JSON {"text"}: a code (QR, ...) the front camera read while looking
         # in: listened to by the phone
         "expression": f"{ns}/face/expression",  # std_msgs/String, one of EXPRESSIONS
         "gaze": f"{ns}/face/gaze",          # geometry_msgs/Point, x right, y up, each -1..1 (z unused)
@@ -28,6 +32,9 @@ def topics(robot: str) -> dict:
         "say": f"{ns}/say",                 # std_msgs/String: text, or JSON {"text", "lang": "en"|"fr"|"de"}
         "torch": f"{ns}/torch",             # std_msgs/Bool: the headlight (it opens the camera, and the face shows it)
         "vibrate": f"{ns}/vibrate",         # std_msgs/Int32: milliseconds, at most MAX_VIBRATE
+        "look": f"{ns}/look",               # std_msgs/Bool: the front camera finds faces (on the phone; pictures never leave it)
+        "familiar": f"{ns}/look/familiar",  # std_msgs/Bool: also tell faces apart this session; only if the bridge allows it (familiar:=true)
+        "forget": f"{ns}/look/forget",      # std_msgs/Empty: forget every face seen so far
     }
 
 
@@ -36,3 +43,5 @@ LANGS = ("en", "fr", "de")
 MAX_SAY = 200               # characters
 MAX_VIBRATE = 2000          # ms
 MAX_IMU_RATE = 60.0         # Hz: faster messages from a phone are dropped
+MAX_FACES = 8               # faces per message, and faces told apart in a session
+MAX_FACES_RATE = 10.0       # Hz

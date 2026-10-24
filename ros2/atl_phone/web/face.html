@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright (C) 2026 Atelier-5 -->
-<!-- The robot's face: eyes on the whole screen; the phone's senses go to the bridge (contract atl-phone/0.1).
+<!-- The robot's face: eyes on the whole screen; the phone's senses go to the bridge (contract atl-phone/0.2).
      face.html?offline=1&expression=happy&still=1 draws one expression without a bridge (for pictures);
      ?autostart=1 skips the start tap; ?key=... when the bridge has a pairing key; ?lang=en|fr|de. -->
 <html lang="en">
@@ -22,7 +22,7 @@
   .dot { position: fixed; top: 8px; width: 10px; height: 10px; border-radius: 50%; }
   #link { left: 8px; background: #b3261e; }
   #link.on { background: #1f7a3f; }
-  /* the camera is on (torch): the face says so, always */
+  /* a camera is on (torch, test: ● cam; look: ● look): the face says so, always */
   #eye { right: 8px; width: auto; height: auto; border-radius: 6px; padding: 2px 6px; background: #e0b341; color: #000;
          font: 12px system-ui, sans-serif; display: none; }
   /* the setup page's camera test: what the camera sees, on the phone only */

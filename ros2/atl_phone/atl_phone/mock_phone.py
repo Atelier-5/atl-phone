@@ -65,6 +65,13 @@ class MockPhone:
     def hello(self):
         self.send(t="hello", id=ID, ua=UA, caps={"motion": True, "tts": True, "vibrate": True}, screen=[1280, 720])
 
+    def faces(self, *faces: dict):
+        """What look sends: where faces are, e.g. faces({"x": 0.5, "y": 0, "size": 0.2, "familiar": 1})."""
+        self.send(t="faces", faces=[dict({"y": 0.0, "size": 0.2, "familiar": None}, **f) for f in faces])
+
+    def imu(self, acc=(0.0, 0.0, 9.81), gyro=(0.0, 0.0, 0.0)):
+        self.send(t="imu", acc=list(acc), gyro=list(gyro))
+
     def expect(self, t: str, timeout: float = 3.0) -> dict:
         """The next message of kind t (others are skipped)."""
         end = time.monotonic() + timeout

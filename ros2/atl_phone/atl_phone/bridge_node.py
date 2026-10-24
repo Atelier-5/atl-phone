@@ -3,10 +3,15 @@
 """bridge — the phone on ROS 2: serves the face page, and maps its WebSocket to the contract's topics.
 
     ros2 run atl_phone bridge --ros-args -p robot:=thymio_1 [-p port:=8782] [-p key:=...] [-p cert:=c.pem -p cert_key:=k.pem [-p ca:=ca.crt]]
+        [-p familiar:=true]
 
 Over USB (adb reverse) the phone opens http://localhost:8782; over Wi-Fi it needs
 https (cert), or the camera and microphone stay blocked. The setup page, on this PC,
 is http://localhost:8782/setup.html: it guides through connecting and testing a phone.
+
+familiar: whether a program may ask the phone to tell faces apart (look/familiar). Off by default; the
+facilitator turns it on (this parameter, or the setup page) once the people at the table agreed. While it is
+off, faces reach ROS without their numbers, whatever the phone sends.
 """
 import json
 import re
@@ -18,7 +23,7 @@ from geometry_msgs.msg import Point
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from sensor_msgs.msg import BatteryState, Imu
-from std_msgs.msg import Bool, ColorRGBA, Float32, Int32, String
+from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Int32, String
 
 from . import contract as c
 from . import protocol as p
@@ -36,6 +41,8 @@ class Bridge(Node):
         cert_key = self.declare_parameter("cert_key", "").value or None
         ca = self.declare_parameter("ca", "").value or None
         self.lang = self.declare_parameter("lang", "en").value
+        self.allow_familiar = bool(self.declare_parameter("familiar", False).value)
+        self.look = {"on": False, "familiar": False}  # as programs ask (look, look/familiar)
         web = self.declare_parameter("web", get_package_share_directory("atl_phone") + "/web").value
         self.t = c.topics(self.robot)
         self.frame_id = f"{self.robot}/phone"
@@ -43,6 +50,7 @@ class Bridge(Node):
         self.seen = {}      # the latest of each sense, for the setup page
         self.reports = []   # the latest phone check reports
         self.last_imu = 0.0
+        self.last_faces = 0.0
         self.key = key
 
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
@@ -52,6 +60,8 @@ class Bridge(Node):
             "heading": self.create_publisher(Float32, self.t["heading"], 10),
             "touch": self.create_publisher(String, self.t["touch"], 10),
             "battery": self.create_publisher(BatteryState, self.t["battery"], latched),
+            "faces": self.create_publisher(String, self.t["faces"], 10),
+            "codes": self.create_publisher(String, self.t["codes"], 10),
         }
         self.create_subscription(String, self.t["expression"], lambda m: self.out(p.face, m.data), 10)
         self.create_subscription(Point, self.t["gaze"], lambda m: self.out(p.gaze, m.x, m.y), 10)
@@ -59,9 +69,13 @@ class Bridge(Node):
         self.create_subscription(String, self.t["say"], lambda m: self.out(p.say, m.data, self.lang), 10)
         self.create_subscription(Bool, self.t["torch"], lambda m: self.out(p.torch, m.data), 10)
         self.create_subscription(Int32, self.t["vibrate"], lambda m: self.out(p.vibrate, m.data), 10)
+        self.create_subscription(Bool, self.t["look"], lambda m: self.set_look(on=m.data), 10)
+        self.create_subscription(Bool, self.t["familiar"], lambda m: self.set_look(familiar=m.data), 10)
+        self.create_subscription(Empty, self.t["forget"], lambda m: self.out(p.forget), 10)
         # the setup page's tests publish on the same topics, as any program would
         self.tests = {k: self.create_publisher(kind, self.t[k], 10) for k, kind in
-                      {"expression": String, "gaze": Point, "color": ColorRGBA, "say": String, "torch": Bool, "vibrate": Int32}.items()}
+                      {"expression": String, "gaze": Point, "color": ColorRGBA, "say": String, "torch": Bool, "vibrate": Int32,
+                       "look": Bool, "familiar": Bool, "forget": Empty}.items()}
 
         self.server = PhoneServer(web, port, bind, key, on_open=self.opened, on_text=self.text, on_close=self.closed,
                                   cert=cert, cert_key=cert_key, api=self, ca=ca).start()
@@ -78,8 +92,20 @@ class Bridge(Node):
             return
         self.server.send(json.dumps(msg))
 
+    def familiar(self) -> bool:
+        return self.look["familiar"] and self.allow_familiar
+
+    def set_look(self, **kw):
+        """A program asks for the front camera (or for faces told apart): the phone hears of it when it changes."""
+        before = (self.look["on"], self.familiar())
+        self.look.update(kw)
+        if (self.look["on"], self.familiar()) != before:
+            self.out(p.look, self.look["on"], self.familiar())
+            self.status()
+
     def status(self):
-        s = {"contract": c.CONTRACT, "connected": self.server.connected}
+        s = {"contract": c.CONTRACT, "connected": self.server.connected,
+             "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar}
         if s["connected"]:
             s.update(self.phone)
         self.pub["status"].publish(String(data=json.dumps(s)))
@@ -107,6 +133,8 @@ class Bridge(Node):
                               caps=m["caps"], screen=m["screen"])
             self.get_logger().info(f"phone says hello: {self.phone['model']}")
             self.status()
+            if self.look["on"]:  # a phone that comes (back) looks on, as asked
+                self.out(p.look, True, self.familiar())
         elif t == "imu":
             now = time.monotonic()
             if now - self.last_imu < 1.0 / c.MAX_IMU_RATE:
@@ -145,6 +173,19 @@ class Bridge(Node):
             if "code" in m:
                 cam["codes"] = (cam.get("codes", []) + [m["code"]])[-5:]
             self.seen["camera"] = cam
+        elif t == "look":
+            self.seen["look"] = {k: v for k, v in m.items() if k != "t"} | {"at": time.time()}
+        elif t == "faces":
+            now = time.monotonic()
+            if now - self.last_faces < 1.0 / c.MAX_FACES_RATE:
+                return
+            self.last_faces = now
+            faces = m["faces"] if self.familiar() else [dict(f, familiar=None) for f in m["faces"]]
+            self.pub["faces"].publish(String(data=json.dumps({"n": m["n"], "faces": faces})))
+            self.seen["faces"] = {"n": m["n"], "faces": faces, "at": time.time()}
+        elif t == "code":
+            self.pub["codes"].publish(String(data=json.dumps({"text": m["text"]})))
+            self.seen["codes"] = (self.seen.get("codes", []) + [m["text"]])[-5:]
 
     # the setup page (wsserver api): what the bridge sees, and the tests it asks for
 
@@ -155,7 +196,8 @@ class Bridge(Node):
                 "urls": {"usb": f"{scheme}://localhost:{port}/{q}", "wifi": f"{scheme}://{lan_address()}:{port}/{q}",
                          "ca": f"{scheme}://{lan_address()}:{port}/ca.crt" if self.server.ca else None},
                 "secure_wifi": scheme == "https", "connected": self.server.connected,
-                "phone": self.phone, "seen": self.seen, "reports": self.reports, "expressions": c.EXPRESSIONS}
+                "phone": self.phone, "seen": self.seen, "reports": self.reports, "expressions": c.EXPRESSIONS,
+                "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar}
 
     def act(self, body: dict):
         """A test from the setup page. Outputs go through ROS, on the contract's own topics, so the whole chain is tested."""
@@ -163,6 +205,12 @@ class Bridge(Node):
             m = p.open_page(body["open"]) if "open" in body else p.camera(body["camera"])
             if not self.server.send(json.dumps(m)):
                 raise ValueError("no phone")
+            return
+        if "allow_familiar" in body:  # the facilitator's choice, on this PC only (the setup page)
+            self.allow_familiar = bool(body["allow_familiar"])
+            self.look["familiar"] = self.look["familiar"] and self.allow_familiar  # once refused, a program asks again
+            self.out(p.look, self.look["on"], self.familiar())
+            self.status()
             return
         if not self.server.connected:  # the topic would take it, and nobody would show it: say so instead
             raise ValueError("no phone")
@@ -185,6 +233,10 @@ class Bridge(Node):
             msg = Bool(data=bool(v))
         elif topic == "vibrate":
             msg = Int32(data=p.vibrate(v)["ms"])
+        elif topic in ("look", "familiar"):
+            msg = Bool(data=bool(v))
+        elif topic == "forget":
+            msg = Empty()
         else:
             raise ValueError(f"unknown topic {topic!r}")
         self.tests[topic].publish(msg)

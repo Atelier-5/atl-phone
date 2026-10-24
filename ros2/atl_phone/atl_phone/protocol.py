@@ -2,11 +2,14 @@
 # Copyright (C) 2026 Atelier-5
 """protocol.py — the JSON messages between the phone page and the bridge, checked both ways (no ROS here).
 
-Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "camera", ...}
-Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera", ...}
+Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "camera" | "look" | "faces" | "code", ...}
+Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera" | "look" | "forget", ...}
 
 "camera" is the setup page's camera test: the phone shows the picture on its own screen and says
 whether it works and which codes it read; pictures never leave the phone.
+"look" turns the front camera on: the phone finds faces itself and sends only where they are ("faces");
+with "familiar" it also tells them apart, by a signature it keeps in its memory for this session.
+Neither pictures nor signatures leave the phone, and a "faces" message cannot carry them.
 
 A phone is not trusted: parse() returns a clean message or raises ValueError,
 and every number is finite and clamped.
@@ -90,6 +93,28 @@ def parse(raw: str) -> dict:
         if "torch" in m:
             out["torch"] = bool(m["torch"])
         return out
+    if t == "look":  # what the front camera does now
+        out = {"t": "look", "on": bool(m.get("on")), "ok": bool(m.get("ok")), "familiar": bool(m.get("familiar"))}
+        if m.get("error"):
+            out["error"] = _text(m["error"], 80)
+        return out
+    if t == "faces":  # only these fields, each clamped: nothing else of a face can pass
+        fs = m.get("faces")
+        if not isinstance(fs, list):
+            raise ValueError("faces: not a list")
+        faces = []
+        for f in fs[:c.MAX_FACES]:
+            if not isinstance(f, dict):
+                raise ValueError("faces: not an object")
+            fam = f.get("familiar")
+            faces.append({"x": _num(f.get("x"), -1, 1), "y": _num(f.get("y"), -1, 1), "size": _num(f.get("size"), 0, 1),
+                          "familiar": None if fam is None else int(_num(fam, 1, c.MAX_FACES))})
+        return {"t": "faces", "n": len(faces), "faces": faces}
+    if t == "code":
+        text = _text(m.get("text"), c.MAX_SAY).strip()
+        if not text:
+            raise ValueError("code: empty")
+        return {"t": "code", "text": text}
     raise ValueError(f"unknown message {t!r}")
 
 
@@ -128,6 +153,14 @@ def torch(on: bool) -> dict:
 
 def camera(on: bool) -> dict:
     return {"t": "camera", "on": bool(on)}
+
+
+def look(on: bool, familiar: bool = False) -> dict:
+    return {"t": "look", "on": bool(on), "familiar": bool(on and familiar)}
+
+
+def forget() -> dict:
+    return {"t": "forget"}
 
 
 def vibrate(ms: int) -> dict:

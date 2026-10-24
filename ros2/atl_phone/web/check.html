@@ -173,7 +173,24 @@ check('g_eyes', 'barcode', 'Built-in code reader (BarcodeDetector)', 'nice', fun
   return { ok: null, note: 'no code seen in 10 s · ' + formats.join(', ') };
 });
 check('g_eyes', 'wasm', 'WebAssembly (fallback reader)', 'core', function () { return { ok: typeof WebAssembly === 'object', note: '' }; });
-check('g_eyes', 'faces', 'Face detector (gaze only)', 'later', function () { return { ok: has(window, 'FaceDetector'), note: '' }; });
+check('g_eyes', 'front', 'Front camera (look)', 'nice', function () { return { ok: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext, note: '' }; }, async function () {
+  stopCamera();
+  var s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 } }, audio: false });
+  var st = s.getVideoTracks()[0].getSettings(); s.getTracks().forEach(function (k) { k.stop(); });
+  return { ok: st.facingMode !== 'environment', note: st.width + '×' + st.height + (st.facingMode ? ' ' + st.facingMode : '') };
+});
+check('g_eyes', 'faces', 'Face finder (look, on the phone)', 'nice', function () {
+  var c = document.createElement('canvas'); return { ok: !!(c.getContext('webgl2') || c.getContext('webgl')), note: 'needs WebGL' };
+}, async function () {  // how long one search takes on this phone: under about 250 ms, look runs at 4 per second
+  if (!window.faceapi) await new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = 'vendor/face-api/face-api.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+  await faceapi.nets.tinyFaceDetector.loadFromUri('vendor/face-api/models');
+  var c = document.createElement('canvas'); c.width = 320; c.height = 240;
+  var opt = new faceapi.TinyFaceDetectorOptions({ inputSize: 320 });
+  await faceapi.detectAllFaces(c, opt);  // the first one compiles the shaders
+  var t0 = performance.now(); for (var i = 0; i < 5; i++) await faceapi.detectAllFaces(c, opt);
+  var ms = Math.round((performance.now() - t0) / 5);
+  return { ok: ms < 500, note: ms + ' ms per search · ' + faceapi.tf.getBackend() };
+});
 
 // Ears and voice
 check('g_ears', 'mic', 'Microphone', 'core', function () { return { ok: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext, note: '' }; }, async function () {

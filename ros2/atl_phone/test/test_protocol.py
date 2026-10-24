@@ -66,10 +66,32 @@ def test_touch():
     '{"t": "touch", "kind": "tap", "zone": "elsewhere"}',
     '{"t": "touch", "kind": "swipe", "zone": "left"}',
     '{"t": "battery", "level": "full"}',
+    '{"t": "faces", "faces": "two"}',
+    '{"t": "faces", "faces": [3]}',
+    '{"t": "faces", "faces": [{"x": 0, "y": 0}]}',
+    '{"t": "code", "text": "  "}',
 ])
 def test_refuses(raw):
     with pytest.raises(ValueError):
         p.parse(raw)
+
+
+def test_faces_carry_only_where_they_are():
+    m = parse(t="faces", faces=[{"x": 2, "y": -0.5, "size": 0.3, "familiar": 2, "descriptor": [0.1] * 128, "jpeg": "..."}])
+    assert m == {"t": "faces", "n": 1, "faces": [{"x": 1.0, "y": -0.5, "size": 0.3, "familiar": 2}]}
+    assert parse(t="faces", faces=[])["n"] == 0
+    many = parse(t="faces", faces=[{"x": 0, "y": 0, "size": 0.1, "familiar": 99}] * 20)
+    assert many["n"] == c.MAX_FACES and many["faces"][0]["familiar"] == c.MAX_FACES
+    assert parse(t="faces", faces=[{"x": 0, "y": 0, "size": 0.1}])["faces"][0]["familiar"] is None
+
+
+def test_look_and_code():
+    assert parse(t="look", on=True, ok=False, error="NotAllowedError", familiar=1) == {
+        "t": "look", "on": True, "ok": False, "familiar": True, "error": "NotAllowedError"}
+    assert parse(t="code", text=" atl-guardian:owner ") == {"t": "code", "text": "atl-guardian:owner"}
+    assert p.look(True, True) == {"t": "look", "on": True, "familiar": True}
+    assert p.look(False, True) == {"t": "look", "on": False, "familiar": False}
+    assert p.forget() == {"t": "forget"}
 
 
 def test_to_the_phone():

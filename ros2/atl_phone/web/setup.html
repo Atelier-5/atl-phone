@@ -71,6 +71,10 @@
   @media (max-width: 720px) { header .meta { order: 3; flex-basis: 100%; } }
   .pad { width: 160px; height: 100px; border: 1px solid var(--line); border-radius: 8px; position: relative; cursor: crosshair; touch-action: none; }
   .pad i { position: absolute; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--accent); left: 50%; top: 50%; }
+  .pad.faces { cursor: default; background: var(--chip); }
+  .pad.faces span { position: absolute; border: 2px solid var(--accent); border-radius: 8px; font: 11px ui-monospace, monospace;
+                    color: var(--accent); display: flex; align-items: center; justify-content: center; }
+  label.row { cursor: pointer; margin-top: 8px; }
   .dial { width: 64px; height: 64px; border-radius: 50%; border: 1.5px solid var(--line); position: relative; flex: none; }
   .dial i { position: absolute; left: 50%; top: 6px; width: 2px; height: 26px; margin-left: -1px; background: var(--no); transform-origin: 1px 26px; }
   .bar { height: 8px; background: var(--chip); border-radius: 4px; overflow: hidden; width: 140px; display: inline-block; vertical-align: middle; }

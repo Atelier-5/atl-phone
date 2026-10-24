@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Atelier-5
-// The robot's face (contract atl-phone/0.1). Plain ES2017, no libraries: old phones run it too.
+// The robot's face (contract atl-phone/0.2). Plain ES2017, no libraries: old phones run it too. Only "look" (the
+// front camera finding faces) loads one, vendor/face-api, and only when a program asks for it.
 // The phone is a peripheral: it draws what the bridge asks and reports what it senses; it decides nothing.
 'use strict';
 
@@ -43,7 +44,7 @@ var W = 0, H = 0, base = 0;
 var expression = EXPRESSIONS[Q.expression] ? Q.expression : 'neutral';
 var target = eyes(expression), cur = eyes(expression);
 var color = [63, 216, 255];
-var gaze = { x: 0, y: 0 }, gazeAt = 0, look = { x: 0, y: 0 }, nextLook = 0, eyeX = 0, eyeY = 0;
+var gaze = { x: 0, y: 0 }, gazeAt = 0, faceAim = { x: 0, y: 0 }, faceAt = -1e9, look = { x: 0, y: 0 }, nextLook = 0, eyeX = 0, eyeY = 0;
 var blinkAt = -1e9, nextBlink = 0, speaking = false, ripples = [];
 if (Q.gaze) { var g = Q.gaze.split(','); gaze.x = +g[0] || 0; gaze.y = +g[1] || 0; gazeAt = Infinity; }
 
@@ -110,7 +111,7 @@ function step(now) {
     look = Math.random() < 0.4 ? { x: 0, y: 0 } : { x: (Math.random() - 0.5) * 0.8, y: (Math.random() - 0.5) * 0.5 };
     nextLook = now + 1500 + Math.random() * 2500;
   }
-  var aim = now - gazeAt <= 4000 || STILL ? gaze : look;
+  var aim = now - gazeAt <= 4000 || STILL ? gaze : now - faceAt < 1000 ? faceAim : look;  // asked, else at a face, else around
   eyeX += (aim.x - eyeX) * (STILL ? 1 : 0.15);
   eyeY += (aim.y - eyeY) * (STILL ? 1 : 0.15);
   if (!STILL && now > nextBlink) { blinkAt = now; nextBlink = now + 2000 + Math.random() * 4000; }
@@ -180,6 +181,8 @@ function handle(m) {
   else if (m.t === 'say') speak(String(m.text || ''), m.lang || lang);
   else if (m.t === 'torch') torch(!!m.on);
   else if (m.t === 'camera') camera(!!m.on);
+  else if (m.t === 'look') lookAt(!!m.on, !!m.familiar);
+  else if (m.t === 'forget') forget();
   else if (m.t === 'vibrate' && navigator.vibrate) navigator.vibrate(Math.max(0, Math.min(2000, m.ms | 0)));
   else if (m.t === 'open' && ['face.html', 'check.html'].indexOf(m.page) >= 0) location.href = m.page + location.search;
 }
@@ -197,32 +200,46 @@ function speak(text, l) {
   speechSynthesis.speak(u);
 }
 
-// ---- the camera: the torch and the setup page's camera test share one stream; the face shows when it is on.
-// The picture is shown on the phone only: what leaves it is whether it works, its size and the codes it read.
-var cam = null, camOpening = null, want = { torch: false, view: false }, camOk = false;
+// ---- the camera: the torch and the setup page's camera test use the back camera, "look" the front one; a phone
+// opens one at a time, so the back camera wins and look waits. The face shows which one is on.
+// Pictures stay on the phone: what leaves it is whether it works, its size, the codes it read and where faces are.
+var cam = null, camFacing = '', camOpening = null, want = { torch: false, view: false, look: false }, camOk = false;
 var view = document.getElementById('view'), viewOff = 0, scanTimer = 0, lastCode = '';
-function camReport(o) { o.t = 'camera'; o.on = !!cam; o.ok = 'ok' in o ? o.ok : camOk; camOk = o.ok; send(o); }
+function camReport(o) { o.t = 'camera'; o.on = !!cam && camFacing === 'environment'; o.ok = 'ok' in o ? o.ok : camOk; camOk = o.ok; send(o); }
 function camError(e) { return (e && e.name) || String(e); }
+function facing() { return want.torch || want.view ? 'environment' : want.look ? 'user' : ''; }
+function eyeBadge() {
+  var b = document.getElementById('eye');
+  b.style.display = cam ? 'block' : 'none';
+  b.textContent = camFacing === 'user' ? '● look' : '● cam';
+}
+function stopCam() {
+  if (cam) cam.getTracks().forEach(function (k) { k.stop(); });
+  cam = null; camFacing = ''; eyeBadge();
+}
 function openCam() {
-  if (cam) return Promise.resolve(cam);
-  if (camOpening) return camOpening;
+  var f = facing();
+  if (cam && camFacing === f) return Promise.resolve(cam);
+  if (camOpening) return camOpening.then(openCam);
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return Promise.reject({ name: window.isSecureContext ? 'NoCamera' : 'NotSecure' });
   }
-  camOpening = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false })
-    .then(function (s) { camOpening = null; cam = s; document.getElementById('eye').style.display = 'block'; return s; },
-          function (e) { camOpening = null; throw e; });
+  stopCam();
+  camOpening = navigator.mediaDevices.getUserMedia({ video: { facingMode: f, width: { ideal: f === 'user' ? 640 : 1280 } }, audio: false })
+    .then(function (s) {
+      camOpening = null;
+      if (facing() !== f) { s.getTracks().forEach(function (k) { k.stop(); }); return openCam(); }  // asked for the other one meanwhile
+      cam = s; camFacing = f; eyeBadge(); return s;
+    }, function (e) { camOpening = null; throw e; });
   return camOpening;
 }
-function closeCamIfIdle() {
-  if (want.torch || want.view || !cam) return;
-  cam.getTracks().forEach(function (k) { k.stop(); });
-  cam = null; document.getElementById('eye').style.display = 'none';
+function closeCamIfIdle() {  // nobody needs this camera any more: close it (look reopens the front one by itself)
+  if (cam && camFacing !== facing()) stopCam();
 }
 function torch(on) {
   want.torch = on;
   if (!on) {
-    if (cam) cam.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: false }] }).catch(function () {});
+    if (cam && camFacing === 'environment') cam.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: false }] }).catch(function () {});
     closeCamIfIdle(); return;
   }
   openCam().then(function (s) {
@@ -249,6 +266,102 @@ function camera(on) {  // the setup page's test: the picture on the phone's scre
       }).catch(function () {});
     }, 400);
   }).catch(function (e) { want.view = false; closeCamIfIdle(); camReport({ ok: false, error: camError(e) }); });
+}
+
+// ---- look: the front camera finds faces, about four times a second, on the phone. With "familiar" it also keeps,
+// in this page's memory only, a signature of each face (128 numbers) to give the same face the same number.
+// The signatures are never sent nor stored, and are forgotten on reload, when look or familiar ends, on "forget",
+// and ten minutes after a face was last seen.
+var MODELS = 'vendor/face-api/models', SAME = 0.5, KEEP = 600000;
+var seeing = { familiar: false, timer: 0, lib: null, recog: null, video: document.createElement('video'),
+               known: [], prev: [], sigAt: 0, codeAt: 0, code: '', codeSent: 0, det: null, ok: null };
+seeing.video.muted = true; seeing.video.setAttribute('playsinline', '');
+function lookReport(o) { o.t = 'look'; o.on = want.look; o.familiar = want.look && seeing.familiar; if (!('ok' in o)) o.ok = seeing.ok === true; send(o); }
+function faceApi(familiar) {  // the library and the nets it needs, loaded once
+  if (!seeing.lib) seeing.lib = new Promise(function (ok, no) {
+    var sc = document.createElement('script'); sc.src = 'vendor/face-api/face-api.js';
+    sc.onload = ok; sc.onerror = function () { no({ name: 'NoFaceApi' }); }; document.head.appendChild(sc);
+  }).then(function () { return faceapi.nets.tinyFaceDetector.loadFromUri(MODELS); });
+  if (familiar && !seeing.recog) seeing.recog = seeing.lib.then(function () {
+    return Promise.all([faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODELS), faceapi.nets.faceRecognitionNet.loadFromUri(MODELS)]);
+  });
+  return familiar ? seeing.recog : seeing.lib;
+}
+function forget() { seeing.known = []; seeing.prev = []; }
+function lookAt(on, familiar) {
+  var was = want.look;
+  if (!on || !familiar) forget();
+  want.look = on; seeing.familiar = on && familiar;
+  clearTimeout(seeing.timer);
+  if (on && !was) seeing.ok = null;
+  if (!on) { seeing.video.srcObject = null; closeCamIfIdle(); if (was) send({ t: 'faces', faces: [] }); lookReport({}); return; }
+  try { seeing.det = seeing.det || ('BarcodeDetector' in window ? new BarcodeDetector({ formats: ['qr_code'] }) : null); } catch (e) {}
+  lookReport({});
+  lookTick();
+}
+function distance(a, b) { var s = 0; for (var i = 0; i < a.length; i++) { var d = a[i] - b[i]; s += d * d; } return Math.sqrt(s); }
+function slotOf(desc, now) {  // the number of this face this session: a face seen before, else a new number
+  var best = null, bd = SAME;
+  seeing.known.forEach(function (k) { var d = distance(k.d, desc); if (d < bd) { bd = d; best = k; } });
+  if (best) {  // follow slow changes (light, angle): a running mean
+    var n = Math.min(best.n, 9);
+    for (var i = 0; i < desc.length; i++) best.d[i] = (best.d[i] * n + desc[i]) / (n + 1);
+    best.n++; best.at = now; return best.slot;
+  }
+  var used = seeing.known.map(function (k) { return k.slot; }), slot = 1;
+  while (used.indexOf(slot) >= 0) slot++;
+  if (slot > 8) {  // full: the face not seen for the longest gives its number
+    var old = seeing.known.reduce(function (a, b) { return a.at < b.at ? a : b; });
+    seeing.known.splice(seeing.known.indexOf(old), 1); slot = old.slot;
+  }
+  seeing.known.push({ slot: slot, d: Float32Array.from(desc), n: 1, at: now });
+  return slot;
+}
+function lookTick() {
+  if (!want.look) return;
+  function next() { clearTimeout(seeing.timer); seeing.timer = setTimeout(lookTick, 250); }
+  function fail(e) { seeing.ok = false; lookReport({ ok: false, error: camError(e) }); seeing.timer = setTimeout(lookTick, 5000); }
+  if (facing() !== 'user') return next();  // the back camera is in use: look waits
+  if (camFacing !== 'user') return void openCam().then(next, fail);
+  var v = seeing.video, now = Date.now();
+  if (v.srcObject !== cam) { v.srcObject = cam; v.play().catch(function () {}); }
+  if (v.readyState < 2 || !v.videoWidth) return next();
+  seeing.known = seeing.known.filter(function (k) { return now - k.at < KEEP; });
+  var sign = seeing.familiar && now - seeing.sigAt >= 1000;  // signatures cost more: once a second
+  faceApi(sign).then(function () {
+    var task = faceapi.detectAllFaces(v, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }));
+    return sign ? task.withFaceLandmarks(true).withFaceDescriptors() : task;
+  }).then(function (rs) {
+    if (!want.look) return;
+    if (seeing.ok !== true) { seeing.ok = true; lookReport({ ok: true }); }
+    if (sign) seeing.sigAt = now;
+    var w = v.videoWidth, h = v.videoHeight;
+    var faces = rs.slice(0, 8).map(function (r) {
+      var b = (r.detection || r).box, cx = (b.x + b.width / 2) / w, cy = (b.y + b.height / 2) / h;
+      var f = { x: 1 - 2 * cx, y: 1 - 2 * cy, size: Math.min(1, b.height / h), familiar: null };  // x: mirrored, as the face sees it
+      if (seeing.familiar) {
+        if (r.descriptor) f.familiar = slotOf(r.descriptor, now);
+        else {  // between signatures: the number of the face that was nearest a moment ago
+          var near = null, nd = 0.25;
+          seeing.prev.forEach(function (p) { var d = Math.hypot(p.x - f.x, p.y - f.y); if (d < nd && p.familiar) { nd = d; near = p; } });
+          if (near) f.familiar = near.familiar;
+        }
+      }
+      return f;
+    }).sort(function (a, b) { return b.size - a.size; });
+    seeing.prev = faces;
+    if (faces.length) { faceAim = { x: faces[0].x, y: faces[0].y }; faceAt = performance.now(); }
+    send({ t: 'faces', faces: faces });
+    if (seeing.det && now - seeing.codeAt > 500) {  // a card held up to the front camera
+      seeing.codeAt = now;
+      seeing.det.detect(v).then(function (cs) {
+        var c = cs.length ? cs[0].rawValue : '';
+        if (c && (c !== seeing.code || Date.now() - seeing.codeSent > 3000)) { send({ t: 'code', text: c }); seeing.codeSent = Date.now(); }
+        seeing.code = c;
+      }).catch(function () {});
+    }
+    next();
+  }, fail);
 }
 
 // ---- senses ------------------------------------------------------------------------------------------

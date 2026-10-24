@@ -5,8 +5,11 @@
 # The image is built when it is missing or the sources changed.
 #
 #   ./start.sh [--robot thymio_1] [--port 8782] [--lang en|fr|de] [--key KEY] [--make-cert [DIR] | --cert DIR]
-#              [--rebuild] [--no-open]
+#              [--guardian [--no-drive]] [--familiar] [--rebuild] [--no-open]
 #   ./start.sh stop | logs
+#
+# --guardian: also run the Desk Guardian on this robot (it drives the Thymio when one answers; --no-drive: never).
+# --familiar: programs may ask the phone to tell faces apart, this session only (ask the people at the table first).
 #
 # --make-cert [DIR]: Wi-Fi over HTTPS with this PC's own certificate authority (DIR default certs/): made the first
 #   time, renewed when this PC's address changes. Each phone installs the authority once (the setup page offers it).
@@ -16,7 +19,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 IMAGE=atl-phone:kilted
 NAME=atl-phone
-ROBOT=thymio_1 PORT=8782 LANG_=en KEY="" CERT="" MAKE_CERT="" REBUILD=0 OPEN=1
+ROBOT=thymio_1 PORT=8782 LANG_=en KEY="" CERT="" MAKE_CERT="" REBUILD=0 OPEN=1 GUARDIAN=false DRIVE=true FAMILIAR=false
 
 case "${1:-}" in
   stop) docker rm -f "$NAME" >/dev/null 2>&1 && echo "stopped" || echo "not running"; exit 0 ;;
@@ -30,9 +33,12 @@ while [ $# -gt 0 ]; do
     --key) KEY=$2; shift 2 ;;
     --cert) CERT=$(cd "$2" && pwd); shift 2 ;;
     --make-cert) if [ -n "${2:-}" ] && [ "${2#--}" = "$2" ]; then MAKE_CERT=$2; shift; else MAKE_CERT=certs; fi; shift ;;
+    --guardian) GUARDIAN=true; shift ;;
+    --no-drive) DRIVE=false; shift ;;
+    --familiar) FAMILIAR=true; shift ;;
     --rebuild) REBUILD=1; shift ;;
     --no-open) OPEN=0; shift ;;
-    -h|--help) sed -n '4,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '4,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $1 (see --help)" >&2; exit 2 ;;
   esac
 done
@@ -56,7 +62,7 @@ if ss -ltn "( sport = :$PORT )" | grep -q LISTEN; then
   exit 1
 fi
 
-ARGS=(robot:="$ROBOT" port:="$PORT" lang:="$LANG_")
+ARGS=(robot:="$ROBOT" port:="$PORT" lang:="$LANG_" familiar:="$FAMILIAR" guardian:="$GUARDIAN" drive:="$DRIVE")
 [ -n "$KEY" ] && ARGS+=(key:="$KEY")
 MOUNT=()
 if [ -n "$CERT" ]; then
@@ -69,8 +75,9 @@ if [ -n "$CERT" ]; then
     ARGS+=(ca:=/certs/ca.crt)
   fi
 fi
+# Fast DDS between containers: their shared memory is not shared, so UDP only (else a Thymio's container is not heard)
 docker run -d --rm --name "$NAME" --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp \
-  -e ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}" "${MOUNT[@]}" "$IMAGE" \
+  -e ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}" -e FASTDDS_BUILTIN_TRANSPORTS=UDPv4 "${MOUNT[@]}" "$IMAGE" \
   ros2 launch atl_phone phone.launch.py "${ARGS[@]}" >/dev/null
 
 SCHEME=http; [ -n "$CERT" ] && SCHEME=https
@@ -83,6 +90,7 @@ done
 curl -sfk -o /dev/null "$SCHEME://localhost:$PORT/api/state" || { echo "the bridge does not answer; see ./start.sh logs" >&2; exit 1; }
 
 echo "bridge for /$ROBOT on port $PORT (container $NAME)"
+[ "$GUARDIAN" = true ] && echo "  Desk Guardian: on (watch: docker exec $NAME /entrypoint.sh ros2 topic echo --no-daemon /$ROBOT/guardian/state)"
 echo "  setup:  $SETUP"
 [ -n "$CERT" ] && echo "  phones: install $CERT/ca.crt once each (the setup page's Wi-Fi tab shows how)"
 echo "  logs:   ./start.sh logs      stop: ./start.sh stop"

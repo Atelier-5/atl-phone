@@ -5,10 +5,12 @@
 
     docker run -d --name atl-phone-check --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted \\
         ros2 launch atl_phone phone.launch.py port:=8792
-    python3 scripts/browser_check.py --container atl-phone-check --port 8792 [--shots <dir>]
+    python3 scripts/browser_check.py --container atl-phone-check --port 8792 [--shots <dir>] [--face <picture>]
 
 ROS -> page: expressions published on the topic show on the face (read back from the page).
 Page -> ROS: the page says hello (status) and a tap reaches the touch topic.
+Look: the front camera (Chrome's fake one) runs the face finder on the page and faces reach the bridge;
+with --face, the fake camera shows that picture (of an adult, kept out of the repo) and the face is found.
 The setup page can send the phone to the check.
 Prints PASS/FAIL per check and exits 1 if any failed. Standard library only.
 """
@@ -31,12 +33,12 @@ DEBUG_PORT = 9333
 
 
 class Page:
-    def __init__(self, url: str):
+    def __init__(self, url: str, extra=()):
         self.profile = tempfile.mkdtemp(prefix="atl-phone-chrome-", dir=os.environ.get("ATL_SCRATCH"))
         self.chrome = subprocess.Popen(
             ["google-chrome", "--headless=new", "--no-sandbox", f"--user-data-dir={self.profile}",
              f"--remote-debugging-port={DEBUG_PORT}", "--remote-allow-origins=*", "--window-size=800,450",
-             "--use-angle=swiftshader", "--enable-unsafe-swiftshader", url],
+             "--use-angle=swiftshader", "--enable-unsafe-swiftshader", *extra, url],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(50):
             try:
@@ -91,6 +93,7 @@ def main() -> int:
     a.add_argument("--port", type=int, default=8792)
     a.add_argument("--robot", default="thymio_1")
     a.add_argument("--shots", type=Path)
+    a.add_argument("--face", type=Path, help="a picture with one face, for the fake front camera")
     args = a.parse_args()
     ns = f"/{args.robot}/phone"
     failed = 0
@@ -100,7 +103,15 @@ def main() -> int:
         print(f"{'PASS' if good else 'FAIL'}  {name}" + (f"  ({detail})" if detail else ""), flush=True)
         failed += not good
 
-    page = Page(f"http://localhost:{args.port}/face.html?autostart=1")
+    camera = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
+    tmp = None
+    if args.face:  # Chrome's fake camera plays a .y4m (or .mjpeg) file
+        tmp = tempfile.mkdtemp(prefix="atl-phone-face-", dir=os.environ.get("ATL_SCRATCH"))
+        y4m = os.path.join(tmp, "face.y4m")
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-loop", "1", "-i", str(args.face), "-t", "2", "-r", "10",
+                        "-vf", "scale=640:480:force_original_aspect_ratio=decrease,pad=640:480:(ow-iw)/2:(oh-ih)/2", "-pix_fmt", "yuv420p", y4m], check=True)
+        camera.append(f"--use-file-for-fake-video-capture={y4m}")
+    page = Page(f"http://localhost:{args.port}/face.html?autostart=1", camera)
     try:
         connected = False
         for _ in range(30):
@@ -148,6 +159,42 @@ def main() -> int:
                                          headers={"Content-Type": "application/json"})
             return urllib.request.urlopen(req, timeout=5).status
 
+        def seen():
+            return json.load(urllib.request.urlopen(f"http://127.0.0.1:{args.port}/api/state", timeout=5))["seen"]
+
+        act({"topic": "look", "value": True})  # through ROS, as a program would
+        look, faces = {}, {}
+        for _ in range(100):  # loading the face finder takes a while on a CPU-only Chrome
+            time.sleep(0.3)
+            s = seen()
+            look, faces = s.get("look", {}), s.get("faces", {})
+            if look.get("ok") and faces and (faces["n"] or not args.face):
+                break
+        ok("look: the front camera opens and the face finder runs on the page", look.get("ok") is True and "n" in faces
+           and page.js("document.getElementById('eye').textContent") == "● look", (look, faces))
+        if args.face:
+            f = (faces.get("faces") or [{}])[0]
+            ok("look: the face in the picture is found, in the middle", faces.get("n") == 1 and abs(f.get("x", 9)) < 0.4
+               and abs(f.get("y", 9)) < 0.5 and f.get("size", 0) > 0.1, faces)
+            if args.shots:
+                page.shot(args.shots / "look.png")
+            act({"allow_familiar": True})
+            act({"topic": "familiar", "value": True})
+            for _ in range(100):  # the recognition net is 6 MB
+                time.sleep(0.3)
+                faces = seen().get("faces", {})
+                if faces.get("n") and faces["faces"][0]["familiar"]:
+                    break
+            n = page.js("seeing.known.length")
+            ok("familiar (allowed): the face gets number 1, and the page keeps one signature, in memory",
+               faces.get("n") == 1 and faces["faces"][0]["familiar"] == 1 and n == 1, (faces, n))
+            act({"allow_familiar": False})
+            time.sleep(1.0)
+            ok("familiar taken back: the page forgets the signatures", page.js("seeing.known.length") == 0 and not page.js("seeing.familiar"))
+        act({"topic": "look", "value": False})
+        time.sleep(1.0)
+        ok("look off: the camera closes", page.js("cam === null && document.getElementById('eye').style.display") == "none")
+
         act({"open": "check.html"})
         where = None
         for _ in range(30):
@@ -161,6 +208,8 @@ def main() -> int:
         ok("setup page: 'open the check' sends the phone to check.html", where == "/check.html", where)
     finally:
         page.close()
+        if tmp:
+            shutil.rmtree(tmp, ignore_errors=True)
     print("all passed" if not failed else f"{failed} failed")
     return 1 if failed else 0
 
