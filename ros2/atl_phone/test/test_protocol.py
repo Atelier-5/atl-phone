@@ -14,7 +14,18 @@ def parse(**m):
 
 def test_hello():
     m = parse(t="hello", ua="x" * 500, caps={"motion": 1, "tts": 0}, screen=[1280, 720, 9])
-    assert m == {"t": "hello", "ua": "x" * 300, "caps": {"motion": True, "tts": False}, "screen": [1280, 720]}
+    assert m == {"t": "hello", "ua": "x" * 300, "model": "", "secure": True,
+                 "caps": {"motion": True, "tts": False}, "screen": [1280, 720]}
+    m = parse(t="hello", ua="", model=" Pixel 3 ", secure=False)
+    assert (m["model"], m["secure"]) == ("Pixel 3", False)
+
+
+def test_camera():
+    assert parse(t="camera", on=True, ok=True, size=[1280, 720.4]) == {"t": "camera", "on": True, "ok": True, "size": [1280, 720]}
+    m = parse(t="camera", on=False, ok=False, error="NotAllowedError", torch=False)
+    assert m == {"t": "camera", "on": False, "ok": False, "error": "NotAllowedError", "torch": False}
+    assert parse(t="camera", on=True, ok=True, size=[1, 1], code="x" * 999)["code"] == "x" * 200
+    assert "size" not in parse(t="camera", on=True, ok=True, torch=True)  # a torch report keeps the picture's size
 
 
 def test_imu_is_clamped():
@@ -61,6 +72,7 @@ def test_to_the_phone():
     assert p.gaze(3, -3) == {"t": "gaze", "x": 1.0, "y": -1.0}
     assert p.color(1, 0.5, 0) == {"t": "color", "rgb": [255, 128, 0]}
     assert p.torch(1) == {"t": "torch", "on": True}
+    assert p.camera(0) == {"t": "camera", "on": False}
     assert p.vibrate(-5) == {"t": "vibrate", "ms": 0}
     assert p.vibrate(10 ** 6) == {"t": "vibrate", "ms": c.MAX_VIBRATE}
     with pytest.raises(ValueError):

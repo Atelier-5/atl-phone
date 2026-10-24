@@ -17,8 +17,10 @@ OS (stock Android, LineageOS, …). The ROS 2 node `atl_phone/bridge` serves the
 
 The **setup page** (`http://localhost:8782/setup.html`, on this PC only) guides through it, in EN/FR/DE:
 the bridge → connecting the phone (USB, or Wi-Fi with a QR code) → the phone check → testing each output
-(face, gaze, colour, voice, vibration, torch: you say what you saw) and each sense (touch, motion, compass,
-battery: they tick by themselves) → a summary to copy. Its tests go through ROS 2, on the contract's topics.
+(face, gaze, colour, voice, vibration, torch, camera: you say what you saw) and each sense (touch, motion, compass,
+battery, reading a code: they tick by themselves) → a summary to copy. Its tests go through ROS 2, on the contract's
+topics; the camera test goes to the phone directly and its picture stays on the phone's screen. A phone on plain
+http (Wi-Fi without `--cert`) shows its camera, motion, compass and battery as *blocked*: use USB, or HTTPS.
 
 `./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY --cert DIR` · `./start.sh logs` · `./start.sh stop`
 

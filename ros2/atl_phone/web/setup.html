@@ -54,7 +54,7 @@
   .chip.yes { background: var(--yes); color: #fff; }
   .chip.no { text-decoration: line-through; color: var(--muted); }
   .qr { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-  .qr canvas { background: #fff; padding: 8px; border-radius: 8px; }
+  .qr canvas, canvas.qr { background: #fff; padding: 8px; border-radius: 8px; }
   .warn { border-left: 3px solid var(--wait); padding: 6px 10px; background: var(--chip); border-radius: 4px; margin: 10px 0; }
   .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 900px) { .tests { grid-template-columns: 1fr; } }
@@ -126,6 +126,7 @@
         <ol class="steps" start="3"><li data-t="usb5">The face opens on the phone: tap ▶.</li></ol>
       </div>
       <div class="status" id="phone-status"></div>
+      <div class="warn" id="phone-insecure" data-t="insecure" style="display:none"></div>
       <div class="chips" id="phone-caps"></div>
     </section>
     <!-- 3 -->

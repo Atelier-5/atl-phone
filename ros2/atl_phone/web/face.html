@@ -25,12 +25,16 @@
   /* the camera is on (torch): the face says so, always */
   #eye { right: 8px; width: auto; height: auto; border-radius: 6px; padding: 2px 6px; background: #e0b341; color: #000;
          font: 12px system-ui, sans-serif; display: none; }
+  /* the setup page's camera test: what the camera sees, on the phone only */
+  #view { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 46vw; max-height: 76vh; object-fit: cover;
+          border: 3px solid #e0b341; border-radius: 12px; display: none; pointer-events: none; background: #222; }
 </style>
 </head>
 <body>
 <canvas id="face"></canvas>
 <div id="link" class="dot" title="bridge"></div>
 <div id="eye" class="dot">● cam</div>
+<video id="view" playsinline muted></video>
 <div id="start">
   <button id="go">▶</button>
   <div id="hint"></div>

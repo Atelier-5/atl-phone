@@ -2,8 +2,11 @@
 # Copyright (C) 2026 Atelier-5
 """protocol.py — the JSON messages between the phone page and the bridge, checked both ways (no ROS here).
 
-Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery", ...}
-Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open", ...}
+Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "camera", ...}
+Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera", ...}
+
+"camera" is the setup page's camera test: the phone shows the picture on its own screen and says
+whether it works and which codes it read; pictures never leave the phone.
 
 A phone is not trusted: parse() returns a clean message or raises ValueError,
 and every number is finite and clamped.
@@ -56,6 +59,8 @@ def parse(raw: str) -> dict:
         caps = m.get("caps") if isinstance(m.get("caps"), dict) else {}
         screen = m.get("screen") if isinstance(m.get("screen"), (list, tuple)) else [0, 0]
         return {"t": "hello", "ua": _text(m.get("ua", ""), 300),
+                "model": _text(m.get("model") or "", 40).strip(),   # from client hints: the UA may hide it ("K")
+                "secure": bool(m.get("secure", True)),              # a page that is not secure: no camera, motion, battery
                 "caps": {_text(k, 40): bool(v) for k, v in list(caps.items())[:40]},
                 "screen": [int(_num(x, 0, 10000)) for x in screen[:2]]}
     if t == "imu":
@@ -69,6 +74,16 @@ def parse(raw: str) -> dict:
         return out
     if t == "battery":
         return {"t": "battery", "level": _num(m.get("level"), 0, 1), "charging": bool(m.get("charging"))}
+    if t == "camera":
+        out = {"t": "camera", "on": bool(m.get("on")), "ok": bool(m.get("ok"))}
+        if m.get("ok") and isinstance(m.get("size"), (list, tuple)):
+            out["size"] = [int(_num(x, 0, 10000)) for x in m["size"][:2]]
+        for k, n in (("error", 80), ("code", c.MAX_SAY)):
+            if m.get(k):
+                out[k] = _text(m[k], n)
+        if "torch" in m:
+            out["torch"] = bool(m["torch"])
+        return out
     raise ValueError(f"unknown message {t!r}")
 
 
@@ -103,6 +118,10 @@ def say(data: str, default_lang: str = "en") -> dict:
 
 def torch(on: bool) -> dict:
     return {"t": "torch", "on": bool(on)}
+
+
+def camera(on: bool) -> dict:
+    return {"t": "camera", "on": bool(on)}
 
 
 def vibrate(ms: int) -> dict:

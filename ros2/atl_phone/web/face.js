@@ -140,15 +140,21 @@ function send(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 function caps() {
   return { motion: 'DeviceMotionEvent' in window, compass: 'ondeviceorientationabsolute' in window,
            tts: 'speechSynthesis' in window, vibrate: 'vibrate' in navigator, battery: 'getBattery' in navigator,
-           wakelock: 'wakeLock' in navigator, camera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) };
+           wakelock: 'wakeLock' in navigator, camera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+           barcode: 'BarcodeDetector' in window };
+}
+function hello() {  // Chrome hides the model in the user agent ("K"); client hints still tell it, on a secure page
+  var h = { t: 'hello', ua: navigator.userAgent, secure: !!window.isSecureContext, caps: caps(), screen: [screen.width, screen.height] };
+  var uad = navigator.userAgentData;
+  (uad && uad.getHighEntropyValues ? uad.getHighEntropyValues(['model']).catch(function () { return {}; }) : Promise.resolve({}))
+    .then(function (v) { h.model = v.model || ''; send(h); sendBattery(); });
 }
 function connect() {
   var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws' + (Q.key ? '?key=' + encodeURIComponent(Q.key) : '');
   ws = new WebSocket(url);
   ws.onopen = function () {
     retry = 1000; document.getElementById('link').className = 'dot on';
-    send({ t: 'hello', ua: navigator.userAgent, caps: caps(), screen: [screen.width, screen.height] });
-    sendBattery();
+    hello();
   };
   ws.onclose = function (e) {
     document.getElementById('link').className = 'dot';
@@ -163,6 +169,7 @@ function handle(m) {
   else if (m.t === 'color' && m.rgb && m.rgb.length === 3) color = m.rgb.map(function (v) { return Math.max(0, Math.min(255, v | 0)); });
   else if (m.t === 'say') speak(String(m.text || ''), m.lang || lang);
   else if (m.t === 'torch') torch(!!m.on);
+  else if (m.t === 'camera') camera(!!m.on);
   else if (m.t === 'vibrate' && navigator.vibrate) navigator.vibrate(Math.max(0, Math.min(2000, m.ms | 0)));
   else if (m.t === 'open' && ['face.html', 'check.html'].indexOf(m.page) >= 0) location.href = m.page + location.search;
 }
@@ -180,20 +187,58 @@ function speak(text, l) {
   speechSynthesis.speak(u);
 }
 
-// ---- torch: it needs the camera, and the face shows when the camera is on ---------------------------
-var cam = null;
-function torch(on) {
-  if (!on) {
-    if (cam) cam.getTracks().forEach(function (k) { k.stop(); });
-    cam = null; document.getElementById('eye').style.display = 'none'; return;
+// ---- the camera: the torch and the setup page's camera test share one stream; the face shows when it is on.
+// The picture is shown on the phone only: what leaves it is whether it works, its size and the codes it read.
+var cam = null, camOpening = null, want = { torch: false, view: false }, camOk = false;
+var view = document.getElementById('view'), viewOff = 0, scanTimer = 0, lastCode = '';
+function camReport(o) { o.t = 'camera'; o.on = !!cam; o.ok = 'ok' in o ? o.ok : camOk; camOk = o.ok; send(o); }
+function camError(e) { return (e && e.name) || String(e); }
+function openCam() {
+  if (cam) return Promise.resolve(cam);
+  if (camOpening) return camOpening;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return Promise.reject({ name: window.isSecureContext ? 'NoCamera' : 'NotSecure' });
   }
-  if (cam || !navigator.mediaDevices) return;
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }).then(function (s) {
+  camOpening = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false })
+    .then(function (s) { camOpening = null; cam = s; document.getElementById('eye').style.display = 'block'; return s; },
+          function (e) { camOpening = null; throw e; });
+  return camOpening;
+}
+function closeCamIfIdle() {
+  if (want.torch || want.view || !cam) return;
+  cam.getTracks().forEach(function (k) { k.stop(); });
+  cam = null; document.getElementById('eye').style.display = 'none';
+}
+function torch(on) {
+  want.torch = on;
+  if (!on) {
+    if (cam) cam.getVideoTracks()[0].applyConstraints({ advanced: [{ torch: false }] }).catch(function () {});
+    closeCamIfIdle(); return;
+  }
+  openCam().then(function (s) {
     var k = s.getVideoTracks()[0], c = k.getCapabilities ? k.getCapabilities() : {};
-    if (!c.torch) { s.getTracks().forEach(function (k) { k.stop(); }); return; }
-    cam = s; document.getElementById('eye').style.display = 'block';
-    return k.applyConstraints({ advanced: [{ torch: true }] });
-  }).catch(function () { torch(false); });
+    if (!c.torch) { want.torch = false; closeCamIfIdle(); camReport({ ok: true, torch: false }); return; }
+    return k.applyConstraints({ advanced: [{ torch: true }] }).then(function () { camReport({ ok: true, torch: true }); });
+  }).catch(function (e) { want.torch = false; closeCamIfIdle(); camReport({ ok: false, error: camError(e), torch: false }); });
+}
+function camera(on) {  // the setup page's test: the picture on the phone's screen for a minute, codes read on the phone
+  want.view = on; clearTimeout(viewOff); clearInterval(scanTimer);
+  if (!on) { view.style.display = 'none'; view.srcObject = null; closeCamIfIdle(); camReport({}); return; }
+  openCam().then(function (s) {
+    if (!want.view) return closeCamIfIdle();
+    view.srcObject = s; view.style.display = 'block'; view.play().catch(function () {});
+    var st = s.getVideoTracks()[0].getSettings ? s.getVideoTracks()[0].getSettings() : {};
+    camReport({ ok: true, size: [st.width || 0, st.height || 0] });
+    viewOff = setTimeout(function () { camera(false); }, 60000);
+    var det = null; lastCode = '';
+    try { det = 'BarcodeDetector' in window ? new BarcodeDetector() : null; } catch (e) {}
+    if (det) scanTimer = setInterval(function () {
+      if (view.readyState < 2) return;
+      det.detect(view).then(function (cs) {
+        if (cs.length && cs[0].rawValue !== lastCode) { lastCode = cs[0].rawValue; camReport({ ok: true, code: lastCode }); }
+      }).catch(function () {});
+    }, 400);
+  }).catch(function (e) { want.view = false; closeCamIfIdle(); camReport({ ok: false, error: camError(e) }); });
 }
 
 // ---- senses ------------------------------------------------------------------------------------------
@@ -219,6 +264,8 @@ if (navigator.getBattery) navigator.getBattery().then(function (b) {
 // touch: tap, long press ("pet") or swipe, in the left, centre or right third
 var down = null;
 canvas.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointercancel', function () { down = null; });
+canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });  // a long press is the robot's, not the browser's
 canvas.addEventListener('pointerup', function (e) {
   if (!down) return;
   var dx = e.clientX - down.x, dy = e.clientY - down.y, dt = performance.now() - down.t;

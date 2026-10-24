@@ -33,7 +33,14 @@ var T = {
     motion: 'Motion', motion_hint: 'Tilt the phone.', compass: 'Compass', compass_hint: 'Turn the phone, lying flat.',
     battery: 'Battery', charging: 'charging', none_yet: 'nothing yet', not_here: 'this phone has none',
     summary_lead: 'What works on this phone. Copy it into your notes or the robot’s build.', untested: 'not tested', skipped: 'skipped',
-    down: 'down:'
+    down: 'down:',
+    camera: 'Camera', show: 'Show on the phone', hide: 'Hide', camera_q: 'Did the phone show what its camera sees?',
+    camera_hint: 'The phone shows its back camera’s picture on its own screen, for a minute. Nothing leaves the phone.',
+    code: 'Reading codes', code_hint: 'With the picture on: hold the phone’s back camera to this code.', code_read: 'read:',
+    no_reader: 'this phone’s browser cannot read codes; the card scanner (step 3) brings its own reader',
+    blocked: 'blocked: the phone’s page is not secure. Connect by USB, or start with --cert',
+    insecure: 'This phone uses a page that is not secure (http over Wi-Fi): its camera, motion, compass and battery are blocked. Connect it by USB, or start the bridge with a certificate (./start.sh --cert DIR).',
+    no_torch: 'the phone says it has no torch', cam_error: 'the camera did not open:', size: 'picture'
   },
   fr: {
     title: 'Installer le téléphone', s1: 'Le pont', s2: 'Connecter le téléphone', s3: 'Test du téléphone', s4: 'L’essayer', s5: 'Bilan',
@@ -64,7 +71,14 @@ var T = {
     motion: 'Mouvement', motion_hint: 'Inclinez le téléphone.', compass: 'Boussole', compass_hint: 'Tournez le téléphone, posé à plat.',
     battery: 'Batterie', charging: 'en charge', none_yet: 'rien encore', not_here: 'ce téléphone n’en a pas',
     summary_lead: 'Ce qui marche sur ce téléphone. Copiez-le dans vos notes ou dans le montage du robot.', untested: 'pas testé', skipped: 'passé',
-    down: 'en bas :'
+    down: 'en bas :',
+    camera: 'Caméra', show: 'Montrer sur le téléphone', hide: 'Cacher', camera_q: 'Le téléphone a-t-il montré ce que voit sa caméra ?',
+    camera_hint: 'Le téléphone montre l’image de sa caméra arrière sur son propre écran, pendant une minute. Rien ne quitte le téléphone.',
+    code: 'Lire des codes', code_hint: 'Image allumée : tenez la caméra arrière du téléphone devant ce code.', code_read: 'lu :',
+    no_reader: 'le navigateur de ce téléphone ne lit pas les codes ; le lecteur de cartes (étape 3) apporte le sien',
+    blocked: 'bloqué : la page du téléphone n’est pas sécurisée. Connectez par USB, ou lancez avec --cert',
+    insecure: 'Ce téléphone utilise une page non sécurisée (http en Wi-Fi) : sa caméra, son mouvement, sa boussole et sa batterie sont bloqués. Connectez-le par USB, ou lancez le pont avec un certificat (./start.sh --cert DOSSIER).',
+    no_torch: 'le téléphone dit ne pas avoir de lampe', cam_error: 'la caméra ne s’est pas ouverte :', size: 'image'
   },
   de: {
     title: 'Handy einrichten', s1: 'Die Brücke', s2: 'Handy verbinden', s3: 'Handy-Check', s4: 'Ausprobieren', s5: 'Zusammenfassung',
@@ -95,7 +109,14 @@ var T = {
     motion: 'Bewegung', motion_hint: 'Das Handy kippen.', compass: 'Kompass', compass_hint: 'Das Handy flach liegend drehen.',
     battery: 'Akku', charging: 'lädt', none_yet: 'noch nichts', not_here: 'dieses Handy hat keinen',
     summary_lead: 'Was auf diesem Handy funktioniert. In deine Notizen oder den Roboterbau kopieren.', untested: 'nicht getestet', skipped: 'übersprungen',
-    down: 'unten:'
+    down: 'unten:',
+    camera: 'Kamera', show: 'Auf dem Handy zeigen', hide: 'Verbergen', camera_q: 'Hat das Handy gezeigt, was seine Kamera sieht?',
+    camera_hint: 'Das Handy zeigt das Bild seiner Rückkamera auf dem eigenen Bildschirm, eine Minute lang. Nichts verlässt das Handy.',
+    code: 'Codes lesen', code_hint: 'Bei laufendem Bild: die Rückkamera des Handys vor diesen Code halten.', code_read: 'gelesen:',
+    no_reader: 'der Browser dieses Handys liest keine Codes; der Kartenleser (Schritt 3) bringt einen eigenen mit',
+    blocked: 'gesperrt: die Seite des Handys ist nicht sicher. Per USB verbinden, oder mit --cert starten',
+    insecure: 'Dieses Handy nutzt eine nicht sichere Seite (http im WLAN): Kamera, Bewegung, Kompass und Akku sind gesperrt. Per USB verbinden, oder die Brücke mit Zertifikat starten (./start.sh --cert ORDNER).',
+    no_torch: 'das Handy sagt, es hat keine Lampe', cam_error: 'die Kamera ging nicht auf:', size: 'Bild'
   }
 };
 var lang = 'en';
@@ -115,6 +136,8 @@ var step = 0, S = null, bridgeUp = null;
 var answers = {};          // outputs: true / false, as the person says
 var touched = {};          // touches seen: tap-left, tap-centre, tap-right, long, swipe
 var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {};
+var passed = {};           // senses that worked once stay ticked, even if the phone reconnects
+var CODE = 'atl-phone camera test';
 
 // ---- talking to the bridge ---------------------------------------------------------------------------
 function act(body) {
@@ -175,11 +198,13 @@ function update() {
       caps.innerHTML = '';
       Object.keys(ph.caps || {}).forEach(function (k) { caps.appendChild(el('span', { class: 'chip ' + (ph.caps[k] ? 'yes' : 'no'), text: k })); });
     } else { ps.textContent = '⏳ ' + t('waiting'); caps.innerHTML = ''; }
+    $('phone-insecure').style.display = insecure() ? 'block' : 'none';
     $('open-check').disabled = !S.connected;
     // 3: the check
     renderReport();
     // 4: live senses
     updateInputs();
+    if (STEPS[step] === 'summary') renderSummary();
   }
 }
 
@@ -247,7 +272,16 @@ function buildOutputs() {
   o.appendChild(card('vibrate', [el('button', { class: 'b', text: t('vibrate_btn'), onclick: function () { act({ topic: 'vibrate', value: 400 }); } })], ask('vibrate', 'vibrate_q')));
   o.appendChild(card('torch', [el('div', { class: 'row' }, [
     el('button', { class: 'b', text: t('on'), onclick: function () { act({ topic: 'torch', value: true }); } }),
-    el('button', { class: 'b ghost', text: t('off'), onclick: function () { act({ topic: 'torch', value: false }); } })])], ask('torch', 'torch_q')));
+    el('button', { class: 'b ghost', text: t('off'), onclick: function () { act({ topic: 'torch', value: false }); } })]), live.torch = el('div', { class: 'hint' })],
+    ask('torch', 'torch_q')));
+  var qr = el('canvas', { class: 'qr' });
+  drawQr(CODE, qr, 4);
+  live.camera = el('div', { class: 'live' }); live.code = el('div', { class: 'live' }); live.codeMark = el('span', { class: 'mark' });
+  o.appendChild(card('camera', [el('div', { class: 'hint', text: t('camera_hint') }), el('div', { class: 'row' }, [
+    el('button', { class: 'b', text: t('show'), onclick: function () { act({ camera: true }); } }),
+    el('button', { class: 'b ghost', text: t('hide'), onclick: function () { act({ camera: false }); } })]), live.camera,
+    el('h3', { text: t('code') }), el('div', { class: 'qr' }, [qr, el('div', {}, [el('div', { class: 'hint', text: t('code_hint') }),
+      el('div', { class: 'row' }, [live.codeMark, live.code])])])], ask('camera', 'camera_q')));
 }
 var live = {};
 function buildInputs() {
@@ -263,7 +297,10 @@ function buildInputs() {
   live.batteryBar = el('i'); live.battery = el('span', { class: 'live' }); live.batteryMark = el('span', { class: 'mark' });
   o.appendChild(card('battery', [el('div', { class: 'row' }, [live.batteryMark, el('span', { class: 'bar' }, [live.batteryBar]), live.battery])]));
 }
-function setMark(m, v) { m.className = 'mark ' + (v === true ? 'yes' : v === false ? 'no' : v === 'na' ? '' : 'wait'); m.textContent = v === true ? '✓' : v === false ? '✗' : v === 'na' ? '–' : '…'; }
+function setMark(m, v) {
+  m.className = 'mark ' + (v === true ? 'yes' : v === false ? 'no' : v === 'na' ? '' : 'wait');
+  m.textContent = v === true ? '✓' : v === false ? '✗' : v === 'na' ? '–' : v === 'blocked' ? '!' : '…';
+}
 function fmt(v) { return (v >= 0 ? ' ' : '') + v.toFixed(1); }
 function updateInputs() {
   if (!live.touch) return;
@@ -292,9 +329,32 @@ function updateInputs() {
     live.battery.textContent = Math.round(seen.battery.level * 100) + '%' + (seen.battery.charging ? ' · ' + t('charging') : '');
   } else live.battery.textContent = caps.battery === false ? t('not_here') : t('none_yet');
   setMark(live.batteryMark, inputResult('battery'));
+  var c = seen.camera;
+  live.camera.textContent = insecure() ? t('blocked') : !c ? '' : c.ok === false ? t('cam_error') + ' ' + (c.error || '?') :
+    c.size && c.size[0] ? '● ' + t('size') + ' ' + c.size.join('×') + (c.on ? '' : ' (' + t('off').toLowerCase() + ')') : '';
+  live.torch.textContent = c && c.torch === false && c.ok !== false ? t('no_torch') : '';
+  live.code.textContent = c && c.codes ? t('code_read') + ' ' + c.codes[c.codes.length - 1] :
+    insecure() ? '' : noteOf('code', inputResult('code')) || t('none_yet');  // blocked: said once, above
+  setMark(live.codeMark, inputResult('code'));
 }
+function insecure() { return !!(S && S.connected && S.phone && S.phone.secure === false); }
+function noteOf(k, v) {  // why a result is not a plain yes or no
+  if (v === 'blocked') return t('blocked');
+  if (v === 'na') return k === 'code' ? t('no_reader') : k === 'torch' ? t('no_torch') : t('not_here');
+  if (v === null) return partial(k) || t('untested');
+  var c = S && S.seen && S.seen.camera;
+  if (k === 'camera' && v === false && c && c.error) return t('cam_error') + ' ' + c.error;
+  return '';
+}
+var NEED_SECURE = { camera: 1, torch: 1, code: 1, motion: 1, compass: 1, battery: 1 };
 function inputResult(k) {
+  var v = passed[k] || inputNow(k);
+  if (v === true) passed[k] = true;
+  return v !== true && insecure() && NEED_SECURE[k] ? 'blocked' : v;
+}
+function inputNow(k) {
   var seen = (S && S.seen) || {}, caps = (S && S.phone && S.phone.caps) || {};
+  if (k === 'code') return seen.camera && seen.camera.codes ? true : caps.barcode === false ? 'na' : null;
   if (k === 'touch') return GESTURES.every(function (x) { return touched[x]; }) || null;
   if (k === 'motion') return seen.imu ? (Object.keys(tilt).length >= 2 || null) : (caps.motion === false ? false : null);
   if (k === 'compass') return seen.heading ? true : caps.compass === false ? 'na' : null;
@@ -308,8 +368,14 @@ function partial(k) {  // a test begun but not finished: what is still missing
 }
 function results() {
   var r = {};
-  ['face', 'gaze', 'color', 'say', 'vibrate', 'torch'].forEach(function (k) { r[k] = k in answers ? answers[k] : null; });
-  ['touch', 'motion', 'compass', 'battery'].forEach(function (k) { r[k] = inputResult(k); });
+  var cam = (S && S.seen && S.seen.camera) || {};
+  ['face', 'gaze', 'color', 'say', 'vibrate', 'torch', 'camera'].forEach(function (k) {
+    r[k] = k in answers ? answers[k] : null;
+    if (r[k] === null && NEED_SECURE[k] && insecure()) r[k] = 'blocked';
+  });
+  if (r.torch === null && cam.torch === false && cam.ok !== false) r.torch = 'na';
+  if (r.camera === null && cam.ok === false) r.camera = false;
+  ['touch', 'motion', 'compass', 'battery', 'code'].forEach(function (k) { r[k] = inputResult(k); });
   return r;
 }
 
@@ -318,9 +384,11 @@ function summaryText() {
   var r = results(), ph = (S && S.phone) || {}, rep = report();
   var lines = ['Phone: ' + (ph.model || '?') + ' (' + (S ? S.robot : '?') + ', ' + (S ? S.contract : '') + ')', 'Date: ' + new Date().toISOString().slice(0, 10)];
   if (rep) lines.push('Check: ' + (coreMissing(rep).length ? 'missing ' + coreMissing(rep).join(', ') : 'core complete'));
+  if (insecure()) lines.push('Page: not secure (http over Wi-Fi): camera, motion, compass, battery blocked');
   Object.keys(r).forEach(function (k) {
-    var more = r[k] === 'na' ? ' (none)' : r[k] === null ? ' (' + (partial(k) ? 'missing ' + GESTURES.filter(function (x) { return !touched[x]; }).join(', ') : 'not tested') + ')' : '';
-    lines.push((r[k] === true ? '[x] ' : r[k] === false ? '[ ] ' : '[-] ') + k + more);
+    var v = r[k], more = v === 'na' ? ' (none)' : v === 'blocked' ? ' (blocked: page not secure)' :
+      v === null ? ' (' + (partial(k) ? 'missing ' + GESTURES.filter(function (x) { return !touched[x]; }).join(', ') : 'not tested') + ')' : '';
+    lines.push((v === true ? '[x] ' : v === false ? '[ ] ' : '[-] ') + k + more);
   });
   return lines.join('\n');
 }
@@ -331,18 +399,18 @@ function renderSummary() {
   tb.appendChild(el('tr', {}, [el('td', {}, [el('span', { class: 'mark ' + (rep ? (coreMissing(rep).length ? 'no' : 'yes') : ''), text: rep ? (coreMissing(rep).length ? '✗' : '✓') : '–' })]),
     el('td', { text: t('s3') }), el('td', { class: 'hint', text: rep ? (coreMissing(rep).length ? t('core_missing') + ' ' + coreMissing(rep).join(', ') : t('core_ok')) : t('skipped') })]));
   Object.keys(r).forEach(function (k) {
-    var v = r[k];
-    tb.appendChild(el('tr', {}, [el('td', {}, [el('span', { class: 'mark ' + (v === true ? 'yes' : v === false ? 'no' : ''), text: v === true ? '✓' : v === false ? '✗' : '–' })]),
-      el('td', { text: t(k) }), el('td', { class: 'hint', text: v === 'na' ? t('not_here') : v === null ? (partial(k) || t('untested')) : '' })]));
+    var m = el('span'); setMark(m, r[k]);
+    tb.appendChild(el('tr', {}, [el('td', {}, [m]), el('td', { text: t(k) }), el('td', { class: 'hint', text: noteOf(k, r[k]) })]));
   });
 }
 
 // ---- the page ----------------------------------------------------------------------------------------
 var qrFor = null;
-function drawQr(text) {
-  if (qrFor === text || typeof qrcode !== 'function') return; qrFor = text;
+function drawQr(text, c, s) {
+  if (!c) { if (qrFor === text) return; qrFor = text; c = $('qr'); s = 5; }
+  if (typeof qrcode !== 'function') return;
   var q = qrcode(0, 'M'); q.addData(text); q.make();
-  var n = q.getModuleCount(), s = 5, c = $('qr'); c.width = c.height = n * s;
+  var n = q.getModuleCount(); c.width = c.height = n * s;
   var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, n * s, n * s); g.fillStyle = '#000';
   for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) if (q.isDark(y, x)) g.fillRect(x * s, y * s, s, s);
 }

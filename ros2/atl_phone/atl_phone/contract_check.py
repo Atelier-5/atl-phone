@@ -128,6 +128,16 @@ class Check:
         self.ok("setup page: the state shows the phone and what it sensed", st.get("connected") is True
                 and st["phone"].get("model") == "MOCK-PHONE" and st["seen"]["touch"][-1]["dir"] == "up"
                 and st["seen"]["battery"]["level"] == 0.42 and st["seen"]["imu"]["n"] >= 1)
+        api("/api/act", {"camera": True})
+        try:
+            m = phone.expect("camera")
+        except TimeoutError:
+            m = None
+        phone.send(t="camera", on=True, ok=True, size=[1280, 720], code="atl-phone camera test")
+        time.sleep(0.2)
+        cam = json.load(api("/api/state"))["seen"].get("camera", {})
+        self.ok("setup page: the camera test reaches the phone, and its report comes back", m == {"t": "camera", "on": True}
+                and cam.get("size") == [1280, 720] and cam.get("codes") == ["atl-phone camera test"], (m, cam))
         api("/report", {"userAgent": "(Linux; Android 8.0.0; MOCK-PHONE)", "checks": {"camera": {"ok": False, "need": "core"}}})
         st = json.load(api("/api/state"))
         self.ok("setup page: a phone check report is kept", st["reports"][-1]["model"] == "MOCK-PHONE"

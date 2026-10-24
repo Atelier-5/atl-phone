@@ -102,7 +102,8 @@ class Bridge(Node):
             return
         t = m["t"]
         if t == "hello":
-            self.phone.update(model=model_of(m["ua"]), ua=m["ua"], caps=m["caps"], screen=m["screen"])
+            self.phone.update(model=m["model"] or model_of(m["ua"]), ua=m["ua"], secure=m["secure"],
+                              caps=m["caps"], screen=m["screen"])
             self.get_logger().info(f"phone says hello: {self.phone['model']}")
             self.status()
         elif t == "imu":
@@ -136,6 +137,13 @@ class Bridge(Node):
                                      else BatteryState.POWER_SUPPLY_STATUS_DISCHARGING)
             self.pub["battery"].publish(b)
             self.seen["battery"] = {"level": m["level"], "charging": m["charging"], "at": time.time()}
+        elif t == "camera":  # the setup page's camera test: not on ROS yet (codes come with the card scanner)
+            cam = {**self.seen.get("camera", {}), **{k: v for k, v in m.items() if k != "t"}, "at": time.time()}
+            if m["ok"]:
+                cam.pop("error", None)
+            if "code" in m:
+                cam["codes"] = (cam.get("codes", []) + [m["code"]])[-5:]
+            self.seen["camera"] = cam
 
     # the setup page (wsserver api): what the bridge sees, and the tests it asks for
 
@@ -149,8 +157,9 @@ class Bridge(Node):
 
     def act(self, body: dict):
         """A test from the setup page. Outputs go through ROS, on the contract's own topics, so the whole chain is tested."""
-        if "open" in body:
-            if not self.server.send(json.dumps(p.open_page(body["open"]))):
+        if "open" in body or "camera" in body:  # straight to the phone: no topic for these
+            m = p.open_page(body["open"]) if "open" in body else p.camera(body["camera"])
+            if not self.server.send(json.dumps(m)):
                 raise ValueError("no phone")
             return
         topic, v = body.get("topic"), body.get("value")
@@ -190,9 +199,11 @@ class Bridge(Node):
 
 
 def model_of(ua: str) -> str:
-    """'... (Linux; Android 8.0.0; SM-G950F) ...' -> 'SM-G950F'."""
-    m = re.search(r"Android [\d.]+; ([^;)]+)", ua)
-    return m.group(1).strip()[:40] if m else "unknown"
+    """'... (Linux; Android 8.0.0; SM-G950F) ...' -> 'SM-G950F'. Chrome 110+ hides it as 'K' (then: client hints)."""
+    m = re.search(r"Android ([\d.]+); ([^;)]+)", ua)
+    if not m:
+        return "unknown"
+    return f"Android {m.group(1)} phone" if m.group(2).strip() == "K" else m.group(2).strip()[:40]
 
 
 def main():
