@@ -60,6 +60,7 @@ SAY = {
 class Sensors:
     faces: List[dict] = field(default_factory=list)      # the latest faces message's faces, largest first
     faces_age: float = math.inf                          # s since that message
+    faces_keep: float = 1.0                              # s a faces message holds: longer on a phone that searches slowly
     acc: Tuple[float, float, float] = (0.0, 0.0, G)      # the phone's IMU, m/s2 with gravity
     gyro: Tuple[float, float, float] = (0.0, 0.0, 0.0)   # rad/s
     ground: Optional[List[float]] = None                 # the Thymio's ground sensors [left, right]; None: no Thymio
@@ -132,7 +133,7 @@ class Guardian:
     def step(self, s: Sensors, e: Events, dt: float) -> Output:
         self.t += dt
         out = Output()
-        faces = s.faces if s.faces_age < 1.0 else []
+        faces = s.faces if s.faces_age < s.faces_keep else []
         face = faces[0] if faces else None
         if face:
             self.last_face = self.t

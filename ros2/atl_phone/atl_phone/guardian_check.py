@@ -44,6 +44,7 @@ class Story:
         self.now_faces = []         # what the mock phone's front camera "sees"
         self.acc = (0.0, 0.0, 9.81)
         self.desk = list(DESK)
+        self.face_every = 0.05      # s between two faces messages: a slow phone searches less often
         self.failed = 0
 
     def ok(self, name: str, good: bool, detail=""):
@@ -57,11 +58,13 @@ class Story:
     def run_for(self, seconds: float, until=None):
         """The world goes on: the camera sees now_faces, the IMU feels acc, the Thymio stands on desk, 20 times a second.
         Returns the first message to the phone that until() accepts (from now on), or None."""
-        start, end, next_at = time.monotonic(), time.monotonic() + seconds, 0.0
+        start, end, next_at, face_at = time.monotonic(), time.monotonic() + seconds, 0.0, 0.0
         while time.monotonic() < end:
             if time.monotonic() >= next_at:
                 next_at = time.monotonic() + 0.05
-                self.phone.faces(*self.now_faces)
+                if time.monotonic() >= face_at:
+                    face_at = time.monotonic() + self.face_every
+                    self.phone.faces(*self.now_faces, period=round(self.face_every * 1000))
                 self.phone.imu(self.acc)
                 self.ground.publish(Float32MultiArray(data=self.desk))
             rclpy.spin_once(self.n, timeout_sec=0.01)
@@ -154,6 +157,17 @@ class Story:
         m = self.to_phone("face", expression="love")
         self.ok("a long touch: love", bool(m))
         self.run_for(0.5)  # guardian/state comes at 5 Hz
+
+        self.run_for(gd.PETTED_FOR)
+        self.now_faces, self.face_every = [{"x": 0.0, "size": 0.2}], 1.5  # a slow phone: a face every 1.5 s
+        self.run_for(1.0)
+        t0 = len(self.states)
+        self.run_for(4.0)
+        slow = self.states[t0:]
+        self.ok("a slow phone (a face every 1.5 s): the guardian keeps the face between searches, no flicker",
+                bool(slow) and set(slow) <= {"alert", "friend", "intruder"}, sorted(set(slow)))
+        self.now_faces, self.face_every = [], 0.05
+        self.run_for(0.5)
 
         seen = set(self.states)
         want = set(gd.FACES)

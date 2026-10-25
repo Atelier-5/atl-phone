@@ -4,3 +4,7 @@ __pycache__/
 certs/
 .idea/
 docs/architecture/receipts/*/
+webots/worlds/
+omi/
+# private photos of the prototype
+ru.zip

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Atelier-5
 import json
+import re
+from pathlib import Path
 
 import pytest
 
@@ -127,3 +129,164 @@ def test_open_page():
     assert p.open_page("check.html") == {"t": "open", "page": "check.html"}
     with pytest.raises(ValueError):
         p.open_page("https://evil.example/")
+    assert p.open_page("face.html", "portrait") == {"t": "open", "page": "face.html", "layout": "portrait"}
+    with pytest.raises(ValueError):
+        p.open_page("face.html", "sideways")
+
+
+def test_panel():
+    assert p.panel('{"mode": "mouth"}') == {"t": "panel", "mode": "mouth"}
+    m = p.panel(json.dumps({"mode": "pad", "buttons": [{"id": "fwd", "label": "Forward, quickly!", "color": [2, 0.5, -1]}] * 20}))
+    assert len(m["buttons"]) == c.MAX_BUTTONS and m["buttons"][0] == {"id": "fwd", "label": "Forward, qui", "rgb": [255, 128, 0]}
+    assert p.panel('{"mode": "pad", "buttons": [{"id": "x"}]}')["buttons"] == [{"id": "x", "label": "x", "rgb": [64, 217, 255]}]
+    for bad in ['{"mode": "video"}', "[]", "{broken", '{"mode": "pad", "buttons": [{"id": "a b"}]}',
+                '{"mode": "pad", "buttons": [{"id": "a", "color": [1, 0]}]}', '{"mode": "pad", "buttons": "a"}']:
+        with pytest.raises(ValueError):
+            p.panel(bad)
+
+
+def test_pad_from_the_phone():
+    assert parse(t="pad", id="b") == {"t": "pad", "id": "b"}
+    for bad in ["", "a" * 21, "<b>", None, 3]:
+        with pytest.raises(ValueError):
+            parse(t="pad", id=bad)
+
+
+def test_the_face_has_the_default_panel():
+    from pathlib import Path
+    page = (Path(__file__).resolve().parent.parent / "web" / "face.js").read_text()
+    for b in p.panel(json.dumps(c.DEFAULT_PANEL))["buttons"]:
+        assert f"{{ id: '{b['id']}', label: '{b['label']}', rgb: {b['rgb']} }}" in page, b
+
+
+def test_see():
+    m = p.see('{"camera": "back", "find": ["markers", "blobs", "markers"], "blob": {"hue": 400, "tol": 0}, "marker_cm": 1000}')
+    assert m == {"t": "see", "camera": "back", "find": ["markers", "blobs"], "blob": {"hue": 40.0, "tol": 1.0}, "marker_cm": 100.0}
+    assert p.see('{"find": []}')["find"] == [] and p.see('{"find": ["faces"], "fov_deg": 5}')["fov_deg"] == 20.0
+    for bad in ['{"find": ["x-ray"]}', '{"camera": "side"}', '{"find": "faces"}', "[]", "{broken"]:
+        with pytest.raises(ValueError):
+            p.see(bad)
+
+
+def test_vision_from_the_phone():
+    m = parse(t="markers", camera="back", markers=[{"id": 7, "x": 3, "y": 0, "size": 0.2, "distance_m": 0.3, "yaw_deg": 400, "img": "..."}] * 20)
+    assert len(m["markers"]) == c.MAX_ITEMS and m["markers"][0] == {"x": 1.0, "y": 0.0, "id": 7, "size": 0.2, "distance_m": 0.3, "yaw_deg": 180.0}
+    assert parse(t="blobs", blobs=[{"x": 0.5, "y": -0.5, "size": 0.1, "rgb": [1, 2, 3]}]) == {
+        "t": "blobs", "camera": "front", "blobs": [{"x": 0.5, "y": -0.5, "size": 0.1}]}
+    o = parse(t="objects", camera="front", objects=[{"label": "cup", "score": 0.9, "x": 0, "y": 0, "w": 0.2, "h": 0.3, "distance_m": None}])
+    assert o["objects"][0] == {"x": 0.0, "y": 0.0, "label": "cup", "score": 0.9, "w": 0.2, "h": 0.3, "distance_m": None}
+    assert parse(t="hands", hands=[{"x": 0, "y": 0, "gesture": "thumbs_up"}])["hands"][0]["gesture"] == "thumbs_up"
+    for bad in [dict(t="objects", objects=[{"label": "name: Alice", "score": 1, "x": 0, "y": 0, "w": 0, "h": 0}]),
+                dict(t="hands", hands=[{"x": 0, "y": 0, "gesture": "wave"}]), dict(t="markers", markers="7"),
+                dict(t="blobs", camera="side", blobs=[])]:
+        with pytest.raises(ValueError):
+            p.parse(json.dumps(bad))
+
+
+def test_the_see_report_and_the_panel_mode_from_the_phone():
+    m = parse(t="see", on=True, ok=True, camera="back", find=["markers", "x"], ms={"markers": 12.4, "secret": 1}, backend="gpu")
+    assert m == {"t": "see", "on": True, "ok": True, "camera": "back", "find": ["markers"], "ms": {"markers": 12}, "backend": "gpu"}
+    assert parse(t="panel", mode="sensors") == {"t": "panel", "mode": "sensors"}
+    assert parse(t="faces", faces=[], period=250.7)["period"] == 250
+    with pytest.raises(ValueError):
+        parse(t="panel", mode="disco")
+
+
+def test_panel_menu():
+    m = p.panel('{"mode": "pad", "menu": ["pad", "mouth", "pad"]}')
+    assert m["menu"] == ["pad", "mouth"]
+    for bad in ['{"mode": "pad", "menu": []}', '{"mode": "pad", "menu": ["tv"]}']:
+        with pytest.raises(ValueError):
+            p.panel(bad)
+    assert p.panel(json.dumps({"mode": "pad", "buttons": c.THYMIO_PAD}))["buttons"][0]["label"] == "▲"
+
+
+def test_panel_lang_and_the_tour():
+    assert p.panel('{"mode": "mouth", "lang": "de"}')["lang"] == "de"
+    assert p.panel('{"mode": "mouth", "lang": "auto"}')["lang"] == "auto"
+    assert "lang" not in p.panel('{"mode": "mouth"}')
+    with pytest.raises(ValueError):
+        p.panel('{"mode": "mouth", "lang": "xx"}')
+    assert p.tour("de") == {"t": "tour", "lang": "de"}
+    with pytest.raises(ValueError):
+        p.tour("xx")
+
+
+def test_the_tour_says_every_step_in_every_language():
+    js = (Path(__file__).resolve().parents[1] / "web" / "omi.js").read_text()
+    steps = re.findall(r"\{ k: '(\w+)'", js[js.index("var TOUR ="):])
+    for lang in ("en", "fr", "de"):
+        block = js[js.index(f"  {lang}: {{ hello:", js.index("var TOUR_TEXT")):]
+        block = block[:block.index("bye:") + 200]
+        assert all(f"{k}:" in block for k in steps + ["card"]), lang
+
+
+def test_the_face_knows_every_panel_mode_and_vision_every_gesture():
+    from pathlib import Path
+    web = Path(__file__).resolve().parent.parent / "web"
+    assert f"var MODES = {list(c.PANEL_MODES)};".replace('"', "'") in (web / "face.js").read_text()
+    see = (web / "see.js").read_text()
+    for g in c.GESTURES:
+        assert f"'{g}'" in see, g
+
+
+def test_tiles_and_a_programs_own_entries():
+    m = p.panel(json.dumps({"mode": "mouth", "style": "tiles", "menu": c.OMI_MENU + ["time", {"id": "tea", "label": {"de": "Tee", "xx": 1}, "icon": "🍵🍵🍵🍵🍵"}]}))
+    assert m["style"] == "tiles" and m["menu"][:len(c.OMI_MENU)] == c.OMI_MENU
+    assert m["menu"][-1] == {"id": "tea", "label": {"de": "Tee"}, "icon": "🍵🍵🍵🍵"} and len(m["menu"]) == len(c.OMI_MENU) + 1
+    assert len(p.panel(json.dumps({"mode": "mouth", "menu": [{"id": f"x{i}"} for i in range(20)]}))["menu"]) == c.MAX_MENU
+    for bad in [{"mode": "mouth", "style": "big"}, {"mode": "mouth", "menu": [{"id": "a b"}]}, {"mode": "mouth", "menu": [3]},
+                {"mode": "mouth", "menu": [{"id": "a", "label": {"xx": "?"}}]}]:
+        with pytest.raises(ValueError):
+            p.panel(json.dumps(bad))
+
+
+def test_omi_messages_from_the_phone():
+    assert parse(t="menu", id="time") == {"t": "menu", "id": "time"}
+    assert parse(t="answer", note="r1", id="done") == {"t": "answer", "note": "r1", "id": "done"}
+    assert parse(t="read", ok=True, lines=3.7, chars=-2, ms=900, text="never kept") == {"t": "read", "ok": True, "lines": 3, "chars": 0, "ms": 900}
+    assert parse(t="what", ok=True, label="cup", score=0.83, ms=1200)["label"] == "cup"
+    assert parse(t="what", ok=False, label="cup")["label"] is None
+    assert parse(t="what", ok=True, label=None)["label"] is None   # it looked, and knew nothing there
+    assert parse(t="show", on=1) == {"t": "show", "on": True}
+    m = parse(t="see", on=True, ok=True, find=["faces"], follow=True, target={"kind": "hands", "x": 3, "y": -0.2})
+    assert m["follow"] is True and m["target"] == {"kind": "hands", "x": 1, "y": -0.2}
+    assert "target" not in parse(t="see", target={"kind": "blobs", "x": 0, "y": 0})
+    for bad in [dict(t="menu", id="no spaces"), dict(t="what", ok=True, label="unicorn")]:
+        with pytest.raises(ValueError):
+            parse(**bad)
+
+
+def test_show_frames_are_small_jpegs_only():
+    import base64
+    jpeg = b"\xff\xd8" + b"\0" * 100 + b"\xff\xd9"
+    assert parse(t="frame", jpeg=base64.b64encode(jpeg).decode())["jpeg"] == jpeg
+    for bad in [base64.b64encode(b"\x89PNG....").decode(), "not base64!", base64.b64encode(b"\xff\xd8" + b"\0" * p.MAX_FRAME).decode(), 3]:
+        with pytest.raises(ValueError):
+            parse(t="frame", jpeg=bad)
+
+
+def test_omi_messages_to_the_phone():
+    n = p.note(json.dumps({"id": "r1", "text": " x " * 200, "buttons": [{"id": "done", "label": {"de": "Erledigt"}}, {"id": "b"}, {"id": "c"}, {"id": "d"}]}))
+    assert n["id"] == "r1" and len(n["text"]) <= c.MAX_SAY and len(n["buttons"]) == c.MAX_NOTE_BUTTONS and n["say"] is True
+    assert n["buttons"][0] == {"id": "done", "label": {"de": "Erledigt"}} and n["buttons"][1]["label"] == "b"
+    assert p.note('{"text": ""}') == {"t": "note", "id": "note", "text": "", "say": True, "buttons": []}
+    assert p.ask("read", "", "de") == {"t": "read", "lang": "de"}
+    assert p.ask("what", '{"lang": "fr"}') == {"t": "what", "lang": "fr"}
+    assert p.show(False, True) == {"t": "show", "allowed": False, "on": False}
+    assert p.see('{"find": ["faces"], "follow": true}')["follow"] is True and "follow" not in p.see('{"find": []}')
+    with pytest.raises(ValueError):
+        p.ask("what", '{"lang": "xx"}')
+
+
+def test_the_phone_knows_every_tile_and_names_every_object():
+    import re
+    from pathlib import Path
+    web = Path(__file__).resolve().parent.parent / "web"
+    assert f"var TILES = {list(c.TILES)};".replace('"', "'") in (web / "face.js").read_text()
+    omi = (web / "omi.js").read_text()
+    table = omi[omi.index("var WHAT = {"):omi.index("var omi = {")]
+    names = re.findall(r"(?:^|[{,]\s*)'?([a-z][a-z ]*?)'?: \['", table, re.M)
+    assert sorted(names) == sorted(c.OBJECTS)
+    for row in re.findall(r": \[('[^\]]*')\]", table):  # English, French, German, each said with its article
+        assert len(re.findall(r"'([^']+)'", row)) == 3, row

@@ -1,0 +1,23 @@
+{
+  "_": "Phones as Webots twins: AtlPhone.proto's fields for each (scripts/phone_twin_world.py writes them). Sizes in mm, the phone frame of atl-phone's contract: x right, y up the screen, z out of it, from the phone's centre. Cameras: where they sit and their field of view across a portrait picture (estimated from the maker's data, not measured).",
+  "A50": {
+    "model": "Galaxy A50 (SM-A505)",
+    "size_mm": [74.7, 158.5, 7.7],
+    "mass_g": 166,
+    "screen_px": [1080, 2340],
+    "display_px": [270, 585],
+    "screen_mm": [68, 147],
+    "front": {"at_mm": [0, 74], "fov_deg": 60, "px": [240, 320]},
+    "back": {"at_mm": [-22, 62], "fov_deg": 60, "px": [240, 320]}
+  },
+  "generic": {
+    "model": "a phone",
+    "size_mm": [72, 150, 8],
+    "mass_g": 170,
+    "screen_px": [1080, 2280],
+    "display_px": [270, 570],
+    "screen_mm": [66, 140],
+    "front": {"at_mm": [0, 70], "fov_deg": 60, "px": [240, 320]},
+    "back": {"at_mm": [-20, 60], "fov_deg": 60, "px": [240, 320]}
+  }
+}

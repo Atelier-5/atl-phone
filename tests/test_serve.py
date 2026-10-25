@@ -53,9 +53,11 @@ def test_serves_the_check_page(server):
 def test_keeps_a_report(server):
     url, reports = server
     report = {"userAgent": UA, "checks": {"camera": {"ok": True, "need": "core"}, "tts": {"ok": False, "need": "core"}}}
-    assert post(url + "/report", json.dumps(report).encode()).status == 204
-    (saved,) = reports.glob("*-SM-G950F.json")
+    r = post(url + "/report", json.dumps(report).encode())
+    (saved,) = (reports / "SM-G950F").glob("*-check.json")  # the registry: one folder per model
+    assert r.status == 200 and json.load(r) == {"saved": str(saved.relative_to(reports.parent))}
     assert json.loads(saved.read_text()) == report
+    assert "SM-G950F" in json.loads((reports / "phones.json").read_text())["phones"]
     assert serve.summary(report) == "SM-G950F: 1 yes, 1 no; core missing: tts"
 
 

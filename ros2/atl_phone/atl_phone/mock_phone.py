@@ -65,9 +65,11 @@ class MockPhone:
     def hello(self):
         self.send(t="hello", id=ID, ua=UA, caps={"motion": True, "tts": True, "vibrate": True}, screen=[1280, 720])
 
-    def faces(self, *faces: dict):
-        """What look sends: where faces are, e.g. faces({"x": 0.5, "y": 0, "size": 0.2, "familiar": 1})."""
-        self.send(t="faces", faces=[dict({"y": 0.0, "size": 0.2, "familiar": None}, **f) for f in faces])
+    def faces(self, *faces: dict, period: int = 0):
+        """What look sends: where faces are, e.g. faces({"x": 0.5, "y": 0, "size": 0.2, "familiar": 1});
+        period: ms between two searches, as a phone says it."""
+        self.send(t="faces", faces=[dict({"y": 0.0, "size": 0.2, "familiar": None}, **f) for f in faces],
+                  **({"period": period} if period else {}))
 
     def imu(self, acc=(0.0, 0.0, 9.81), gyro=(0.0, 0.0, 0.0)):
         self.send(t="imu", acc=list(acc), gyro=list(gyro))

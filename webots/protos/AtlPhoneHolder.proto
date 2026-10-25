@@ -1,0 +1,36 @@
+#VRML_SIM R2025a utf8
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# A holder that stands a phone (AtlPhone) on a robot: it goes into the robot's body slot (a Thymio II's bodySlot), with
+# a DEF. The phone follows it (AtlPhone follow "<ROBOT DEF>.<holder DEF>"): its controller reads these fields and puts
+# the phone's bottom edge on the block, the screen to the robot's front (+x), leaning back by `tilt`; upright
+# (portrait) or lying across (landscape). A placeholder block for now, sized for a Thymio's top; a brick holder can
+# replace it later, with the same fields.
+# template language: javascript
+
+PROTO AtlPhoneHolder [
+  field SFVec3f    translation   0.02 0 0.053        # on a Thymio II: its top, a little ahead of the wheels
+  field SFRotation rotation      0 0 1 0
+  field SFString   name          "phone holder"
+  field SFBool     upright       TRUE                 # FALSE: lying across, in landscape
+  field SFFloat    tilt          0.2                  # rad the screen leans back
+  field SFFloat    width         0.085                # across the robot
+]
+{
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    children [
+      Pose {
+        translation 0 0 0.006
+        children [
+          Shape {
+            appearance PBRAppearance { baseColor 0.85 0.2 0.15 roughness 0.6 metalness 0 }
+            geometry Box { size 0.03 %<= fields.width.value >% 0.012 }
+          }
+        ]
+      }
+    ]
+  }
+}

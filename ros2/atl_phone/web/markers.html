@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Atelier-5 -->
+<!-- A sheet of ArUco 4x4 markers (ids 0..9) to print, for the phone's vision (see: markers). markers.html?cm=5&lang=fr:
+     the black square is that many centimetres, so the phone can tell how far a marker is. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markers</title>
+<style>
+  body { margin: 1cm; background: #fff; color: #111; font: 12pt/1.4 system-ui, sans-serif; }
+  h1 { font-size: 16pt; margin: 0 0 4pt; }
+  p { margin: 0 0 12pt; color: #444; }
+  .sheet { display: flex; flex-wrap: wrap; gap: 0.6cm; }
+  figure { margin: 0; text-align: center; break-inside: avoid; }
+  figure svg { display: block; }
+  figcaption { font: 10pt ui-monospace, monospace; margin-top: 2pt; }
+  @media print { p.screen { display: none; } }
+</style>
+</head>
+<body>
+<h1 id="title"></h1>
+<p id="note"></p>
+<p class="screen"><button onclick="print()" id="print"></button></p>
+<div class="sheet" id="sheet"></div>
+<script src="vendor/aruco/cv.js"></script>
+<script src="vendor/aruco/aruco.js"></script>
+<script src="vendor/aruco/aruco_4x4_1000.js"></script>
+<script>
+'use strict';
+var Q = {};
+location.search.slice(1).split('&').forEach(function (kv) { if (kv) { var p = kv.split('='); Q[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || ''); } });
+var cm = Math.max(1, Math.min(18, parseFloat(Q.cm) || 5)), lang = ['en', 'fr', 'de'].indexOf(Q.lang) >= 0 ? Q.lang : 'en';
+var T = {
+  en: { title: 'Markers for the robot’s camera', print: 'Print', note: 'Print at 100 % (not “fit to page”). Each black square must measure ' + cm + ' cm: the phone works out the distance from it. Keep the white border.' },
+  fr: { title: 'Marqueurs pour la caméra du robot', print: 'Imprimer', note: 'Imprimez à 100 % (pas « ajuster à la page »). Chaque carré noir doit mesurer ' + cm + ' cm : le téléphone en déduit la distance. Gardez le bord blanc.' },
+  de: { title: 'Marker für die Kamera des Roboters', print: 'Drucken', note: 'In 100 % drucken (nicht „an Seite anpassen“). Jedes schwarze Quadrat muss ' + cm + ' cm messen: daraus berechnet das Handy die Entfernung. Den weißen Rand lassen.' }
+}[lang];
+document.documentElement.lang = lang;
+document.getElementById('title').textContent = T.title;
+document.getElementById('note').textContent = T.note;
+document.getElementById('print').textContent = T.print;
+var dict = new AR.Dictionary('ARUCO_4X4_1000'), sheet = document.getElementById('sheet');
+for (var id = 0; id < 10; id++) {
+  var f = document.createElement('figure');
+  f.innerHTML = dict.generateSVG(id).replace('<svg ', '<svg width="' + (cm * 8 / 6) + 'cm" height="' + (cm * 8 / 6) + 'cm" ') +
+    '<figcaption>' + id + ' · ' + cm + ' cm</figcaption>';
+  sheet.appendChild(f);
+}
+</script>
+</body>
+</html>

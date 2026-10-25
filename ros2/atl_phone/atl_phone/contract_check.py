@@ -34,11 +34,18 @@ class Check:
         self.got = {}
         latched = QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL)
         for name, kind, qos in [("status", String, latched), ("imu", Imu, 10), ("heading", Float32, 10),
-                                ("touch", String, 10), ("battery", BatteryState, latched), ("faces", String, 10), ("codes", String, 10)]:
+                                ("touch", String, 10), ("battery", BatteryState, latched), ("faces", String, 10), ("codes", String, 10), ("pad", String, 10),
+                                ("panel_mode", String, latched), ("markers", String, 10), ("blobs", String, 10),
+                                ("objects", String, 10), ("hands", String, 10), ("menu", String, 10), ("note_answer", String, 10),
+                                ("read_result", String, 10), ("what_result", String, 10)]:
             self.n.create_subscription(kind, self.t[name], lambda m, k=name: self.got.setdefault(k, []).append(m), qos)
         self.pub = {name: self.n.create_publisher(kind, self.t[name], 10) for name, kind in
                     [("expression", String), ("gaze", Point), ("color", ColorRGBA), ("say", String),
-                     ("torch", Bool), ("vibrate", Int32), ("look", Bool), ("familiar", Bool), ("forget", Empty)]}
+                     ("torch", Bool), ("vibrate", Int32), ("look", Bool), ("familiar", Bool), ("forget", Empty), ("panel", String), ("see", String),
+                     ("note", String), ("read", String), ("what", String)]}
+        self.n.create_subscription(String, f"/{robot}/omi/state", lambda m: self.got.setdefault("omi/state", []).append(m), 10)
+        for k in ("run", "drive"):  # the Desk Guardian's own topics, which the setup page starts it with
+            self.n.create_subscription(Bool, f"/{robot}/guardian/{k}", lambda m, k=k: self.got.setdefault("guardian/" + k, []).append(m), 10)
         self.failed = 0
 
     def ok(self, name: str, good: bool, detail=""):
@@ -60,7 +67,7 @@ class Check:
     def run(self, url: str) -> int:
         phone = MockPhone(url)
         phone.hello()
-        s = self.status(True)
+        s = self.wait("status", lambda m: json.loads(m.data).get("model") == "MOCK-PHONE")  # (after hello: a status may come before it)
         detail = json.loads(s.data) if s else {}
         self.ok("status: connected, with the phone's model and contract", bool(s) and detail.get("model") == "MOCK-PHONE"
                 and detail.get("contract") == c.CONTRACT, json.dumps(detail)[:120])
@@ -127,6 +134,45 @@ class Check:
         m = to_phone("look", Bool(data=False), "look")
         self.ok("look off reaches the phone", m == {"t": "look", "on": False, "familiar": False}, m)
 
+        self.pub["panel"].publish(String(data='{"mode": "pad", "buttons": [{"id": "../x"}]}'))
+        m = to_phone("panel", String(data=json.dumps({"mode": "pad", "buttons": [{"id": "go", "label": "Go!", "color": [0, 1, 2]}],
+                                                       "script": "alert(1)"})), "panel")
+        self.ok("panel reaches the phone: checked, colours 0..255, nothing else (and a bad button id does not)",
+                m == {"t": "panel", "mode": "pad", "buttons": [{"id": "go", "label": "Go!", "rgb": [0, 255, 255]}]}, m)
+        phone.send(t="pad", id="go")
+        phone.send(t="pad", id="<script>")
+        f = self.wait("pad")
+        self.wait("pad", lambda m: False, timeout=0.3)
+        self.ok("a press on the panel's pad reaches ROS (a bad id does not)",
+                [json.loads(x.data) for x in self.got.get("pad", [])] == [{"id": "go"}], [x.data for x in self.got.get("pad", [])])
+
+        pm = self.wait("panel_mode", lambda m: m.data == "pad")  # (a latched one from a run before may come first)
+        self.ok("panel/mode (latched) says what the panel shows: as the program set it", bool(pm) and pm.data == "pad", pm and pm.data)
+        phone.send(t="panel", mode="sensors")
+        pm = self.wait("panel_mode", lambda m: m.data == "sensors")
+        self.ok("panel/mode: the person picked another mode in the phone's menu", bool(pm))
+
+        self.pub["see"].publish(String(data='{"find": ["x-ray"]}'))
+        m = to_phone("see", String(data=json.dumps({"camera": "back", "find": ["markers", "blobs"], "blob": {"hue": 120}})), "see")
+        self.ok("see reaches the phone, checked (and an unknown finder does not)",
+                m == {"t": "see", "camera": "back", "find": ["markers", "blobs"], "blob": {"hue": 120.0, "tol": 20.0}, "marker_cm": 5.0}, m)
+        phone.send(t="markers", camera="back", markers=[{"id": 7, "x": 0.1, "y": 0, "size": 0.3, "distance_m": 0.42, "yaw_deg": 10, "picture": "x"}])
+        phone.send(t="objects", camera="back", objects=[{"label": "a child's name", "score": 1, "x": 0, "y": 0, "w": 1, "h": 1}])
+        phone.send(t="objects", camera="back", objects=[{"label": "cup", "score": 0.8, "x": 0, "y": 0, "w": 0.1, "h": 0.2, "distance_m": 0.5}])
+        phone.send(t="hands", camera="back", hands=[{"x": 0, "y": 0, "gesture": "thumbs_up"}])
+        phone.send(t="blobs", camera="back", blobs=[{"x": -0.5, "y": 0.5, "size": 0.1}])
+        mk, ob, hd, bl = self.wait("markers"), self.wait("objects"), self.wait("hands"), self.wait("blobs")
+        self.wait("objects", lambda m: False, timeout=0.3)
+        self.ok("markers, objects, hands and blobs reach ROS: their own fields only (an unknown label does not)",
+                bool(mk and ob and hd and bl) and json.loads(mk.data) == {"camera": "back", "markers": [
+                    {"x": 0.1, "y": 0.0, "id": 7, "size": 0.3, "distance_m": 0.42, "yaw_deg": 10.0}]}
+                and [json.loads(x.data)["objects"][0]["label"] for x in self.got["objects"]] == ["cup"]
+                and json.loads(hd.data)["hands"][0]["gesture"] == "thumbs_up" and json.loads(bl.data)["blobs"][0]["size"] == 0.1,
+                [x and x.data for x in (mk, ob, hd, bl)])
+        phone.send(t="faces", faces=[], period=1500)
+        f = self.wait("faces", lambda m: json.loads(m.data).get("period") == 1500)
+        self.ok("faces say how fast the phone searches (period, ms)", bool(f), f and f.data)
+
         base = url.split("/ws")[0].replace("ws:", "http:")
 
         def api(path, body=None):
@@ -162,9 +208,47 @@ class Check:
                 r["model"] == "SM-A505FN" and r["checks"]["camera"]["ok"] is False
                 and r["id"] == st["phone"].get("id") == MOCK_ID, (r["id"], st["phone"].get("id"), r["model"]))
 
+        api("/api/act", {"open": "face.html", "layout": "portrait"})
+        try:
+            m = phone.expect("open")
+        except TimeoutError:
+            m = None
+        self.ok("setup page: the face opens in portrait", m == {"t": "open", "page": "face.html", "layout": "portrait"}, m)
+
+        api("/api/act", {"guardian": True, "drive": False})
+        run = self.wait("guardian/run")
+        drive = self.wait("guardian/drive")
+        g, end = {}, time.monotonic() + 3.0
+        while time.monotonic() < end and g.get("state") in (None, "off"):
+            self.wait("status", lambda m: False, timeout=0.3)
+            g = json.load(api("/api/state")).get("guardian", {})
+        api("/api/act", {"guardian": False})
+        self.ok("setup page: the Desk Guardian starts (guardian/run, drive off) and its state comes back",
+                bool(run) and run.data is True and bool(drive) and drive.data is False and g.get("state") not in (None, "off")
+                and g.get("drive") is False, g)
+        stopped = self.wait("guardian/run", lambda m: m.data is False)
+        m, end = None, time.monotonic() + 3.0
+        while m != {"t": "face", "expression": "neutral"} and time.monotonic() < end:
+            try:
+                m = phone.expect("face", timeout=end - time.monotonic())
+            except TimeoutError:
+                break
+        self.ok("setup page: stopped, the guardian puts the face back to neutral", bool(stopped) and m == {"t": "face", "expression": "neutral"}, m)
+
         second = MockPhone(url)
         second.hello()
         self.ok("a second phone takes over and the first is closed", phone.closed.wait(3.0))
+        try:
+            m = second.expect("panel")
+        except TimeoutError:
+            m = None
+        self.ok("the phone that comes gets the panel a program set (as the person left it)", bool(m) and m["buttons"][0]["id"] == "go"
+                and m["mode"] == "sensors", m)
+        try:
+            m = second.expect("see")
+        except TimeoutError:
+            m = None
+        self.ok("... and what a program asked its camera to find", bool(m) and m["find"] == ["markers", "blobs"], m)
         second.close()
         self.ok("status: disconnected when the phone is gone", bool(self.status(False)))
         try:
@@ -173,11 +257,130 @@ class Check:
         except urllib.error.HTTPError as e:
             refused = (e.code, json.load(e).get("error"))
         self.ok("setup page: with no phone, an output test is refused", refused == (400, "no phone"), refused)
+        api("/api/act", {"topic": "see", "value": {"camera": "front", "find": []}})  # a test left on: cleared with no phone there
+        third = MockPhone(url)
+        third.hello()
+        try:
+            m = third.expect("see", 1.5)
+        except TimeoutError:
+            m = None
+        kept = (json.load(api("/api/state")).get("see") or {}).get("find")
+        self.ok("setup page: with no phone, see can still be turned off: the phone that comes gets none", m is None and kept == [], (m, kept))
+        third.close()
+        self.omi(url, api)
 
         print(f"{'all passed' if not self.failed else f'{self.failed} failed'}")
         self.n.destroy_node()
         rclpy.shutdown()
         return 1 if self.failed else 0
+
+
+    def omi(self, url, api):
+        """0.5, Omi Assist: tiles and their picks, notes, read and what, showing (only when allowed, never on a topic)."""
+        import base64
+        phone = MockPhone(url)
+        phone.hello()
+        self.status(True)
+
+        def get(t, timeout=3.0):
+            try:
+                return phone.expect(t, timeout)
+            except TimeoutError:
+                return None
+
+        self.pub["panel"].publish(String(data=json.dumps({"mode": "mouth", "style": "tiles", "menu": c.OMI_MENU})))
+        m, end = get("panel"), time.monotonic() + 3.0
+        while m and m.get("style") != "tiles" and time.monotonic() < end:  # first, the panel kept from before, sent on hello
+            m = get("panel")
+        self.ok("0.5: panel tiles reach the phone, with the phone's own tiles", bool(m) and m.get("style") == "tiles"
+                and m.get("menu") == c.OMI_MENU, m)
+        phone.send(t="menu", id="time")
+        k = self.wait("menu")
+        self.ok("0.5: a tile picked reaches ROS (menu)", bool(k) and json.loads(k.data) == {"id": "time"}, k and k.data)
+        self.pub["note"].publish(String(data=json.dumps({"id": "r1", "text": "Tabletten", "buttons": [{"id": "done", "label": "Erledigt"}]})))
+        m = get("note")
+        phone.send(t="answer", note="r1", id="done")
+        a = self.wait("note_answer")
+        self.ok("0.5: a note reaches the phone and its answer comes back (note/answer)", bool(m) and m.get("text") == "Tabletten"
+                and bool(a) and json.loads(a.data) == {"note": "r1", "id": "done"}, (m, a and a.data))
+        self.pub["read"].publish(String(data=""))
+        m = get("read")
+        phone.send(t="read", ok=True, lines=2, chars=40, ms=3100, text="the text stays on the phone")
+        r = self.wait("read_result")
+        self.ok("0.5: read reaches the phone; only how it went comes back (never the text)", bool(m) and m.get("lang") in c.LANGS
+                and bool(r) and json.loads(r.data) == {"ok": True, "lines": 2, "chars": 40, "ms": 3100}, (m, r and r.data))
+        self.pub["what"].publish(String(data='{"lang": "de"}'))
+        m = get("what")
+        phone.send(t="what", ok=True, label="cup", score=0.8, ms=1500)
+        w = self.wait("what_result")
+        self.ok("0.5: what reaches the phone and the label comes back", m == {"t": "what", "lang": "de"}
+                and bool(w) and json.loads(w.data)["label"] == "cup", (m, w and w.data))
+
+        jpeg = b"\xff\xd8" + b"\x11" * 200 + b"\xff\xd9"
+        frame = base64.b64encode(jpeg).decode()
+
+        def shown():
+            try:
+                return api("/api/show.jpg").read()
+            except urllib.error.HTTPError as e:
+                return e.code
+        api("/api/act", {"allow_show": False})
+        get("show", 1.0)
+        phone.send(t="show", on=True)
+        refused = get("show")
+        phone.send(t="frame", jpeg=frame)
+        time.sleep(0.3)
+        self.ok("0.5: show is refused unless allowed: the phone is told, no frame reaches the PC",
+                refused == {"t": "show", "allowed": False, "on": False} and shown() == 404, refused)
+        api("/api/act", {"allow_show": True})
+        allowed = get("show")
+        phone.send(t="show", on=True)
+        phone.send(t="frame", jpeg=frame)
+        time.sleep(0.3)
+        st = json.load(api("/api/state")).get("show", {})
+        got = shown()
+        topics = [n for n, _ in self.n.get_topic_names_and_types() if "show" in n or "frame" in n]
+        self.ok("0.5: allowed, what she shows reaches the setup page only (/api/show.jpg), on no topic",
+                bool(allowed) and allowed.get("allowed") is True and got == jpeg and st.get("on") is True and topics == [], (allowed, st, topics))
+        api("/api/act", {"show": False})
+        stop = get("show")
+        time.sleep(0.2)
+        self.ok("0.5: the setup page stops the showing: the phone is told, the frame is dropped",
+                stop == {"t": "show", "allowed": True, "on": False} and shown() == 404, stop)
+        api("/api/act", {"allow_show": False})
+
+        try:
+            api("/api/act", {"reminders": [{"text": "", "at": "9"}]})
+            bad = None
+        except urllib.error.HTTPError as e:
+            bad = e.code
+        api("/api/act", {"omi": True, "reminders": [{"id": "pill", "text": "Tabletten", "at": "09:00"}]})
+        m, s = get("panel"), get("see")
+        o, end = {}, time.monotonic() + 4.0
+        while time.monotonic() < end and not (o.get("state") == "on" and o.get("reminders")):
+            self.wait("status", lambda m: False, timeout=0.3)
+            o = json.load(api("/api/state")).get("omi", {})
+        self.ok("0.5: setup page: Omi Assist starts: the tiles, the eyes following, its reminders (a bad one refused)",
+                bad == 400 and bool(m) and m.get("style") == "tiles" and bool(s) and s.get("follow") is True
+                and o.get("state") == "on" and [r["id"] for r in o.get("reminders", [])] == ["pill"], (bad, m, s, o))
+        api("/api/act", {"omi_tour": True})
+        tour = get("tour")
+        api("/api/act", {"omi": False})
+        m = get("panel")
+        self.ok("0.5: the setup page's Introduce: the phone is asked for the presentation, in Omi's language",
+                tour == {"t": "tour", "lang": o.get("lang")} and m.get("lang") == "auto" if m else False, (tour, m))
+        end = time.monotonic() + 4.0
+        while time.monotonic() < end and json.load(api("/api/state")).get("omi", {}).get("state") == "on":
+            time.sleep(0.2)
+        try:
+            api("/api/act", {"omi_tour": True})
+            late = None
+        except urllib.error.HTTPError as e:
+            late = e.code
+        self.ok("0.5: stopped, Omi Assist puts the chips back (the phone's own language); no presentation then",
+                bool(m) and m.get("style") == "chips" and late == 400, (m, late))
+        api("/api/act", {"reminders": []})
+        phone.close()
 
 
 def main():

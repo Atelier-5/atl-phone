@@ -4,7 +4,9 @@
 
 GET /        -> face.html (any file of web/ is served as is)
 GET /ws      -> the WebSocket (RFC 6455, text frames only); ?key=... when the bridge has a pairing key
-POST /report -> a phone check's report (check.html), from any phone
+POST /report -> a phone check's report (check.html), from any phone; kept in the registry when the bridge has one
+POST /api/summary -> the setup page's summary, into the registry: this PC only
+GET /api/show.jpg -> the picture the person shows right now (Omi Assist, opt-in): this PC only, kept in memory only
 GET /ca.crt  -> this PC's certificate authority, for a phone to install once (when the bridge has one)
 GET /api/state, POST /api/act -> the setup page's view of the phone and its tests: this PC only (loopback;
                 a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
@@ -27,7 +29,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-MAX_FRAME = 64 * 1024
+MAX_FRAME = 128 * 1024   # a show frame (Omi) is the largest: a 320 px JPEG as base64 (protocol.MAX_FRAME)
 MAX_POST = 64 * 1024
 
 
@@ -119,7 +121,8 @@ class PhoneServer:
 
     def __init__(self, web_dir, port, bind="0.0.0.0", key="", on_open=None, on_text=None, on_close=None,
                  cert=None, cert_key=None, api=None, ca=None):
-        """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict).
+        """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict) and
+        summary(dict) -> None or what to answer (where it was kept).
         ca: the authority that signed cert, offered at /ca.crt (public: it is what a phone needs to trust the bridge)."""
         self.key = key
         self.ca = ca
@@ -182,11 +185,16 @@ class PhoneServer:
 
 def make_handler(server: PhoneServer):
     class Handler(SimpleHTTPRequestHandler):
+        # vision's libraries: a module, and WebAssembly (which the browser compiles while it loads only with its own type)
+        extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".mjs": "text/javascript", ".js": "text/javascript",
+                          ".wasm": "application/wasm", ".webmanifest": "application/manifest+json", ".tflite": "application/octet-stream", ".task": "application/octet-stream"}
+
         def log_message(self, *args):  # quiet: the bridge logs what matters
             pass
 
         def end_headers(self):
-            self.send_header("Cache-Control", "no-store")
+            # vendor/ holds fixed versions (some 30 MB): a phone keeps them a day; the rest is never cached
+            self.send_header("Cache-Control", "max-age=86400" if self.path.startswith("/vendor/") else "no-store")
             super().end_headers()
 
         def do_GET(self):
@@ -212,6 +220,18 @@ def make_handler(server: PhoneServer):
                 if self.refused(local=True):
                     return
                 return self.answer(200, server.api.state())
+            if url.path == "/api/show.jpg":  # what the person shows (Omi): this PC only, while showing, never stored
+                if self.refused(local=True):
+                    return
+                jpeg = server.api.show_frame() if hasattr(server.api, "show_frame") else None
+                if not jpeg:
+                    return self.send_error(404, "nothing shown")
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(jpeg)))
+                self.end_headers()
+                self.wfile.write(jpeg)
+                return
             if url.path != "/ws":
                 return super().do_GET()
             if self.refused():
@@ -253,9 +273,9 @@ def make_handler(server: PhoneServer):
 
         def do_POST(self):
             path = urlsplit(self.path).path
-            if path not in ("/report", "/api/act") or not server.api:
+            if path not in ("/report", "/api/act", "/api/summary") or not server.api:
                 return self.send_error(404)
-            if self.refused(local=path == "/api/act"):
+            if self.refused(local=path.startswith("/api/")):
                 return
             size = int(self.headers.get("Content-Length") or 0)
             if not 0 < size <= MAX_POST:
@@ -267,12 +287,16 @@ def make_handler(server: PhoneServer):
                 if path == "/report":
                     if not isinstance(body.get("checks"), dict):
                         raise ValueError("not a phone check report")
-                    server.api.report(body)
+                    saved = server.api.report(body)
+                elif path == "/api/summary":
+                    if not isinstance(body.get("text"), str):
+                        raise ValueError("not a setup summary")
+                    saved = server.api.summary(body)
                 else:
-                    server.api.act(body)
+                    saved = server.api.act(body)
             except ValueError as e:
                 return self.answer(400, {"error": str(e)})
-            self.answer(204)
+            self.answer(200, saved) if saved else self.answer(204)
 
         def serve_ws(self):
             self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)

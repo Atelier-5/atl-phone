@@ -1,0 +1,31 @@
+@prefix atl:    <https://atelier-5.github.io/atl/ontology#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# The phone as a payload, for atl-ide's library: copy this file into a workspace's mydocs/library/. The phone is
+# its own controller (its page talks to the bridge, contract atl-phone/0.4); its Webots twin is webots/protos/AtlPhone.proto
+# with the controller atl_phone_twin, and it stands on the holder (AtlPhoneHolder.proto) on a Thymio's top.
+
+atl:model_phoneA50 a atl:Payload ; atl:nameCode "PH5" ;
+    atl:hasController atl:controller_phone ;
+    schema:name "Phone (Galaxy A50)" ; atl:maker "Atelier-5" ;
+    atl:contract "atl-phone/0.4" ;
+    atl:webotsProto "webots/protos/AtlPhone.proto"^^xsd:anyURI ;
+    schema:description "An old phone as the robot's face, eyes and ears: eyes on its screen, a panel below (a mouth, buttons, the sensors), speech, vibration, its motion sensors, and vision on the phone (faces, markers, colours, objects, hands): only numbers leave it. Its twin in Webots speaks the same protocol, so a program runs on both."@en ,
+        "Un vieux téléphone comme visage, yeux et oreilles du robot : des yeux sur son écran, un panneau dessous (une bouche, des boutons, les capteurs), la parole, la vibration, ses capteurs de mouvement, et la vision sur le téléphone (visages, marqueurs, couleurs, objets, mains) : seuls des nombres en sortent. Son jumeau dans Webots parle le même protocole : un programme tourne sur les deux."@fr ,
+        "Ein altes Handy als Gesicht, Augen und Ohren des Roboters: Augen auf dem Bildschirm, darunter ein Feld (ein Mund, Tasten, die Sensoren), Sprache, Vibration, seine Bewegungssensoren und Sehen auf dem Handy (Gesichter, Marker, Farben, Gegenstände, Hände): nur Zahlen verlassen es. Sein Zwilling in Webots spricht dasselbe Protokoll, so läuft ein Programm auf beiden."@de .
+
+atl:model_phoneHolder a atl:Holder ; atl:nameCode "PHH" ;
+    schema:name "Phone holder" ; atl:maker "Atelier-5" ;
+    atl:webotsProto "webots/protos/AtlPhoneHolder.proto"^^xsd:anyURI ;
+    schema:description "Stands a phone on a Thymio's top, upright (portrait) or across (landscape), leaning back a little. A placeholder block for now; a brick holder with the same fields can replace it."@en ,
+        "Tient un téléphone sur le dessus d'un Thymio, debout (portrait) ou couché (paysage), un peu incliné en arrière. Un bloc provisoire pour l'instant ; un support en briques avec les mêmes champs pourra le remplacer."@fr ,
+        "Hält ein Handy auf einem Thymio, hochkant (Hochformat) oder quer (Querformat), leicht nach hinten geneigt. Vorerst ein Platzhalter-Block; eine Halterung aus Steinen mit denselben Feldern kann ihn ersetzen."@de .
+
+atl:controller_phone a atl:Controller ;
+    schema:name "Phone (face page)" ; atl:maker "Atelier-5" ;
+    schema:description "The phone's browser page (face.html), connected to the bridge: it draws the face, speaks and senses. In Webots, the controller atl_phone_twin plays it."@en ,
+        "La page du navigateur du téléphone (face.html), reliée au pont : elle dessine le visage, parle et perçoit. Dans Webots, le contrôleur atl_phone_twin la joue."@fr ,
+        "Die Browserseite des Handys (face.html), mit der Brücke verbunden: sie zeichnet das Gesicht, spricht und nimmt wahr. In Webots spielt sie der Controller atl_phone_twin."@de .

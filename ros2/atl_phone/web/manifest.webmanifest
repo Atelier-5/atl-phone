@@ -1,0 +1,15 @@
+{
+  "_": "SPDX-License-Identifier: GPL-3.0-or-later. Copyright (C) 2026 Atelier-5. The robot's face as its own app window (Omi Assist): installed from Chrome, it opens full screen without tabs.",
+  "name": "Omi Assist – robot face",
+  "short_name": "Omi",
+  "start_url": "face.html?layout=auto",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {"src": "icons/eye-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icons/eye-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

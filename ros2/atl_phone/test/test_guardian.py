@@ -144,3 +144,13 @@ def test_the_setup_page_shows_the_same_owner_card():
     from pathlib import Path
     page = (Path(__file__).resolve().parent.parent / "web" / "setup.js").read_text()
     assert f"OWNER = '{g.OWNER_CARD}'" in page
+
+
+def test_a_slow_phone_keeps_its_face_until_the_next_search(gd):
+    outs = []
+    for i in range(round(6 / DT)):  # a face message every 1.5 s, as a slow phone sends them
+        age = (i * DT) % 1.5
+        s = g.Sensors(faces=[face(x=0.6)], faces_age=age, faces_keep=2.5 * 1.5)
+        outs.append(gd.step(s, g.Events(), DT))
+    assert {o.state for o in outs[2:]} == {"alert"}
+    assert run(gd, 0.2, faces=[face()])[-1].state == "alert"

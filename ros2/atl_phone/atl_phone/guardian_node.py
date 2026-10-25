@@ -2,12 +2,16 @@
 # Copyright (C) 2026 Atelier-5
 """guardian_node — runs the Desk Guardian (guardian.py) on the phone's topics and, when there is one, a Thymio's.
 
-    ros2 run atl_phone guardian --ros-args -p robot:=thymio_1 [-p lang:=fr] [-p drive:=true]
+    ros2 run atl_phone guardian --ros-args -p robot:=thymio_1 [-p lang:=fr] [-p drive:=true] [-p run:=true]
 
     in:  /<robot>/phone/faces, touch, imu, codes;  /<robot>/prox/ground (atl-thymio, optional)
     out: /<robot>/phone/face/expression, face/color, face/gaze, say, vibrate, look, look/familiar
          /<robot>/cmd_vel, leds/top (atl-thymio; only with drive, and only while the Thymio answers)
-         /<robot>/guardian/state (String JSON, 5 Hz)
+         /<robot>/guardian/state (String JSON, 5 Hz; {"state": "off"} once a second while it does not run)
+    its own: /<robot>/guardian/run (Bool: start, stop), /<robot>/guardian/drive (Bool: may it drive the Thymio)
+
+It waits until it is started (run, or the setup page's Scenarios step); stopped, it puts the face back to
+neutral, stops the wheels and the front camera, and publishes nothing else.
 
 It knows nothing of the phone's page or of Webots: only the topics. The same node runs
 against guardian_check's mock phone and fake Thymio, and against the real ones.
@@ -31,6 +35,7 @@ RATE = 20.0                 # Hz
 STATE_EVERY = 4             # ticks: 5 Hz
 ASK_EVERY = 40              # ticks: look and familiar again every 2 s (the bridge passes on only changes)
 THYMIO_QUIET = 1.0          # s without prox/ground: no Thymio
+KEEP_PERIODS = 2.5          # a faces message holds this many of the phone's search periods
 
 
 def thymio_topics(robot: str) -> dict:  # atl-thymio/0.1 (atl-bot-thymio thymio_twin/contract.py)
@@ -42,6 +47,7 @@ class GuardianNode(Node):
         super().__init__("guardian")
         robot = self.declare_parameter("robot", "thymio_1").value
         self.drive = bool(self.declare_parameter("drive", True).value)
+        self.running = bool(self.declare_parameter("run", False).value)
         self.guardian = gd.Guardian(self.declare_parameter("lang", "en").value)
         self.lang = self.guardian.lang
         self.t, th = c.topics(robot), thymio_topics(robot)
@@ -63,13 +69,42 @@ class GuardianNode(Node):
         self.create_subscription(Float32MultiArray, th["ground"], self.on_ground, 10)
         self.phone = None
         self.create_subscription(String, self.t["status"], self.on_status, QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+        self.create_subscription(Bool, f"/{robot}/guardian/run", lambda m: self.run(m.data), 10)
+        self.create_subscription(Bool, f"/{robot}/guardian/drive", lambda m: self.set_drive(m.data), 10)
         self.create_timer(1.0 / RATE, self.tick)
-        self.get_logger().info(f"Desk Guardian on /{robot} ({'with' if self.drive else 'without'} the Thymio's wheels)")
+        self.get_logger().info(f"Desk Guardian on /{robot}: {'running' if self.running else 'waiting to be started'}"
+                               f" ({'with' if self.drive else 'without'} the Thymio's wheels)")
+
+    def run(self, on: bool):
+        if on == self.running:
+            return
+        self.running = on
+        if on:  # a fresh start: nobody known, nothing said yet
+            self.guardian = gd.Guardian(self.lang)
+            self.sensors, self.events, self.last, self.ticks = gd.Sensors(), gd.Events(), {}, 0
+        else:
+            self.stand_down()
+        self.get_logger().info(f"Desk Guardian {'started' if on else 'stopped'}")
+
+    def set_drive(self, on: bool):
+        if self.drive and not on:
+            self.cmd.publish(Twist())
+        self.drive = on
+
+    def stand_down(self):
+        """Stopped: the wheels, the front camera and the face as they were before it began."""
+        self.cmd.publish(Twist())
+        self.pub["look"].publish(Bool(data=False))
+        self.pub["familiar"].publish(Bool(data=False))
+        self.pub["expression"].publish(String(data="neutral"))
+        self.pub["color"].publish(ColorRGBA(r=0.25, g=0.85, b=1.0, a=1.0))
 
     def on_faces(self, m):
         f = json.loads(m.data)
         self.sensors.faces = sorted(f.get("faces", []), key=lambda x: -x.get("size", 0))
         self.faces_at = time.monotonic()
+        if f.get("period"):  # a slow phone: a face it saw holds until its next search, and a little longer
+            self.sensors.faces_keep = max(1.0, KEEP_PERIODS * f["period"] / 1000.0)
 
     def on_status(self, m):
         s = json.loads(m.data)
@@ -94,6 +129,12 @@ class GuardianNode(Node):
         return True
 
     def tick(self):
+        if not self.running:
+            self.ticks += 1
+            if self.ticks % int(RATE) == 0:
+                self.state_pub.publish(String(data=json.dumps({"state": "off", "drive": self.drive})))
+            self.events = gd.Events()
+            return
         now = time.monotonic()
         self.sensors.faces_age = now - self.faces_at
         thymio = now - self.ground_at < THYMIO_QUIET
@@ -124,14 +165,13 @@ class GuardianNode(Node):
             self.cmd.publish(tw)
         if self.ticks % STATE_EVERY == 0:
             self.state_pub.publish(String(data=json.dumps({"state": out.state, "doing": out.doing, "faces": len(self.sensors.faces)
-                                                           if self.sensors.faces_age < 1.0 else 0, "thymio": thymio,
-                                                           "friends": sorted(self.guardian.friends)})))
+                                                           if self.sensors.faces_age < self.sensors.faces_keep else 0, "thymio": thymio,
+                                                           "drive": self.drive, "friends": sorted(self.guardian.friends)})))
         self.ticks += 1
 
     def destroy_node(self):
-        if self.drive:
-            self.cmd.publish(Twist())  # stop the wheels
-        self.pub["look"].publish(Bool(data=False))
+        if self.running:
+            self.stand_down()
         super().destroy_node()
 
 

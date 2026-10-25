@@ -1,7 +1,9 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright (C) 2026 Atelier-5 -->
-<!-- Phone setup, on the PC: connect a phone, check it, test every output and sense, sum it up.
+<!-- Phone setup, on the PC: what to do is picked at the top. Connect and Test: connect a phone, check it, test every
+     output and sense, sum it up. Desk Guard: the Desk Guardian. Omi Assist: the helper on a stand, its reminders,
+     and the picture she shows (only when allowed).
      Served by the bridge (http://localhost:8782/setup.html); it reads /api/state and its tests go through ROS (/api/act). -->
 <html lang="en">
 <head>
@@ -74,7 +76,9 @@
   .pad.faces { cursor: default; background: var(--chip); }
   .pad.faces span { position: absolute; border: 2px solid var(--accent); border-radius: 8px; font: 11px ui-monospace, monospace;
                     color: var(--accent); display: flex; align-items: center; justify-content: center; }
-  label.row { cursor: pointer; margin-top: 8px; }
+  label.row { cursor: pointer; margin-top: 8px; flex-wrap: nowrap; align-items: flex-start; }
+  label.row input { margin-top: 4px; flex: none; }
+  .test > .row { margin-top: 8px; }
   .dial { width: 64px; height: 64px; border-radius: 50%; border: 1.5px solid var(--line); position: relative; flex: none; }
   .dial i { position: absolute; left: 50%; top: 6px; width: 2px; height: 26px; margin-left: -1px; background: var(--no); transform-origin: 1px 26px; }
   .bar { height: 8px; background: var(--chip); border-radius: 4px; overflow: hidden; width: 140px; display: inline-block; vertical-align: middle; }
@@ -88,6 +92,25 @@
   select { font: inherit; padding: 5px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
   ol.steps { margin: 6px 0; padding-left: 22px; }
   ol.steps li { margin: 4px 0; }
+  /* what to do: the three choices at the top */
+  .views { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px 0; max-width: 1100px; margin: 0 auto; }
+  .views button { flex: 1 1 180px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+                  background: var(--panel); color: var(--fg); border: 1.5px solid var(--line); border-radius: 12px;
+                  padding: 10px 14px; font: inherit; cursor: pointer; }
+  .views button b { font-size: 1.05em; }
+  .views button span { color: var(--muted); font-size: 13px; }
+  .views button.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .wrap.solo { grid-template-columns: 1fr; }
+  .wrap.solo nav, .wrap.solo .nav { display: none; }
+  #v-omi .tests, #v-guard .tests { margin-top: 12px; }
+  .rem { display: grid; grid-template-columns: 92px 1fr auto auto; gap: 6px; align-items: center; margin: 6px 0; }
+  @media (max-width: 560px) { .rem { grid-template-columns: 92px 1fr auto; } .rem .days { grid-column: 1 / -1; order: 1; } }
+  .rem input[type=time] { font: inherit; padding: 5px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
+  .days { display: flex; gap: 2px; flex-wrap: wrap; }
+  .days button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 1px 5px; font-size: 12px; cursor: pointer; }
+  .days button.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  img.show { width: 100%; max-width: 320px; border-radius: 8px; border: 3px solid var(--no); display: none; }
+  .badge { display: inline-block; background: var(--no); color: #fff; border-radius: 6px; padding: 1px 8px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -96,9 +119,27 @@
   <span class="meta" id="meta"></span>
   <div class="lang"><button data-l="en">EN</button> <button data-l="fr">FR</button> <button data-l="de">DE</button></div>
 </header>
+<div class="views" id="views">
+  <button data-v="setup"><b data-t="v_setup">Connect and Test</b><span data-t="v_setup_d"></span></button>
+  <button data-v="guard"><b data-t="v_guard">Desk Guard</b><span data-t="v_guard_d"></span></button>
+  <button data-v="omi"><b data-t="v_omi">Omi Assist</b><span data-t="v_omi_d"></span></button>
+</div>
 <div class="wrap">
   <nav><ol id="stepper"></ol></nav>
   <main>
+    <!-- Desk Guard -->
+    <section id="v-guard">
+      <h2 data-t="guardian">Desk Guardian</h2>
+      <div class="status" id="guard-phone"></div>
+      <div class="tests" id="guard-cards"></div>
+    </section>
+    <!-- Omi Assist -->
+    <section id="v-omi">
+      <h2 data-t="v_omi">Omi Assist</h2>
+      <p class="lead" data-t="omi_lead"></p>
+      <div class="status" id="omi-phone"></div>
+      <div class="tests" id="omi-cards"></div>
+    </section>
     <!-- 1 -->
     <section id="s-bridge">
       <h2 data-t="s1">The bridge</h2>
@@ -164,11 +205,18 @@
       <div class="tests" id="inputs"></div>
     </section>
     <!-- 5 -->
+    <section id="s-play">
+      <h2 data-t="s5">Scenarios</h2>
+      <p class="lead" data-t="s5_lead">Examples that use it all at once.</p>
+      <div class="tests" id="play"></div>
+    </section>
+    <!-- 6 -->
     <section id="s-summary">
-      <h2 data-t="s5">Summary</h2>
+      <h2 data-t="s6">Summary</h2>
       <p class="lead" id="summary-lead"></p>
       <table id="summary"></table>
-      <div class="row" style="margin-top:12px"><button class="b" id="copy-summary" data-t="copy_summary">Copy summary</button><span class="live" id="copied"></span></div>
+      <div class="row" style="margin-top:12px"><button class="b" id="copy-summary" data-t="copy_summary">Copy summary</button><button class="b ghost" id="save-summary" data-t="save_summary">Save on the PC</button><span class="live" id="copied"></span></div>
+      <p class="hint" id="saved"></p>
     </section>
     <div class="nav"><button class="b ghost" id="back" data-t="back">← Back</button><button class="b" id="next" data-t="next">Next →</button></div>
   </main>

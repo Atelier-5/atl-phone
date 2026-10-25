@@ -6,7 +6,8 @@
     python3 scripts/serve.py                      http on :8782, for USB (adb reverse makes it localhost)
     python3 scripts/serve.py --cert c.pem --key k.pem    https, for Wi-Fi (camera and microphone need it)
 
-Reports land in reports/<when>-<model>.json; each one is summed up on the terminal.
+Reports go into the registry of phones tested (reports/: phones.json, phones.md, one folder per model; see
+ros2/atl_phone/atl_phone/registry.py), as with the bridge; each one is summed up on the terminal.
 """
 import argparse
 import json
@@ -14,12 +15,13 @@ import re
 import socket
 import ssl
 import sys
-from datetime import datetime, timezone
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "ros2" / "atl_phone"))
+from atl_phone.registry import Registry  # noqa: E402
 WEB = ROOT / "ros2" / "atl_phone" / "web"
 REPORTS = ROOT / "reports"
 MAX_REPORT = 64 * 1024
@@ -50,6 +52,10 @@ def summary(report: dict) -> str:
 
 
 class Handler(SimpleHTTPRequestHandler):
+    # the vision libraries the check times: a module, and WebAssembly (as the bridge serves them)
+    extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".mjs": "text/javascript", ".js": "text/javascript",
+                      ".wasm": "application/wasm"}
+
     def do_POST(self):
         if self.path != "/report":
             return self.send_error(404)
@@ -63,12 +69,14 @@ class Handler(SimpleHTTPRequestHandler):
         except ValueError as e:
             return self.send_error(400, str(e))
         REPORTS.mkdir(exist_ok=True)
-        when = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        path = REPORTS / f"{when}-{model_in(report)}.json"
-        path.write_text(json.dumps(report, indent=2) + "\n")
+        path = Registry(REPORTS).check(report, model_in(report))
         print("report:", summary(report), "->", path.relative_to(ROOT), flush=True)
-        self.send_response(204)
+        body = json.dumps({"saved": str(path.relative_to(ROOT))}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
         self.end_headers()
+        self.wfile.write(body)
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")

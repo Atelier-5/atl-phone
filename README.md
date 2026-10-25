@@ -1,8 +1,8 @@
 # atl-phone: an old phone as the robot's face, eyes and ears
 
-🇬🇧 An old Android phone as a payload: it shows the face, sees cards, hears and speaks, over ROS 2. The brain stays on the PC.
-🇫🇷 Un vieux téléphone Android comme charge utile : il montre le visage, lit les cartes, entend et parle, via ROS 2. Le cerveau reste sur le PC.
-🇩🇪 Ein altes Android-Handy als Nutzlast: es zeigt das Gesicht, liest Karten, hört und spricht, über ROS 2. Das Gehirn bleibt auf dem PC.
+🇬🇧 An old Android phone as a payload: it shows the face, sees faces, markers, colours, objects and hands, hears and speaks, over ROS 2. The brain stays on the PC.
+🇫🇷 Un vieux téléphone Android comme charge utile : il montre le visage, voit visages, marqueurs, couleurs, objets et mains, entend et parle, via ROS 2. Le cerveau reste sur le PC.
+🇩🇪 Ein altes Android-Handy als Nutzlast: es zeigt das Gesicht, sieht Gesichter, Marker, Farben, Gegenstände und Hände, hört und spricht, über ROS 2. Das Gehirn bleibt auf dem PC.
 
 ![The ten expressions](docs/faces.png)
 
@@ -15,14 +15,17 @@ OS (stock Android, LineageOS, …). The ROS 2 node `atl_phone/bridge` serves the
 ./start.sh            # builds the image if needed, starts the bridge in Docker, opens the setup page
 ```
 
-The **setup page** (`http://localhost:8782/setup.html`, on this PC only) guides through it, in EN/FR/DE:
+The **setup page** (`http://localhost:8782/setup.html`, on this PC only), in EN/FR/DE, starts with what to do:
+**Connect and Test**, **Desk Guard** ([the Desk Guardian](#the-desk-guardian)) or **Omi Assist** ([the helper on a
+stand](#omi-assist)). Connect and Test guides through it:
 the bridge → connecting the phone (USB, or Wi-Fi with a QR code) → the phone check → testing each output
 (face, gaze, colour, voice, vibration, torch, camera: you say what you saw) and each sense (touch, motion, compass,
-battery, reading a code, look: they tick by themselves) → a summary to copy. Its tests go through ROS 2, on the contract's
+battery, reading a code, look, vision: they tick by themselves) → scenarios (try the portrait panel)
+→ a summary to copy. Its tests go through ROS 2, on the contract's
 topics; the camera test goes to the phone directly and its picture stays on the phone's screen. A phone on plain
 http (Wi-Fi without `--cert`) shows its camera, motion, compass and battery as *blocked*: use USB, or HTTPS.
 
-`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY` · `./start.sh --guardian [--familiar]` · `./start.sh logs` · `./start.sh stop`
+`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY` · `./start.sh --guardian [--familiar]` · `./start.sh --omi [--show]` · `./start.sh logs` · `./start.sh stop`
 
 **Wi-Fi with camera and motion:** `./start.sh --make-cert`. It makes this PC's own certificate authority once
 (`certs/`, git-ignored; `scripts/make_cert.sh`) and the bridge's certificate for this PC's addresses, renewed when the
@@ -36,19 +39,21 @@ Your own certificate instead: `--cert DIR` (`cert.pem`, `key.pem`, and `ca.crt` 
 docker build -f docker/Dockerfile -t atl-phone:kilted .
 docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted   # the bridge, for thymio_1
 docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thymio_1 \
-    [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=fr] [familiar:=true] [guardian:=true]
+    [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=fr] [familiar:=true] [guardian:=true] \
+    [omi:=true] [omi_folder:=/omi] [show:=true] [reports:=/reports]
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
-docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 24 checks
-python3 scripts/browser_check.py --container <container> [--face <picture>]   # the face page in headless Chrome: 9 checks (12 with a face)
-./test.sh                                                        # protocol, WebSocket, check server, guardian: no ROS, no phone
+docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 47 checks
+python3 scripts/browser_check.py --container <container> [--face <picture>]   # the face page in headless Chrome: 49 checks with a face picture
+./test.sh                                                        # protocol, WebSocket, check server, guardian, reminders: no ROS, no phone
+./scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]      # what weighs on the phone (adb); changes only what you confirm
 ```
 
 **How the phone connects.** Camera, microphone and motion need a *secure* page. Over **USB**, `adb reverse` makes the
 bridge the phone's `localhost`, which counts as secure, and the cable charges the phone: the way to set up at the desk.
 Over **Wi-Fi** the bridge needs HTTPS (`cert`, `cert_key`, `ca`): `./start.sh --make-cert`, with the authority installed once on each phone.
-On the phone, tap ▶: full screen, landscape, the screen stays on. A `key` pairs the bridge with its phones (`/?key=...`).
+On the phone, tap ▶: full screen, landscape, the screen stays on (`face.html?layout=portrait`: upright, with the panel). A `key` pairs the bridge with its phones (`/?key=...`).
 
-## The contract: `atl-phone/0.2` (`atl_phone/contract.py`)
+## The contract: `atl-phone/0.5` (`atl_phone/contract.py`)
 
 Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's own contract stays as it is.
 
@@ -59,8 +64,18 @@ Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's ow
 | `heading` | Float32 | out | degrees clockwise from magnetic north, when the phone has a compass |
 | `touch` | String JSON | out | `{"kind": "tap"\|"long"\|"swipe", "zone": "left"\|"centre"\|"right", "dir"}` |
 | `battery` | BatteryState | out | the phone's own battery, latched |
-| `faces` | String JSON | out | while looking, about 4 Hz: `{"n", "faces": [{"x", "y", "size", "familiar"}]}`, largest first; x right and y up as the face sees it (-1..1), size = the face's height in the picture (0..1), familiar = `null` or the same number 1–8 for the same face this session |
+| `faces` | String JSON | out | while looking, up to 10 Hz: `{"n", "faces": [{"x", "y", "size", "familiar"}], "period"}`, largest first; x right and y up as the face sees it (-1..1), size = the face's height in the picture (0..1), familiar = `null` or the same number 1–8 for the same face this session; period = ms between two searches on this phone |
+| `markers` | String JSON | out | while seeing them: `{"camera", "markers": [{"id", "x", "y", "size", "distance_m", "yaw_deg"}]}`: ArUco 4×4 markers (ids 0–999); the distance from their printed size |
+| `blobs` | String JSON | out | `{"camera", "blobs": [{"x", "y", "size"}]}`: the largest patches of the asked colour |
+| `objects` | String JSON | out | `{"camera", "objects": [{"label", "score", "x", "y", "w", "h", "distance_m"}]}`: COCO's 80 kinds (`cup`, `person`, `sports ball`, …); a distance only for kinds of known height |
+| `hands` | String JSON | out | `{"camera", "hands": [{"x", "y", "gesture"}]}`: `none` `fist` `open_palm` `pointing_up` `thumbs_down` `thumbs_up` `victory` `love` |
+| `panel/mode` | String | out | latched: the panel's mode, as a program set it or the person picked it in the menu |
 | `codes` | String JSON | out | `{"text"}`: a QR code held up to the front camera while looking |
+| `pad` | String JSON | out | `{"id"}`: a button of the panel's pad was pressed |
+| `menu` | String JSON | out | `{"id"}`: the person picked a chip or a tile of the menu (a mode, one of the phone's tiles, or a program's own entry) |
+| `note/answer` | String JSON | out | `{"note", "id"}`: the button pressed on a note card |
+| `read/result` | String JSON | out | `{"ok", "lines", "chars", "ms"}`: the phone read the back camera's text aloud; the text itself stays on the phone |
+| `what/result` | String JSON | out | `{"ok", "label", "score", "ms"}`: what the back camera saw nearest (a COCO label, or `null`), said aloud on the phone |
 | `face/expression` | String | in | `neutral` `happy` `sad` `angry` `surprised` `sleepy` `curious` `wink` `scared` `love` |
 | `face/gaze` | Point | in | where the eyes look, x right and y up, each -1..1; left alone, they look around by themselves |
 | `face/color` | ColorRGBA | in | the eyes' colour |
@@ -70,10 +85,91 @@ Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's ow
 | `look` | Bool | in | the front camera finds faces, on the phone; the face shows **● look** |
 | `look/familiar` | Bool | in | also tell faces apart, this session only; only if the bridge allows it (`familiar:=true`, or the setup page) |
 | `look/forget` | Empty | in | forget every face seen so far |
+| `see` | String JSON | in | what one camera finds, on the phone: `{"camera": "front"\|"back", "find": ["faces", "markers", "blobs", "objects", "hands"], "blob": {"hue": 0–359, "tol"}, "marker_cm": 5, "fov_deg"}`; `"find": []` closes it; `"follow": true`: the eyes follow the nearest thing found; the face shows **● look** |
+| `panel` | String JSON | in | in portrait, the panel under the eyes: `{"mode": "mouth"\|"pad"\|"off"\|"camera"\|"camera_back"\|"sensors"\|"magnify", "buttons": [{"id", "label", "color": [r, g, b]}], "style": "chips"\|"tiles", "menu": [...], "lang": "en"\|"fr"\|"de"\|"auto"}`, at most 8 buttons, labels ≤ 12 characters; `menu`: what a tap on the eyes offers, in order, at most 9: modes, the phone's own tiles (`time` `magnify` `read` `what` `front` `back` `show` `follow`) or a program's `{"id", "label": text or {"en", "fr", "de"}, "icon"}`; `lang`: the face's words and voice from now on, whatever the phone's language (`auto`: the phone's own again; the page's `?lang=` wins); a phone that comes gets the last one |
+| `note` | String JSON | in | a big card over the face: `{"id", "text", "buttons": [{"id", "label"}], "say"}`, at most 3 buttons and 200 characters; `{"text": ""}` takes it away |
+| `read` | String JSON | in | `{"lang"}` (or empty): read aloud what the back camera sees |
+| `what` | String JSON | in | `{"lang"}` (or empty): say what the back camera sees nearest |
 
 The phone is not trusted: what it sends is checked and clamped (`atl_phone/protocol.py`), and what it cannot do it skips.
 One phone per bridge: a new one takes over and the old one is closed. A phone has one camera open at a time: the
-torch and the camera test (back camera) win, and look (front camera) waits for them.
+torch and the camera test (back camera) win, and look (front camera) waits for them. With no phone connected, `see`,
+`panel` and `note` are still taken and kept for the phone that comes (so a test left on can be turned off); the setup
+page's other tests are refused with "no phone".
+
+**Portrait.** Held upright (`layout=portrait`, or `auto` as the phone is held; the setup page's Scenarios step
+switches it), the eyes move to the top and the lower part becomes the robot's own input device:
+- **Mouth** (the default): it follows the expression; while the robot speaks it becomes a scrolling sound wave, drawn
+  from the words being spoken (the browser does not hand over the voice's sound, and the microphone stays off).
+- **Buttons**: a pad (A–D until a program defines its own; each press is a `pad` message).
+- **Eyes only**, **Front camera**, **Back camera**: the picture stays on the phone's screen (the face shows **● cam**).
+- **Sensors**: six tiles drawn on the phone: battery, a tilt bubble, the compass, the link, vision, the last press.
+
+A tap on the eyes shows the menu across the top of the panel for 6 s (its chips wrap on a narrow phone); a swipe
+left or right steps to the next mode. With `"style": "tiles"` the menu is big tiles instead (see [Omi Assist](#omi-assist)).
+Taps and swipes still go to ROS as `touch`. The phone tells the bridge what was picked (`panel/mode`). A program
+changes the menu for its robot: `ros2 run atl_phone thymio_pad` (`atl_phone/thymio_pad.py`, a sample of some forty
+lines) gives the pad the Thymio's five buttons ▲ ◀ ● ▶ ▼ and a menu without the cameras, and drives `cmd_vel` with them.
+Landscape stays as it was: the eyes alone.
+
+## Vision
+
+One camera at a time finds what a program asks for on `see`, on the phone; only numbers leave it. The page runs
+[MediaPipe Tasks Vision](https://ai.google.dev/edge/mediapipe/solutions/vision/object_detector) (faces with BlazeFace,
+objects with EfficientDet-Lite0, hands with the gesture recogniser; on the phone's GPU when it can) and
+[js-aruco2](https://github.com/damianofalcioni/js-aruco2) for markers; colour blobs are its own code. Everything is in
+`web/vendor/` (licences in its README) and served by the bridge: no internet needed, the models load when first asked.
+- **Markers** carry an id and give a distance and an angle: print `markers.html?cm=5` (ids 0–9; the setup page links it)
+  at 100 %, and tell `see` the black square's size (`marker_cm`). A camera's field of view differs between phones:
+  `fov_deg` corrects the distances (65° when not said).
+- **Colour**: `blob.hue` (0 red, 120 green, 240 blue) and a tolerance; the setup page has a colour picker.
+- **Objects**: a label, a box, a score; a distance for a few kinds of known height (a person, a cup, a bottle…).
+- **Hands**: where, and the gesture.
+
+The setup page's **Vision** card picks the camera and the finders and shows what they find, live, with each finder's
+time per picture; `check.html` times them on each phone, so its report says what the phone can afford. The Desk
+Guardian's faces come from BlazeFace too, up to 10 searches a second, and a face that appears makes the eyes start at
+once, before ROS answers; `faces` says how long a search takes, so the guardian keeps a face that long.
+
+**Follow.** With `"follow": true` on `see`, the eyes look at the nearest thing found: a face, a hand, a marker, or an
+object when objects are quick on this phone (under 400 ms). Nearness is the distance when it is known, else the
+thing's size in the picture. The eyes hold what they follow: another one takes over only when it is 25 % nearer for
+half a second, and a lost one is held a second. A `face/gaze` from a program still wins. The `see` report says what
+the eyes follow (`"target": {"kind", "x", "y"}`).
+
+**Further, not built yet:** line following with the back camera turned down; depth from one picture (too heavy for an
+A50); NFC tags read by Chrome (cards without a camera); geolocation; the ambient light sensor (behind a browser flag);
+spoken keywords recognised on the phone (offline); BLE sensors over Web Bluetooth. Other apps on the phone: a web page
+cannot drive them; over USB the PC can (adb), when the person allows it, or a small companion app later.
+
+## The phone's Webots twin
+
+The phone is a payload like any other: `webots/protos/AtlPhone.proto` (sizes from `webots/phones.json`: the A50, and a
+generic phone; others follow), standing on `AtlPhoneHolder.proto` in a Thymio's body slot, upright or across, leaning
+back. Its controller (`webots/controllers/atl_phone_twin`) speaks the face page's protocol to the bridge, so the bridge
+cannot tell it from a real phone and a program runs unchanged on both:
+- its screen (a Display) shows the eyes, the panel's mouth, wave, pad or sensors; `say` speaks through Webots;
+- `imu` and `heading` come from its motion on the robot; `torch` is a light;
+- `see` and `look` use Webots' Recognition: a Solid whose `model` is `face` is a face, `aruco:<id>` a marker, a COCO
+  label an object, and a `recognitionColors` within the asked hue a blob. Hands are not simulated.
+
+`webots/payload.ttl` is its card for atl-ide's library (copy it into `mydocs/library/`): the phone, the holder, and the
+phone as its own controller.
+
+```bash
+docker build -f docker/Dockerfile.twin -t atl-phone-twin:kilted .            # on top of atl-phone:kilted
+python3 scripts/phone_twin_world.py ~/atl/atl-ide/mydocs/twin --things        # webots/worlds/table_phone.wbt
+/snap/bin/webots --port=1240 webots/worlds/table_phone.wbt
+# then, together (three extern robots wait for each other): atl-bot-thymio's launch and the twin
+docker run -d --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp -e WEBOTS_CONTROLLER_URL=tcp://127.0.0.1:1240/PH5v0001 \
+    atl-phone-twin:kilted /entrypoint.sh python3 /ws/webots/controllers/atl_phone_twin/atl_phone_twin.py --bridge ws://127.0.0.1:8782/ws
+python3 scripts/phone_twin_check.py --port 8782                               # 11 checks
+```
+
+The check reads only the bridge and the Thymio's gateway: the twin rides leaning back (gravity in its frame), faces
+east, finds the marker within 2 cm of the world's geometry, the cup and the face on the left, the red ball on the
+right, nothing with the back camera; and the Desk Guardian, unchanged, turns the Thymio to the face it sees through the
+twin's camera.
 
 ## The Desk Guardian
 
@@ -88,42 +184,119 @@ seine Karte und wird ein Freund; ein Fremder, der zu lange zu nah kommt, wird au
 wieder hingestellt werden; an der Tischkante weicht er zurück.
 
 ```bash
-./start.sh --guardian [--familiar] [--lang fr]     # the bridge and the guardian; the phone over USB (./scripts/usb.sh)
+./start.sh [--familiar] [--lang fr]     # then the setup page's Desk Guard: ▶ Start (and whether it may drive the Thymio)
+./start.sh --guardian                   # or started at once
 ```
+
+The guardian runs beside the bridge, waiting: Start and Stop on the setup page publish `/<robot>/guardian/run` (and
+`/<robot>/guardian/drive`), as any program could. Stopped, it stops the wheels and the front camera and puts the face back to neutral.
 
 The guardian (`atl_phone/guardian.py`, plain Python; `guardian_node.py` wires it) knows only topics: the phone's
 (`faces`, `codes`, `touch`, `imu` in; the face, `say`, `vibrate`, `look` out) and, when a Thymio answers on the same
-ROS domain, `prox/ground` in and `cmd_vel`, `leds/top` out (atl-thymio/0.1). So one brain runs in three worlds:
+ROS domain, `prox/ground` in and `cmd_vel`, `leds/top` out (atl-thymio/0.1). So one brain runs in every world:
 
 | World | Phone | Body | Run |
 |---|---|---|---|
 | unit tests | invented inputs | invented | `./test.sh -k guardian` |
 | the backend's test scenario | mock phone | fake Thymio (ground sensors, records `cmd_vel`) | `docker exec <container> /entrypoint.sh python3 -m atl_phone.guardian_check`: 13 steps, from guarding to petted |
 | the twin | mock phone, or the real one | the Thymio twin in Webots (atl-ide's table, atl-bot-thymio's container) | `python3 scripts/guardian_twin_check.py`: the twin turns, stops, backs off |
-| the table | the real phone | a real Thymio (later: same topics) | `./start.sh --guardian` |
+| both twins | the phone's twin (its camera sees a face in Webots) | the Thymio twin | `python3 scripts/phone_twin_check.py`: the guardian turns to the face |
+| the table | the real phone | a real Thymio (later: same topics) | `./start.sh`, then Start on the setup page |
 
 The owner card is a QR code that says `atl-guardian:owner` (a token, no name): print it, or show it on a screen.
 With `--familiar` the guardian knows the owner again by the face's number; without it, the owner stays a friend while
-the face is in view and ten seconds after. `/<robot>/guardian/state` (String JSON, 5 Hz) says what it is doing.
+the face is in view and ten seconds after. `/<robot>/guardian/state` (String JSON, 5 Hz; `{"state": "off"}` once a second while stopped) says what it is doing; the setup page shows it.
 The bridge and atl-bot-thymio's container must share the ROS domain; `start.sh` makes Fast DDS use UDP, because
 containers do not share their memory.
 
-## The phone check
+## Omi Assist
 
-Which phones in the drawer qualify? `python3 scripts/serve.py`, open `check.html` on each phone (USB or HTTPS),
-tap **Test everything**, then **Send report to the PC**: one line per phone in the terminal, the report in `reports/`.
+🇬🇧 The phone on a fixed or movable stand as a helper for someone who sees or hears less well, or finds a phone's
+menus tricky. A tap on its eyes opens big tiles that say their name: the time, a magnifier, reading aloud, "what is
+this?", the front and the back camera, eyes that follow, showing something to her assistant. The assistant's reminders come
+at their time, as a big card she answers. 🇫🇷 Le téléphone sur un support, fixe ou mobile, comme assistant pour
+quelqu'un qui voit ou entend moins bien, ou que les menus d'un téléphone embrouillent. Un toucher sur ses yeux ouvre de
+grandes tuiles qui disent leur nom : l'heure, une loupe, lire à voix haute, « qu'est-ce que c'est ? », la caméra avant et
+arrière, des yeux qui suivent, montrer quelque chose à la personne qui l'assiste. Ses rappels arrivent à leur heure, sur
+une grande carte à laquelle elle répond. 🇩🇪 Das Handy auf einem festen oder beweglichen Ständer als Helfer für jemanden,
+der schlechter sieht oder hört oder mit den Menüs eines Handys nicht zurechtkommt. Ein Tipp auf die Augen öffnet große
+Kacheln, die ihren Namen sagen: die Uhrzeit, eine Lupe, Vorlesen, „Was ist das?", die vordere und die hintere Kamera,
+Augen, die folgen, der Assistenz etwas zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie
+beantwortet.
+
+```bash
+./start.sh --omi [--show]     # in German unless --lang says otherwise; then the setup page's Omi Assist (setup.html#omi)
+```
+
+- **Tiles** (`face.js`): nine in three rows in the lower three quarters (eight, and **Gesicht** last, which goes back
+  to the face from anything: reading, the magnifier, showing), an icon and one word, 18 px and more; a touch vibrates,
+  says the tile's name and acts; they close after 10 s. The words and the voice are Omi's language (`lang`, German with
+  `--omi`), even on a phone set to French.
+- **The presentation:** the setup page's **🎤 Introduce Omi Assist** makes the phone say what it can, tile by tile, in
+  about two minutes ("Hallo Omi! Ich bin Omi Assist, dein persönlicher Helfer …"); a tap ends it. Its script, and what
+  happens on the phone and on the PC at each step: [docs/omi-presentation.md](docs/omi-presentation.md).
+- **The helpers run on the phone** (`web/omi.js`): the time and the date from its clock; the **magnifier** (the back
+  camera big in the panel, zoom with the camera's own zoom or a scale, the torch, hold; tap again for the whole screen);
+  **reading** a still from the back camera with [Tesseract.js](https://github.com/naptha/tesseract.js) (German, English
+  and French, in `web/vendor/tesseract/`), said sentence by sentence and written big, a tap stops it; **what is this?**,
+  one look of the object finder, said with its article ("Das ist eine Tasse."); **front** and **back** show that camera
+  big on her screen. With tiles, what she picks wins the camera over the eyes' following, which waits meanwhile.
+- **Omi Assist** (`atl_phone/omi_assist.py`, beside the bridge, waiting like the guardian) sets the tiles and the eyes'
+  following, greets a face that comes after five minutes alone, and brings the reminders (`atl_phone/omi.py`): a text,
+  a time, the days (none: every day). At their time it says them and shows a card with **Erledigt** and **Später**
+  (ten minutes later). The setup page edits them; they are kept in `omi/reminders.json` and the answers in
+  `omi/answers.jsonl` (git-ignored). Stopped, it puts the chips back. Starting it stops the Desk Guardian, and the
+  other way round: they share the face.
+- **Showing the picture** is the one exception to "pictures stay on the phone", and only when allowed: see
+  [Privacy](#privacy).
+- **A lighter phone.** The face installs as its own app window (`manifest.webmanifest`, `sw.js`, which keeps
+  nothing): in Chrome, ⋮ › Install app, over USB or HTTPS. It then opens full screen without the tabs.
+  `./scripts/phone_tidy.sh` shows what weighs on the phone (free memory, the load, the busiest apps, the Chrome tab
+  count, the battery's temperature) and, each only on a typed y: `--kill` stops background apps (`am kill-all`, no
+  data lost), `--stay-on` keeps the screen on while on USB, `--close-tabs` closes Chrome tabs other than the bridge's,
+  one by one. The check page's **Headroom** says memory, cores and how busy the phone is.
+
+Measured on the ANE-LX1 over USB (2026-10-25): the nine tiles fit its 360×730 screen (105×168 px each, every word whole);
+the eyes' following searches every 0.33–0.37 s (faces 85 ms, hands 212 ms, on the GPU); the time is spoken 0.33 s after
+the tap (1.0 s for the first words after a reload); reading takes 2.7 s and "what is this?" 2.6 s (10.8 s and 7.6 s the
+first time, while their models load). Its load average was about 40 with 45 Chrome tabs open: the app window and
+`phone_tidy.sh` are for that. The Webots twin shows the tiles' panel but does not run the helpers.
+
+## The phone check, and the phones tested
+
+Which phones in the drawer qualify? Open `check.html` on each phone (USB or HTTPS) and tap **Test everything**: when
+the tests are done the report goes to the PC by itself, and 3 s later the phone opens the face, turned as it is held
+(`face.html?layout=auto`; **Stay here** keeps the check). **Send report to the PC** sends it again.
+
+Every phone tested is kept on the PC, in `reports/` (git-ignored; `atl_phone/registry.py`), by the bridge (`./start.sh`
+mounts it) or by `python3 scripts/serve.py` (the check alone):
+- `reports/phones.md`: one row per model: Android, Chrome, screen, GPU, the check's verdict, what failed in the setup;
+- `reports/phones.json`: the same, with more details; its `notes` are yours to write, and they are kept;
+- `reports/<model>/<day>-check.json`: the whole check report; `<day>-summary.txt`: the setup page's summary, saved
+  when you reach step 6 (or with **Save on the PC**). Checked again the same day, a phone replaces that day's file.
+
+What is kept is what a phone says about itself: no pictures, no names. The check's **Headroom** (memory, cores, how
+busy the main thread is) goes into it too.
 
 ## Privacy
 
-Camera and microphone open only when asked (the torch, the check's tests, look) and the face shows when a camera is on
+Camera and microphone open only when asked (the torch, the check's tests, look, see, the panel's picture, Omi's helpers) and the face shows when a camera is on
 (**● cam**, **● look**). Nothing is recorded; pictures and sound do not leave the phone: what leaves it is whether a
-camera works, the codes it read, and where faces are.
+camera works, the codes it read, and where faces, markers, colours, objects and hands are. The microphone is never
+used for the mouth's wave.
 **Faces.** Look finds faces on the phone (`web/vendor/face-api`, run in the page). It never says who someone is.
 With **familiar**, the phone also keeps a signature of each face (128 numbers) in the page's memory, only to give the
 same face the same number: never sent, never stored, forgotten on reload, when look or familiar ends, on
 `look/forget`, and ten minutes after a face was last seen. A program cannot turn it on alone: the facilitator allows it
 (`--familiar`, or the setup page), after asking the people at the table and the parents: [consent note](docs/consent-familiar.md).
 While it is not allowed, the bridge strips the numbers, whatever a phone sends.
+**Reading and "what is this?"** run on the phone: the text read and the thing seen are said and written on its
+screen; ROS gets only how many lines and characters, or a label.
+**Showing (Omi Assist, opt-in).** The one exception: the person may show the camera's picture to the PC, so her assistant
+can help from the next room. Only when the facilitator allows it (`--show`, or the setup page), only while she presses
+**Zeigen** (show), at most a minute, with a red **● ZEIGEN** badge on the face; a tap stops it. The frames (320 px, two
+a second) go to the setup page only (`/api/show.jpg`, this PC): the bridge keeps the last one three seconds in memory,
+writes nothing, and puts nothing on a ROS topic. Agree on it with her first: [consent note](docs/consent-show.md).
 The browser's own speech recognition is not used: it sends voices to the cloud.
 
 License: GPL-3.0-or-later.

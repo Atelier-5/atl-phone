@@ -26,7 +26,9 @@ from sensor_msgs.msg import BatteryState, Imu
 from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Int32, String
 
 from . import contract as c
+from . import omi
 from . import protocol as p
+from .registry import Registry
 from .wsserver import PhoneServer, lan_address
 
 
@@ -42,13 +44,24 @@ class Bridge(Node):
         ca = self.declare_parameter("ca", "").value or None
         self.lang = self.declare_parameter("lang", "en").value
         self.allow_familiar = bool(self.declare_parameter("familiar", False).value)
+        self.allow_show = bool(self.declare_parameter("show", False).value)  # the phone may show its picture to this PC (Omi)
+        self.showing = False                          # the person is showing now (the phone's show tile)
+        self.frame = (b"", 0.0)                       # the last show frame and when: for the setup page only, in memory only
+        self.note = None                              # the card a program put over the face (note): a phone that comes gets it
+        self.omi = {}                                 # Omi Assist's last state (omi_assist), for the setup page
         self.look = {"on": False, "familiar": False}  # as programs ask (look, look/familiar)
+        self.panel = None                             # the last panel a program set: a phone that comes gets it
+        self.see = None                               # what the last program asked the camera to find (see)
+        self.last_vision = {}                         # kind -> when it was last published (MAX_SEE_RATE)
+        self.guardian = {}                            # the Desk Guardian's last state (guardian_node), for the setup page
         web = self.declare_parameter("web", get_package_share_directory("atl_phone") + "/web").value
         self.t = c.topics(self.robot)
         self.frame_id = f"{self.robot}/phone"
         self.phone = {}
         self.seen = {}      # the latest of each sense, for the setup page
         self.reports = []   # the latest phone check reports
+        folder = self.declare_parameter("reports", "").value
+        self.registry = Registry(folder) if folder else None  # every phone tested, on the PC (start.sh: reports/)
         self.last_imu = 0.0
         self.last_faces = 0.0
         self.key = key
@@ -62,6 +75,10 @@ class Bridge(Node):
             "battery": self.create_publisher(BatteryState, self.t["battery"], latched),
             "faces": self.create_publisher(String, self.t["faces"], 10),
             "codes": self.create_publisher(String, self.t["codes"], 10),
+            "pad": self.create_publisher(String, self.t["pad"], 10),
+            "panel_mode": self.create_publisher(String, self.t["panel_mode"], latched),
+            **{k: self.create_publisher(String, self.t[k], 10) for k in ("menu", "note_answer", "read_result", "what_result")},
+            **{k: self.create_publisher(String, self.t[k], 10) for k in p.VISION},
         }
         self.create_subscription(String, self.t["expression"], lambda m: self.out(p.face, m.data), 10)
         self.create_subscription(Point, self.t["gaze"], lambda m: self.out(p.gaze, m.x, m.y), 10)
@@ -72,10 +89,23 @@ class Bridge(Node):
         self.create_subscription(Bool, self.t["look"], lambda m: self.set_look(on=m.data), 10)
         self.create_subscription(Bool, self.t["familiar"], lambda m: self.set_look(familiar=m.data), 10)
         self.create_subscription(Empty, self.t["forget"], lambda m: self.out(p.forget), 10)
+        self.create_subscription(String, self.t["panel"], self.set_panel, 10)
+        self.create_subscription(String, self.t["see"], self.set_see, 10)
+        self.create_subscription(String, self.t["note"], self.set_note, 10)
+        self.create_subscription(String, self.t["read"], lambda m: self.out(p.ask, "read", m.data, self.lang), 10)
+        self.create_subscription(String, self.t["what"], lambda m: self.out(p.ask, "what", m.data, self.lang), 10)
+        # Omi Assist (omi_assist): the setup page starts it, sets its reminders, and shows what it does
+        self.create_subscription(String, f"/{self.robot}/omi/state", self.omi_state, 10)
+        self.omi_pub = {"run": self.create_publisher(Bool, f"/{self.robot}/omi/run", 10),
+                        "reminders": self.create_publisher(String, f"/{self.robot}/omi/reminders", 10)}
+        # the Desk Guardian (guardian_node): the setup page starts and stops it, and shows what it does
+        self.create_subscription(String, f"/{self.robot}/guardian/state", self.guardian_state, 10)
+        self.guardian_pub = {k: self.create_publisher(Bool, f"/{self.robot}/guardian/{k}", 10) for k in ("run", "drive")}
         # the setup page's tests publish on the same topics, as any program would
         self.tests = {k: self.create_publisher(kind, self.t[k], 10) for k, kind in
                       {"expression": String, "gaze": Point, "color": ColorRGBA, "say": String, "torch": Bool, "vibrate": Int32,
-                       "look": Bool, "familiar": Bool, "forget": Empty}.items()}
+                       "look": Bool, "familiar": Bool, "forget": Empty, "panel": String, "see": String, "note": String,
+                       "read": String, "what": String}.items()}
 
         self.server = PhoneServer(web, port, bind, key, on_open=self.opened, on_text=self.text, on_close=self.closed,
                                   cert=cert, cert_key=cert_key, api=self, ca=ca).start()
@@ -103,9 +133,61 @@ class Bridge(Node):
             self.out(p.look, self.look["on"], self.familiar())
             self.status()
 
+    def set_panel(self, m):
+        try:
+            self.panel = p.panel(m.data)
+        except ValueError as e:
+            self.get_logger().warning(f"not sent to the phone: {e}")
+            return
+        self.server.send(json.dumps(self.panel))
+        self.pub["panel_mode"].publish(String(data=self.panel["mode"]))
+
+    def set_see(self, m):
+        try:
+            self.see = p.see(m.data)
+        except ValueError as e:
+            self.get_logger().warning(f"not sent to the phone: {e}")
+            return
+        self.server.send(json.dumps(self.see))
+
+    def set_note(self, m):
+        try:
+            self.note = p.note(m.data)
+        except ValueError as e:
+            self.get_logger().warning(f"not sent to the phone: {e}")
+            return
+        self.server.send(json.dumps(self.note))
+
+    def omi_state(self, m):
+        try:
+            self.omi = dict(json.loads(m.data), at=time.time())
+        except (ValueError, TypeError):
+            pass
+
+    def set_show(self, allowed=None, stop=False):
+        """The facilitator allows showing or not (show:=true, the setup page); stopped, the last frame is dropped."""
+        if allowed is not None:
+            self.allow_show = bool(allowed)
+        if stop or not self.allow_show:
+            self.showing, self.frame = False, (b"", 0.0)
+        self.out(p.show, self.allow_show, self.showing)
+        self.status()
+
+    def show_frame(self):
+        """The last frame the person showed, for the setup page: only while showing, and fresh (3 s)."""
+        jpeg, at = self.frame
+        return jpeg if self.showing and jpeg and time.time() - at < 3.0 else None
+
+    def guardian_state(self, m):
+        try:
+            self.guardian = dict(json.loads(m.data), at=time.time())
+        except (ValueError, TypeError):
+            pass
+
     def status(self):
         s = {"contract": c.CONTRACT, "connected": self.server.connected,
-             "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar}
+             "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar,
+             "show_allowed": self.allow_show, "showing": self.showing}
         if s["connected"]:
             s.update(self.phone)
         self.pub["status"].publish(String(data=json.dumps(s)))
@@ -119,6 +201,7 @@ class Bridge(Node):
     def closed(self, link):
         self.get_logger().info(f"phone at {link.peer} gone")
         self.phone = {}
+        self.showing, self.frame = False, (b"", 0.0)
         self.status()
 
     def text(self, raw: str):
@@ -135,6 +218,13 @@ class Bridge(Node):
             self.status()
             if self.look["on"]:  # a phone that comes (back) looks on, as asked
                 self.out(p.look, True, self.familiar())
+            if self.panel:
+                self.server.send(json.dumps(self.panel))
+            if self.see and self.see["find"]:
+                self.server.send(json.dumps(self.see))
+            if self.note and self.note["text"]:
+                self.server.send(json.dumps(self.note))
+            self.out(p.show, self.allow_show, False)
         elif t == "imu":
             now = time.monotonic()
             if now - self.last_imu < 1.0 / c.MAX_IMU_RATE:
@@ -181,11 +271,51 @@ class Bridge(Node):
                 return
             self.last_faces = now
             faces = m["faces"] if self.familiar() else [dict(f, familiar=None) for f in m["faces"]]
-            self.pub["faces"].publish(String(data=json.dumps({"n": m["n"], "faces": faces})))
+            self.pub["faces"].publish(String(data=json.dumps({"n": m["n"], "faces": faces, **({"period": m["period"]} if "period" in m else {})})))
             self.seen["faces"] = {"n": m["n"], "faces": faces, "at": time.time()}
+        elif t in p.VISION:
+            now = time.monotonic()
+            if now - self.last_vision.get(t, 0.0) < 1.0 / c.MAX_SEE_RATE:
+                return
+            self.last_vision[t] = now
+            body = {"camera": m["camera"], t: m[t]}
+            self.pub[t].publish(String(data=json.dumps(body)))
+            self.seen[t] = dict(body, at=time.time())
+        elif t == "see":
+            self.seen["see"] = {k: v for k, v in m.items() if k != "t"} | {"at": time.time()}
+        elif t == "panel":  # the person picked another mode on the phone
+            self.panel = dict(self.panel or p.panel(json.dumps(c.DEFAULT_PANEL)), mode=m["mode"])
+            self.pub["panel_mode"].publish(String(data=m["mode"]))
+        elif t == "pad":
+            self.pub["pad"].publish(String(data=json.dumps({"id": m["id"]})))
+            self.seen["pad"] = (self.seen.get("pad", []) + [{"id": m["id"], "at": time.time()}])[-10:]
         elif t == "code":
             self.pub["codes"].publish(String(data=json.dumps({"text": m["text"]})))
             self.seen["codes"] = (self.seen.get("codes", []) + [m["text"]])[-5:]
+        elif t == "menu":
+            self.pub["menu"].publish(String(data=json.dumps({"id": m["id"]})))
+            self.seen["menu"] = (self.seen.get("menu", []) + [{"id": m["id"], "at": time.time()}])[-10:]
+        elif t == "answer":
+            body = {"note": m["note"], "id": m["id"]}
+            self.pub["note_answer"].publish(String(data=json.dumps(body)))
+            self.seen["answer"] = dict(body, at=time.time())
+            if self.note and self.note["id"] == m["note"]:
+                self.note = None  # answered: a phone that comes does not get it again
+        elif t in ("read", "what"):
+            body = {k: v for k, v in m.items() if k != "t"}
+            self.pub[f"{t}_result"].publish(String(data=json.dumps(body)))
+            self.seen[t] = dict(body, at=time.time())
+        elif t == "show":  # the person starts or stops showing; refused unless allowed
+            self.showing = m["on"] and self.allow_show
+            if not self.showing:
+                self.frame = (b"", 0.0)
+            if m["on"] and not self.allow_show:
+                self.out(p.show, False)
+            self.get_logger().info(f"show: {'on' if self.showing else 'off'}" + ("" if self.allow_show else " (not allowed)"))
+            self.status()
+        elif t == "frame":
+            if self.showing:  # else dropped at once: nothing is kept that was not allowed
+                self.frame = (m["jpeg"], time.time())
 
     # the setup page (wsserver api): what the bridge sees, and the tests it asks for
 
@@ -197,14 +327,36 @@ class Bridge(Node):
                          "ca": f"{scheme}://{lan_address()}:{port}/ca.crt" if self.server.ca else None},
                 "secure_wifi": scheme == "https", "connected": self.server.connected,
                 "phone": self.phone, "seen": self.seen, "reports": self.reports, "expressions": c.EXPRESSIONS,
-                "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar}
+                "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar,
+                "panel": self.panel, "see": self.see, "guardian": self.guardian, "note": self.note, "omi": self.omi,
+                "show": {"allowed": self.allow_show, "on": self.showing, "fresh": self.show_frame() is not None}}
 
     def act(self, body: dict):
         """A test from the setup page. Outputs go through ROS, on the contract's own topics, so the whole chain is tested."""
+        if "guardian" in body:  # start or stop the Desk Guardian, as any program could (its own topics)
+            if "drive" in body:
+                self.guardian_pub["drive"].publish(Bool(data=bool(body["drive"])))
+            self.guardian_pub["run"].publish(Bool(data=bool(body["guardian"])))
+            return
         if "open" in body or "camera" in body:  # straight to the phone: no topic for these
-            m = p.open_page(body["open"]) if "open" in body else p.camera(body["camera"])
+            m = p.open_page(body["open"], body.get("layout", "")) if "open" in body else p.camera(body["camera"])
             if not self.server.send(json.dumps(m)):
                 raise ValueError("no phone")
+            return
+        if "allow_show" in body or "show" in body:  # the facilitator's choice, and a stop, on this PC only
+            self.set_show(body.get("allow_show"), stop=body.get("show") is False)
+            return
+        if "omi_tour" in body:  # Omi Assist's presentation, straight to the phone, in Omi's language
+            if (self.omi.get("state") != "on" or time.time() - self.omi.get("at", 0) > 3):
+                raise ValueError("Omi Assist is not running")
+            if not self.server.send(json.dumps(p.tour(self.omi.get("lang") or self.lang))):
+                raise ValueError("no phone")
+            return
+        if "omi" in body or "reminders" in body:  # Omi Assist (omi_assist): start, stop, its reminders (its own topics)
+            if "reminders" in body:
+                self.omi_pub["reminders"].publish(String(data=json.dumps(omi.clean(body["reminders"]))))  # a bad one: 400
+            if "omi" in body:
+                self.omi_pub["run"].publish(Bool(data=bool(body["omi"])))
             return
         if "allow_familiar" in body:  # the facilitator's choice, on this PC only (the setup page)
             self.allow_familiar = bool(body["allow_familiar"])
@@ -212,9 +364,9 @@ class Bridge(Node):
             self.out(p.look, self.look["on"], self.familiar())
             self.status()
             return
-        if not self.server.connected:  # the topic would take it, and nobody would show it: say so instead
-            raise ValueError("no phone")
         topic, v = body.get("topic"), body.get("value")
+        if not self.server.connected and topic not in ("see", "panel", "note"):  # nobody would show it: say so instead
+            raise ValueError("no phone")  # (see and panel are kept for the phone that comes: they may change meanwhile)
         if topic == "expression":
             msg = String(data=p.face(v)["expression"])
         elif topic == "gaze":
@@ -237,6 +389,12 @@ class Bridge(Node):
             msg = Bool(data=bool(v))
         elif topic == "forget":
             msg = Empty()
+        elif topic in ("panel", "see", "note"):
+            msg = String(data=json.dumps(v))
+            {"panel": p.panel, "see": p.see, "note": p.note}[topic](msg.data)
+        elif topic in ("read", "what"):
+            msg = String(data=json.dumps(v if isinstance(v, dict) else {}))
+            p.ask(topic, msg.data, self.lang)
         else:
             raise ValueError(f"unknown topic {topic!r}")
         self.tests[topic].publish(msg)
@@ -250,6 +408,26 @@ class Bridge(Node):
         self.reports = (self.reports + [r])[-10:]
         core = [k for k, v in r["checks"].items() if v["need"] == "core" and v["ok"] is False]
         self.get_logger().info(f"phone check from {r['model']}: " + (f"core missing: {', '.join(core)}" if core else "core complete"))
+        return self.keep(lambda: self.registry.check(body, r["model"]))
+
+    def summary(self, body: dict):
+        """The setup page's summary (step 6), for the registry."""
+        model = body.get("model") if isinstance(body.get("model"), str) and body["model"].strip() else self.phone.get("model", "")
+        if not model:
+            raise ValueError("which phone? none is connected and the summary names none")
+        return self.keep(lambda: self.registry.summary(body, model))
+
+    def keep(self, write):
+        if not self.registry:
+            return {"saved": None}
+        try:
+            path = write()
+        except OSError as e:
+            self.get_logger().warning(f"the registry could not keep it: {e}")
+            return {"saved": None, "error": str(e)}
+        rel = path.relative_to(self.registry.dir)
+        self.get_logger().info(f"kept in the registry: reports/{rel}")
+        return {"saved": f"reports/{rel}"}
 
     def destroy_node(self):
         self.server.stop()

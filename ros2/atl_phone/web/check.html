@@ -62,8 +62,9 @@ var T = {
         all: 'Test everything', send: 'Send report to the PC', face: 'Robot face →', copy: 'Copy report', test: 'Test',
         yes: 'yes', no: 'no', untested: '?', g_phone: 'This phone', g_face: 'Face', g_eyes: 'Eyes (camera)',
         g_ears: 'Ears and voice', g_body: 'Body (motion, light, touch)', g_link: 'Link to the robot',
-        sent: 'Report saved on the PC.', copied: 'Report copied.', failed: 'Could not send: ',
-        show_code: 'Show a QR code or barcode to the back camera…', clap: 'Speak or clap now…', move: 'Move the phone now…',
+        sent: 'Report saved on the PC', sending: 'Sending the report to the PC…', to_face: 'Opening the robot face…', stay: 'Stay here',
+        not_kept: 'The PC got the report but keeps no registry (start the bridge with ./start.sh).', copied: 'Report copied.', failed: 'Could not send: ',
+        show_code: 'Show a QR code or barcode to the back camera (any package will do). None at hand? It goes on by itself in', clap: 'Speak or clap now…', move: 'Move the phone now…',
         nfc: 'Hold an NFC tag to the phone…',
         v_good: 'Good robot face: everything for version 1 works.', v_ok: 'Usable, with gaps: ', v_bad: 'Too old for the web page: ',
         v_wait: 'Tap “Test everything” (allow camera, microphone and motion).',
@@ -72,8 +73,9 @@ var T = {
         all: 'Tout tester', send: 'Envoyer le rapport au PC', face: 'Visage du robot →', copy: 'Copier le rapport', test: 'Tester',
         yes: 'oui', no: 'non', untested: '?', g_phone: 'Ce téléphone', g_face: 'Visage', g_eyes: 'Yeux (caméra)',
         g_ears: 'Oreilles et voix', g_body: 'Corps (mouvement, lumière, toucher)', g_link: 'Lien avec le robot',
-        sent: 'Rapport enregistré sur le PC.', copied: 'Rapport copié.', failed: 'Envoi impossible : ',
-        show_code: 'Montrez un QR code ou un code-barres à la caméra arrière…', clap: 'Parlez ou tapez dans vos mains…', move: 'Bougez le téléphone…',
+        sent: 'Rapport enregistré sur le PC', sending: 'Envoi du rapport au PC…', to_face: 'Ouverture du visage du robot…', stay: 'Rester ici',
+        not_kept: 'Le PC a reçu le rapport mais ne tient pas de registre (lancez le pont avec ./start.sh).', copied: 'Rapport copié.', failed: 'Envoi impossible : ',
+        show_code: 'Montrez un QR code ou un code-barres à la caméra arrière (n’importe quel emballage). Aucun sous la main ? Le test continue tout seul dans', clap: 'Parlez ou tapez dans vos mains…', move: 'Bougez le téléphone…',
         nfc: 'Approchez une puce NFC du téléphone…',
         v_good: 'Bon visage de robot : tout ce qu’il faut pour la version 1 fonctionne.', v_ok: 'Utilisable, avec des manques : ', v_bad: 'Trop ancien pour la page web : ',
         v_wait: 'Touchez « Tout tester » (autorisez caméra, micro et mouvement).',
@@ -82,8 +84,9 @@ var T = {
         all: 'Alles testen', send: 'Bericht an den PC senden', face: 'Robotergesicht →', copy: 'Bericht kopieren', test: 'Testen',
         yes: 'ja', no: 'nein', untested: '?', g_phone: 'Dieses Handy', g_face: 'Gesicht', g_eyes: 'Augen (Kamera)',
         g_ears: 'Ohren und Stimme', g_body: 'Körper (Bewegung, Licht, Berührung)', g_link: 'Verbindung zum Roboter',
-        sent: 'Bericht auf dem PC gespeichert.', copied: 'Bericht kopiert.', failed: 'Senden fehlgeschlagen: ',
-        show_code: 'Zeige der Rückkamera einen QR-Code oder Strichcode…', clap: 'Sprich oder klatsche jetzt…', move: 'Bewege das Handy jetzt…',
+        sent: 'Bericht auf dem PC gespeichert', sending: 'Bericht wird an den PC gesendet…', to_face: 'Das Robotergesicht öffnet sich…', stay: 'Hier bleiben',
+        not_kept: 'Der PC hat den Bericht, führt aber kein Verzeichnis (die Brücke mit ./start.sh starten).', copied: 'Bericht kopiert.', failed: 'Senden fehlgeschlagen: ',
+        show_code: 'Zeige der Rückkamera einen QR-Code oder Strichcode (jede Verpackung geht). Keiner da? Es geht von selbst weiter in', clap: 'Sprich oder klatsche jetzt…', move: 'Bewege das Handy jetzt…',
         nfc: 'Halte einen NFC-Tag an das Handy…',
         v_good: 'Gutes Robotergesicht: alles für Version 1 funktioniert.', v_ok: 'Brauchbar, mit Lücken: ', v_bad: 'Zu alt für die Webseite: ',
         v_wait: 'Tippe auf „Alles testen“ (Kamera, Mikrofon und Bewegung erlauben).',
@@ -120,6 +123,22 @@ check('g_phone', 'battery', 'Battery', 'nice', function () { return { ok: has(na
   var b = await navigator.getBattery(); return { ok: true, note: Math.round(b.level * 100) + '%' + (b.charging ? ', charging' : '') };
 });
 
+check('g_phone', 'headroom', 'Headroom', 'info', function () {  // memory and cores as Chrome says them; the test: how busy it is now
+  return { ok: null, note: (navigator.deviceMemory ? '≥' + navigator.deviceMemory + ' GB' : '? GB') + ', ' + (navigator.hardwareConcurrency || '?') + ' cores' };
+}, async function () {
+  var late = 0, n = 0, t0 = performance.now(), last = t0;
+  await new Promise(function (done) {  // a tick every 50 ms for a second: what comes late is time other work took
+    var id = setInterval(function () {
+      var now = performance.now(); late += Math.max(0, now - last - 50); last = now; n++;
+      if (now - t0 >= 1000) { clearInterval(id); done(); }
+    }, 50);
+  });
+  var x = 0, k = 0, s0 = performance.now();
+  while (performance.now() - s0 < 200) { for (var i = 0; i < 10000; i++) x += Math.sqrt(i + k); k++; }  // a small sum, for speed
+  var busy = Math.round(late / 10);
+  return { ok: busy < 30, note: (navigator.deviceMemory ? '≥' + navigator.deviceMemory + ' GB' : '? GB') + ', ' + (navigator.hardwareConcurrency || '?') +
+           ' cores, main thread ' + busy + '% busy, ' + Math.round(k * 10000 / 200 / 1000) + ' Mops/s' };
+});
 // Face
 check('g_face', 'screen', 'Screen', 'core', function () {
   return { ok: true, note: screen.width + '×' + screen.height + ' @' + (window.devicePixelRatio || 1) + 'x' };
@@ -164,8 +183,9 @@ check('g_eyes', 'torch', 'Torch (headlight)', 'nice', function () { return { ok:
 check('g_eyes', 'barcode', 'Built-in code reader (BarcodeDetector)', 'nice', function () { return { ok: has(window, 'BarcodeDetector'), note: has(window, 'BarcodeDetector') ? '' : 'fallback: wasm reader' }; }, async function () {
   var formats = await BarcodeDetector.getSupportedFormats();
   if (!formats.length) return { ok: false, note: 'no formats (Play services missing?)' };
-  var d = new BarcodeDetector({ formats: formats }); var v = document.getElementById('video'); await camera(); say('show_code');
+  var d = new BarcodeDetector({ formats: formats }); var v = document.getElementById('video'); await camera();
   for (var i = 0; i < 40; i++) {
+    if (i % 4 === 0) document.getElementById('msg').textContent = t('show_code') + ' ' + (10 - i / 4) + ' s';
     var found = await d.detect(v);
     if (found.length) return { ok: true, note: found[0].format + ': ' + String(found[0].rawValue).slice(0, 40) + ' · ' + formats.join(', ') };
     await wait(250);
@@ -179,17 +199,41 @@ check('g_eyes', 'front', 'Front camera (look)', 'nice', function () { return { o
   var st = s.getVideoTracks()[0].getSettings(); s.getTracks().forEach(function (k) { k.stop(); });
   return { ok: st.facingMode !== 'environment', note: st.width + '×' + st.height + (st.facingMode ? ' ' + st.facingMode : '') };
 });
+async function mediapipe() {  // the vision library the face page uses (see.js), loaded once
+  if (!window.MPV) { var m = await import('./vendor/mediapipe/vision_bundle.mjs'); window.MPV = { m: m, files: await m.FilesetResolver.forVisionTasks('vendor/mediapipe/wasm') }; }
+  return window.MPV;
+}
+async function timeTask(make, model, extra) {  // ms per picture of one MediaPipe task, on the GPU if it can
+  var mp = await mediapipe(), t, where = 'gpu';
+  function opts(d) { return Object.assign({ baseOptions: { modelAssetPath: 'vendor/mediapipe/models/' + model, delegate: d }, runningMode: 'IMAGE' }, extra || {}); }
+  try { t = await mp.m[make].createFromOptions(mp.files, opts('GPU')); } catch (e) { t = await mp.m[make].createFromOptions(mp.files, opts('CPU')); where = 'cpu'; }
+  var c = document.createElement('canvas'); c.width = 640; c.height = 480; c.getContext('2d').fillRect(0, 0, 640, 480);
+  var run = make === 'GestureRecognizer' ? function () { t.recognize(c); } : function () { t.detect(c); };
+  run();  // the first one compiles
+  var t0 = performance.now(); for (var i = 0; i < 5; i++) run();
+  t.close();
+  return { ms: Math.round((performance.now() - t0) / 5), where: where };
+}
 check('g_eyes', 'faces', 'Face finder (look, on the phone)', 'nice', function () {
   var c = document.createElement('canvas'); return { ok: !!(c.getContext('webgl2') || c.getContext('webgl')), note: 'needs WebGL' };
-}, async function () {  // how long one search takes on this phone: under about 250 ms, look runs at 4 per second
-  if (!window.faceapi) await new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = 'vendor/face-api/face-api.js'; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
-  await faceapi.nets.tinyFaceDetector.loadFromUri('vendor/face-api/models');
-  var c = document.createElement('canvas'); c.width = 320; c.height = 240;
-  var opt = new faceapi.TinyFaceDetectorOptions({ inputSize: 320 });
-  await faceapi.detectAllFaces(c, opt);  // the first one compiles the shaders
-  var t0 = performance.now(); for (var i = 0; i < 5; i++) await faceapi.detectAllFaces(c, opt);
-  var ms = Math.round((performance.now() - t0) / 5);
-  return { ok: ms < 500, note: ms + ' ms per search · ' + faceapi.tf.getBackend() };
+}, async function () {  // how long one search takes on this phone: under 100 ms, look runs 10 times a second
+  var r = await timeTask('FaceDetector', 'blaze_face_short_range.tflite');
+  return { ok: r.ms < 250, note: r.ms + ' ms per search · ' + r.where };
+});
+check('g_eyes', 'vision', 'Vision: markers, objects, hands (on the phone)', 'nice', function () { return { ok: typeof WebAssembly === 'object', note: '' }; }, async function () {
+  var notes = [], slow = false;
+  for (var k of [['ObjectDetector', 'efficientdet_lite0.tflite', 'objects'], ['GestureRecognizer', 'gesture_recognizer.task', 'hands']]) {
+    var r = await timeTask(k[0], k[1]); notes.push(k[2] + ' ' + r.ms + ' ms (' + r.where + ')'); slow = slow || r.ms > 1000;
+  }
+  for (var f of ['cv.js', 'svd.js', 'posit1.js', 'aruco.js', 'aruco_4x4_1000.js']) {
+    if (f === 'aruco.js' && window.AR) continue;
+    await new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = 'vendor/aruco/' + f; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+  }
+  var det = new AR.Detector({ dictionaryName: 'ARUCO_4X4_1000' }), c = document.createElement('canvas'); c.width = 320; c.height = 240;
+  var img = c.getContext('2d').getImageData(0, 0, 320, 240), t0 = performance.now();
+  for (var i = 0; i < 5; i++) det.detect(img);
+  notes.unshift('markers ' + Math.round((performance.now() - t0) / 5) + ' ms');
+  return { ok: !slow, note: notes.join(' · ') };
 });
 
 // Ears and voice
@@ -202,11 +246,18 @@ check('g_ears', 'mic', 'Microphone', 'core', function () { return { ok: !!(navig
   return { ok: peak > 0.02, note: 'peak ' + peak.toFixed(2) + ' @ ' + ctx.sampleRate + ' Hz' };
 });
 check('g_ears', 'tts', 'Speech (text to speech)', 'core', function () { return { ok: has(window, 'speechSynthesis'), note: '' }; }, async function () {
-  var vs = speechSynthesis.getVoices(); if (!vs.length) { await wait(1000); vs = speechSynthesis.getVoices(); }
+  var vs = speechSynthesis.getVoices();
+  for (var i = 0; i < 30 && !vs.length; i++) { await wait(100); vs = speechSynthesis.getVoices(); }  // some phones load them late
   var langs = ['en', 'fr', 'de'].filter(function (l) { return vs.some(function (v) { return v.lang.slice(0, 2) === l; }); });
+  var tag = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE' }[lang];
   var u = new SpeechSynthesisUtterance({ en: 'Hello, I am your robot.', fr: 'Bonjour, je suis ton robot.', de: 'Hallo, ich bin dein Roboter.' }[lang]);
-  u.lang = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE' }[lang]; speechSynthesis.speak(u);
-  return { ok: langs.length === 3, note: 'voices: ' + (langs.join(', ') || 'none') };
+  u.lang = tag;  // and the voice itself: a language alone (with voices said as fr_FR) never starts on some phones
+  u.voice = vs.filter(function (v) { return v.lang.replace('_', '-') === tag; })[0] || vs.filter(function (v) { return v.lang.slice(0, 2) === lang; })[0] || null;
+  var started = await new Promise(function (ok) {
+    u.onstart = function () { ok(true); }; u.onerror = function () { ok(false); };
+    speechSynthesis.cancel(); speechSynthesis.speak(u); setTimeout(function () { ok(false); }, 4000);
+  });
+  return { ok: langs.length === 3 && started, note: 'voices: ' + (langs.join(', ') || 'none') + (started ? '' : ' · it did not start speaking') };
 });
 check('g_ears', 'stt', 'Browser speech recognition', 'info', function () {
   var ok = has(window, 'SpeechRecognition') || has(window, 'webkitSpeechRecognition');
@@ -292,9 +343,11 @@ async function run(c) {
   catch (e) { report.checks[c.id] = { ok: false, note: (e && e.name ? e.name + ': ' : '') + (e && e.message || e), need: c.need, tested: true }; }
   say(''); render();
 }
-document.getElementById('all').onclick = async function () {
-  for (var i = 0; i < checks.length; i++) if (checks[i].test && checks[i].id !== 'nfc') await run(checks[i]);
-  stopCamera();
+document.getElementById('all').onclick = async function () {  // every test, then the report to the PC, then the face
+  var b = this; b.disabled = true;
+  try { for (var i = 0; i < checks.length; i++) if (checks[i].test && checks[i].id !== 'nfc') await run(checks[i]); }
+  finally { stopCamera(); b.disabled = false; }
+  sendReport();
 };
 function phoneId() {  // a random id kept in this browser: it ties this phone's check report to its face, and says nothing about the phone
   try {
@@ -307,11 +360,28 @@ function phoneId() {  // a random id kept in this browser: it ties this phone's 
   } catch (e) { return ''; }  // storage blocked: the setup page falls back to the model
 }
 function text() { return JSON.stringify(report, null, 2); }
-document.getElementById('send').onclick = function () {
+var faceTimer = 0;
+function faceUrl() {  // the face, turned as the phone is held; the pairing key goes along
+  var q = location.search.slice(1).split('&').filter(function (kv) { return /^key=/.test(kv); });
+  return 'face.html?' + ['layout=auto'].concat(q).join('&');
+}
+function sendReport() {  // to the PC's registry (reports/<model>/), then on to the face in 3 s, unless asked to stay
+  var b = document.getElementById('send'), msg = document.getElementById('msg');
+  if (b.disabled) return;
+  b.disabled = true; msg.textContent = t('sending'); clearTimeout(faceTimer);
   fetch('report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: text() })
-    .then(function (r) { if (!r.ok) throw new Error(r.status); say('sent'); })
-    .catch(function (e) { document.getElementById('msg').textContent = t('failed') + e.message; });
-};
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.status === 200 ? r.json() : {}; })
+    .then(function (a) {
+      msg.textContent = (a.saved ? t('sent') + ': ' + a.saved + '. ' : a.saved === null ? t('not_kept') + ' ' : t('sent') + '. ') + t('to_face') + ' ';
+      var stay = document.createElement('button'); stay.className = 'test'; stay.id = 'stay'; stay.textContent = t('stay');
+      stay.onclick = function () { clearTimeout(faceTimer); stay.remove(); };
+      msg.appendChild(stay);
+      faceTimer = setTimeout(function () { location.href = faceUrl(); }, 3000);
+    })
+    .catch(function (e) { msg.textContent = t('failed') + e.message; })
+    .then(function () { b.disabled = false; });
+}
+document.getElementById('send').onclick = sendReport;
 document.getElementById('copy').onclick = function () {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text()).then(function () { say('copied'); });
   else { var a = document.createElement('textarea'); a.value = text(); document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); say('copied'); }
@@ -319,7 +389,7 @@ document.getElementById('copy').onclick = function () {
 [].forEach.call(document.querySelectorAll('.lang button'), function (b) {
   b.onclick = function () { lang = b.getAttribute('data-l'); try { localStorage.setItem('atl-lang', lang); } catch (e) {} render(); };
 });
-document.getElementById('toface').href = 'face.html' + location.search;
+document.getElementById('toface').href = faceUrl();
 probeAll();
 </script>
 </body>

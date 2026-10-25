@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Atelier-5
-// Phone setup, on the PC: it watches the bridge (/api/state) and asks it for tests (/api/act).
+// Phone setup, on the PC: it watches the bridge (/api/state) and asks it for tests (/api/act). At the top, what to do:
+// Connect and Test (the six steps), Desk Guard (the Desk Guardian), Omi Assist (the helper, its reminders, showing).
 'use strict';
 
 var T = {
   en: {
-    title: 'Phone setup', s1: 'The bridge', s2: 'Connect the phone', s3: 'Phone check', s4: 'Test it', s5: 'Summary',
+    title: 'Phone setup', s1: 'The bridge', s2: 'Connect the phone', s3: 'Phone check', s4: 'Test it', s5: 'Scenarios', s6: 'Summary',
     s1_lead: 'The bridge connects the phone to ROS 2. If you can read this, it runs.',
     s2_lead: 'By USB at the desk, or by Wi-Fi on the table.',
     s3_lead: 'What can this phone do? The check tests each part once. You can skip it.',
     s4_lead: 'Each test goes through ROS 2, as a robot program would. Outputs: say what you saw. Senses: they tick by themselves.',
+    s5_lead: 'Examples that use it all at once. They run in ROS 2 beside the bridge and talk to the phone only through its topics.',
     usb1: 'On the phone: Settings › About phone › tap “Build number” seven times.',
     usb2: 'Settings › Developer options › turn on “USB debugging”.',
     usb3: 'Plug the phone into this PC and allow it on the phone.',
@@ -25,7 +27,7 @@ var T = {
     open_check: 'Open the check on the phone', chk2: 'On the phone: “Test everything”, allow camera, microphone and motion.',
     chk3: 'Then “Send report to the PC”, and “Robot face →” to come back.',
     outputs: 'The robot → the phone', inputs: 'The phone → the robot',
-    copy: 'Copy', copied: 'Copied.', copy_summary: 'Copy summary', back: '← Back', next: 'Next →',
+    copy: 'Copy', copied: 'Copied.', copy_summary: 'Copy summary', save_summary: 'Save on the PC', saved_summary: 'Saved on the PC:', no_registry: 'not kept: the bridge has no registry (start it with ./start.sh)', back: '← Back', next: 'Next →',
     bridge_ok: 'The bridge runs.', bridge_no: 'No bridge: start it with ./start.sh', robot: 'Robot', contract: 'Contract',
     usb_url: 'USB address', wifi_url: 'Wi-Fi address',
     waiting: 'Waiting for the phone…', connected: 'Phone connected:', no_phone: 'No phone: connect one first (step 2).',
@@ -50,14 +52,27 @@ var T = {
     familiar_allow: 'Allow telling faces apart (this session only)', forget: 'Forget the faces', faces_n: 'faces:',
     familiar_note: 'The phone then keeps a signature of each face in its memory, to give the same face the same number. Nothing is stored or sent, and it is forgotten on reload. Ask the people at the table, and the parents, first.',
     look_error: 'look did not start:', look_wait: 'the back camera is in use: look waits',
-    owner: 'The Desk Guardian’s owner card: hold it up to the front camera, with your face in view (./start.sh --guardian).', code_seen: 'read:'
+    guardian: 'Desk Guardian', guardian_hint: 'Like Cozmo: it watches the desk with the front camera, turns to whoever comes, greets its owner (the card in step 4) and is scared when picked up. With a Thymio (atl-bot-thymio, or its twin in Webots) it turns its body and keeps away from the edge.',
+    start: 'Start', stop: 'Stop', drive: 'It may drive the Thymio', g_off: 'stopped', g_none: 'the guardian does not answer: restart the bridge (./start.sh)',
+    st_guarding: 'watching', st_alert: 'alert', st_friend: 'friend', st_intruder: 'intruder', st_scared: 'scared', st_edge: 'at the edge', st_petted: 'petted',
+    thymio_yes: 'the Thymio answers', thymio_no: 'no Thymio: the phone alone', friends: 'friends:',
+    g_tip: 'For friends who stay friends, allow telling faces apart first (step 4, Look).',
+    panel: 'Portrait panel', panel_hint: 'Held upright, the face has its eyes on top and a panel below: a mouth that turns into a sound wave when it speaks, buttons a program defines (each press goes to ROS), a camera’s picture (on the phone only), or the sensors. A tap on the eyes opens the menu; a swipe steps through it.',
+    layout: 'Layout:', landscape: 'Landscape', portrait: 'Portrait', auto: 'Auto (as held)', layout_note: 'The face reloads: tap ▶ on the phone again.',
+    panel_mode: 'Panel:', mode_pad: 'Buttons', mode_camera: 'Front camera', mode_camera_back: 'Back camera', mode_sensors: 'Sensors', mode_mouth: 'Mouth', mode_off: 'Eyes only', thymio_pad: 'Thymio buttons', abcd_pad: 'A B C D', pad: 'Panel buttons', pad_seen: 'pressed:',
+    topics: 'Programs:',
+    vision: 'Vision (camera)', vision_hint: 'The phone’s camera finds things, on the phone; only numbers come here: markers (their number, distance and angle), a colour, objects (80 kinds), hands and gestures.',
+    cam_front: 'Front', cam_back: 'Back', f_faces: 'faces', f_markers: 'markers', f_blobs: 'colour', f_objects: 'objects', f_hands: 'hands',
+    marker_cm: 'Marker size, cm:', print_markers: 'Print the markers', vision_ms: 'time per picture:',
+    owner: 'The Desk Guardian’s owner card: hold it up to the front camera, with your face in view (start the guardian in step 5).', code_seen: 'read:'
   },
   fr: {
-    title: 'Installer le téléphone', s1: 'Le pont', s2: 'Connecter le téléphone', s3: 'Test du téléphone', s4: 'L’essayer', s5: 'Bilan',
+    title: 'Installer le téléphone', s1: 'Le pont', s2: 'Connecter le téléphone', s3: 'Test du téléphone', s4: 'L’essayer', s5: 'Scénarios', s6: 'Bilan',
     s1_lead: 'Le pont relie le téléphone à ROS 2. Si vous lisez ceci, il tourne.',
     s2_lead: 'Par USB au bureau, ou par Wi-Fi sur la table.',
     s3_lead: 'Que sait faire ce téléphone ? Le test essaie chaque partie une fois. Vous pouvez le passer.',
     s4_lead: 'Chaque essai passe par ROS 2, comme un programme du robot. Sorties : dites ce que vous avez vu. Sens : ils se cochent tout seuls.',
+    s5_lead: 'Des exemples qui utilisent tout à la fois. Ils tournent dans ROS 2 à côté du pont et ne parlent au téléphone que par ses topics.',
     usb1: 'Sur le téléphone : Paramètres › À propos du téléphone › touchez sept fois « Numéro de build ».',
     usb2: 'Paramètres › Options pour les développeurs › activez « Débogage USB ».',
     usb3: 'Branchez le téléphone sur ce PC et autorisez-le sur le téléphone.',
@@ -73,7 +88,7 @@ var T = {
     open_check: 'Ouvrir le test sur le téléphone', chk2: 'Sur le téléphone : « Tout tester », autorisez caméra, micro et mouvement.',
     chk3: 'Puis « Envoyer le rapport au PC », et « Visage du robot → » pour revenir.',
     outputs: 'Le robot → le téléphone', inputs: 'Le téléphone → le robot',
-    copy: 'Copier', copied: 'Copié.', copy_summary: 'Copier le bilan', back: '← Retour', next: 'Suivant →',
+    copy: 'Copier', copied: 'Copié.', copy_summary: 'Copier le bilan', save_summary: 'Enregistrer sur le PC', saved_summary: 'Enregistré sur le PC :', no_registry: 'non gardé : le pont n’a pas de registre (lancez-le avec ./start.sh)', back: '← Retour', next: 'Suivant →',
     bridge_ok: 'Le pont tourne.', bridge_no: 'Pas de pont : lancez-le avec ./start.sh', robot: 'Robot', contract: 'Contrat',
     usb_url: 'Adresse USB', wifi_url: 'Adresse Wi-Fi',
     waiting: 'En attente du téléphone…', connected: 'Téléphone connecté :', no_phone: 'Pas de téléphone : connectez-en un d’abord (étape 2).',
@@ -98,14 +113,27 @@ var T = {
     familiar_allow: 'Permettre de distinguer les visages (cette séance seulement)', forget: 'Oublier les visages', faces_n: 'visages :',
     familiar_note: 'Le téléphone garde alors une signature de chaque visage dans sa mémoire, pour donner le même numéro au même visage. Rien n’est enregistré ni envoyé, et tout est oublié au rechargement. Demandez d’abord aux personnes à la table, et aux parents.',
     look_error: 'le regard n’a pas démarré :', look_wait: 'la caméra arrière est utilisée : le regard attend',
-    owner: 'La carte du propriétaire pour le Gardien du bureau : montrez-la à la caméra avant, avec votre visage (./start.sh --guardian).', code_seen: 'lu :'
+    guardian: 'Gardien du bureau', guardian_hint: 'Comme Cozmo : il surveille le bureau avec la caméra avant, se tourne vers qui arrive, salue son propriétaire (la carte de l’étape 4) et a peur quand on le soulève. Avec un Thymio (atl-bot-thymio, ou son jumeau dans Webots), il tourne son corps et s’éloigne du bord.',
+    start: 'Démarrer', stop: 'Arrêter', drive: 'Il peut conduire le Thymio', g_off: 'arrêté', g_none: 'le gardien ne répond pas : relancez le pont (./start.sh)',
+    st_guarding: 'surveille', st_alert: 'en alerte', st_friend: 'ami', st_intruder: 'intrus', st_scared: 'effrayé', st_edge: 'au bord', st_petted: 'caressé',
+    thymio_yes: 'le Thymio répond', thymio_no: 'pas de Thymio : le téléphone seul', friends: 'amis :',
+    g_tip: 'Pour que les amis restent des amis, permettez d’abord de distinguer les visages (étape 4, Regard).',
+    panel: 'Panneau en portrait', panel_hint: 'Tenu debout, le visage a ses yeux en haut et un panneau en bas : une bouche qui devient une onde sonore quand il parle, des boutons définis par un programme (chaque appui va à ROS), l’image d’une caméra (sur le téléphone seulement), ou les capteurs. Toucher les yeux ouvre le menu ; glisser le parcourt.',
+    layout: 'Disposition :', landscape: 'Paysage', portrait: 'Portrait', auto: 'Auto (selon le téléphone)', layout_note: 'Le visage se recharge : touchez ▶ de nouveau sur le téléphone.',
+    panel_mode: 'Panneau :', mode_pad: 'Boutons', mode_camera: 'Caméra avant', mode_camera_back: 'Caméra arrière', mode_sensors: 'Capteurs', mode_mouth: 'Bouche', mode_off: 'Yeux seuls', thymio_pad: 'Boutons du Thymio', abcd_pad: 'A B C D', pad: 'Boutons du panneau', pad_seen: 'appuyé :',
+    topics: 'Programmes :',
+    vision: 'Vision (caméra)', vision_hint: 'La caméra du téléphone trouve des choses, sur le téléphone ; seuls des nombres arrivent ici : des marqueurs (leur numéro, distance et angle), une couleur, des objets (80 sortes), des mains et des gestes.',
+    cam_front: 'Avant', cam_back: 'Arrière', f_faces: 'visages', f_markers: 'marqueurs', f_blobs: 'couleur', f_objects: 'objets', f_hands: 'mains',
+    marker_cm: 'Taille des marqueurs, cm :', print_markers: 'Imprimer les marqueurs', vision_ms: 'temps par image :',
+    owner: 'La carte du propriétaire pour le Gardien du bureau : montrez-la à la caméra avant, avec votre visage (démarrez le gardien à l’étape 5).', code_seen: 'lu :'
   },
   de: {
-    title: 'Handy einrichten', s1: 'Die Brücke', s2: 'Handy verbinden', s3: 'Handy-Check', s4: 'Ausprobieren', s5: 'Zusammenfassung',
+    title: 'Handy einrichten', s1: 'Die Brücke', s2: 'Handy verbinden', s3: 'Handy-Check', s4: 'Ausprobieren', s5: 'Szenarien', s6: 'Zusammenfassung',
     s1_lead: 'Die Brücke verbindet das Handy mit ROS 2. Wenn du das liest, läuft sie.',
     s2_lead: 'Per USB am Tisch, oder per WLAN auf dem Spielfeld.',
     s3_lead: 'Was kann dieses Handy? Der Check testet jedes Teil einmal. Du kannst ihn überspringen.',
     s4_lead: 'Jeder Test geht über ROS 2, wie ein Roboterprogramm. Ausgaben: sag, was du gesehen hast. Sinne: sie haken sich selbst ab.',
+    s5_lead: 'Beispiele, die alles auf einmal nutzen. Sie laufen in ROS 2 neben der Brücke und sprechen mit dem Handy nur über seine Topics.',
     usb1: 'Auf dem Handy: Einstellungen › Über das Telefon › siebenmal auf „Build-Nummer“ tippen.',
     usb2: 'Einstellungen › Entwickleroptionen › „USB-Debugging“ einschalten.',
     usb3: 'Handy an diesen PC anschließen und auf dem Handy erlauben.',
@@ -121,7 +149,7 @@ var T = {
     open_check: 'Check auf dem Handy öffnen', chk2: 'Auf dem Handy: „Alles testen“, Kamera, Mikrofon und Bewegung erlauben.',
     chk3: 'Dann „Bericht an den PC senden“, und „Robotergesicht →“ für zurück.',
     outputs: 'Der Roboter → das Handy', inputs: 'Das Handy → der Roboter',
-    copy: 'Kopieren', copied: 'Kopiert.', copy_summary: 'Zusammenfassung kopieren', back: '← Zurück', next: 'Weiter →',
+    copy: 'Kopieren', copied: 'Kopiert.', copy_summary: 'Zusammenfassung kopieren', save_summary: 'Auf dem PC speichern', saved_summary: 'Auf dem PC gespeichert:', no_registry: 'nicht gespeichert: die Brücke hat kein Verzeichnis (mit ./start.sh starten)', back: '← Zurück', next: 'Weiter →',
     bridge_ok: 'Die Brücke läuft.', bridge_no: 'Keine Brücke: mit ./start.sh starten', robot: 'Roboter', contract: 'Vertrag',
     usb_url: 'USB-Adresse', wifi_url: 'WLAN-Adresse',
     waiting: 'Warte auf das Handy…', connected: 'Handy verbunden:', no_phone: 'Kein Handy: erst eins verbinden (Schritt 2).',
@@ -146,9 +174,73 @@ var T = {
     familiar_allow: 'Gesichter unterscheiden erlauben (nur in dieser Sitzung)', forget: 'Gesichter vergessen', faces_n: 'Gesichter:',
     familiar_note: 'Das Handy behält dann eine Signatur jedes Gesichts im Speicher, damit dasselbe Gesicht dieselbe Nummer bekommt. Nichts wird gespeichert oder gesendet, und beim Neuladen ist alles vergessen. Frag zuerst die Leute am Tisch, und die Eltern.',
     look_error: 'Schauen startete nicht:', look_wait: 'die Rückkamera ist belegt: Schauen wartet',
-    owner: 'Die Besitzerkarte des Schreibtischwächters: vor die Frontkamera halten, mit deinem Gesicht im Bild (./start.sh --guardian).', code_seen: 'gelesen:'
+    guardian: 'Schreibtischwächter', guardian_hint: 'Wie Cozmo: er bewacht den Schreibtisch mit der Frontkamera, dreht sich zu jedem, der kommt, begrüßt seinen Besitzer (die Karte aus Schritt 4) und erschrickt, wenn man ihn hochhebt. Mit einem Thymio (atl-bot-thymio, oder seinem Zwilling in Webots) dreht er den Körper und hält sich von der Kante fern.',
+    start: 'Starten', stop: 'Stoppen', drive: 'Er darf den Thymio fahren', g_off: 'gestoppt', g_none: 'der Wächter antwortet nicht: die Brücke neu starten (./start.sh)',
+    st_guarding: 'wacht', st_alert: 'aufmerksam', st_friend: 'Freund', st_intruder: 'Eindringling', st_scared: 'erschrocken', st_edge: 'an der Kante', st_petted: 'gestreichelt',
+    thymio_yes: 'der Thymio antwortet', thymio_no: 'kein Thymio: nur das Handy', friends: 'Freunde:',
+    g_tip: 'Damit Freunde Freunde bleiben, zuerst das Unterscheiden von Gesichtern erlauben (Schritt 4, Schauen).',
+    panel: 'Hochformat-Feld', panel_hint: 'Aufrecht gehalten zeigt das Gesicht oben die Augen und unten ein Feld: einen Mund, der beim Sprechen zur Schallwelle wird, Tasten, die ein Programm festlegt (jeder Druck geht an ROS), das Bild einer Kamera (nur auf dem Handy), oder die Sensoren. Ein Tippen auf die Augen öffnet das Menü; Wischen blättert.',
+    layout: 'Ausrichtung:', landscape: 'Quer', portrait: 'Hoch', auto: 'Auto (wie gehalten)', layout_note: 'Das Gesicht lädt neu: auf dem Handy wieder ▶ tippen.',
+    panel_mode: 'Feld:', mode_pad: 'Tasten', mode_camera: 'Frontkamera', mode_camera_back: 'Rückkamera', mode_sensors: 'Sensoren', mode_mouth: 'Mund', mode_off: 'Nur Augen', thymio_pad: 'Thymio-Tasten', abcd_pad: 'A B C D', pad: 'Feld-Tasten', pad_seen: 'gedrückt:',
+    topics: 'Programme:',
+    vision: 'Sehen (Kamera)', vision_hint: 'Die Kamera des Handys findet Dinge, auf dem Handy; nur Zahlen kommen hier an: Marker (ihre Nummer, Entfernung und Winkel), eine Farbe, Gegenstände (80 Arten), Hände und Gesten.',
+    cam_front: 'Vorne', cam_back: 'Hinten', f_faces: 'Gesichter', f_markers: 'Marker', f_blobs: 'Farbe', f_objects: 'Gegenstände', f_hands: 'Hände',
+    marker_cm: 'Markergröße, cm:', print_markers: 'Marker drucken', vision_ms: 'Zeit pro Bild:',
+    owner: 'Die Besitzerkarte des Schreibtischwächters: vor die Frontkamera halten, mit deinem Gesicht im Bild (den Wächter in Schritt 5 starten).', code_seen: 'gelesen:'
   }
 };
+// the three choices at the top, and Omi Assist
+Object.assign(T.en, {
+  v_setup: 'Connect and Test', v_setup_d: 'Connect a phone, check it, test each part', v_guard: 'Desk Guard', v_guard_d: 'It watches the desk, greets its owner',
+  v_omi: 'Omi Assist', v_omi_d: 'A helper on a stand: big spoken tiles, reminders',
+  omi_lead: 'The phone on a stand as a helper. A tap on its eyes opens big tiles that say their name: the time, the magnifier, reading aloud, “what is this?”, the front and back camera, eyes that follow, showing. Her assistant’s reminders come at their time, as a big card she answers.',
+  no_phone_here: 'No phone connected: open the face on the phone (Connect and Test, step 2).', omi: 'Omi Assist',
+  omi_none: 'Omi Assist does not answer: start the bridge with ./start.sh --omi', omi_on: 'running', omi_off: 'stopped', omi_face: 'Face upright on the phone', omi_tour: 'Introduce Omi Assist',
+  omi_tour_d: 'The phone says what it can, tile by tile, in its language (about two minutes). A tap on the phone ends it.',
+  omi_stops: 'Starting one stops the other (Desk Guard, Omi Assist): they share the face.',
+  reminders: 'Reminders', rem_add: '+ Add a reminder', rem_save: 'Save the reminders', rem_test: 'Test: one in a minute', rem_test_text: 'Drink a glass of water',
+  rem_text: 'What to remind', rem_saved: 'saved', rem_next: 'next:', rem_none: 'no reminder yet', every_day: 'every day', answers: 'answered:',
+  ans_done: 'done', ans_later: 'later', picks: 'tiles picked:', days: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+  show_card: 'Showing the picture', show_allow: 'Allow her to show the camera’s picture to this PC (only while she presses “Show”)',
+  show_note: 'Only while she shows: a red badge on the phone, at most a minute, a tap stops it. The picture comes to this page only: it is not kept, nor sent on to ROS. Agree on it with her first (docs/consent-show.md).',
+  show_live: 'showing now', show_wait: 'not showing', show_stop: 'Stop showing', show_off: 'not allowed',
+  lighter: 'A lighter phone', install_hint: 'On the phone, in Chrome: ⋮ › Install app (or Add to Home screen). The face then opens as its own window, without the tabs and the address bar.',
+  tidy_hint: 'On this PC: what weighs on the phone, and closing background apps when you say so:', more_views: 'Desk Guard and Omi Assist: at the top of this page.'
+});
+Object.assign(T.fr, {
+  v_setup: 'Connecter et tester', v_setup_d: 'Connecter un téléphone, le vérifier, tester chaque partie', v_guard: 'Gardien du bureau', v_guard_d: 'Il surveille le bureau, salue son propriétaire',
+  v_omi: 'Omi Assist', v_omi_d: 'Un assistant sur un support : de grandes tuiles qui parlent, des rappels',
+  omi_lead: 'Le téléphone sur un support, comme assistant. Un toucher sur ses yeux ouvre de grandes tuiles qui disent leur nom : l’heure, la loupe, lire à voix haute, « qu’est-ce que c’est ? », la caméra avant et arrière, des yeux qui suivent, montrer. Les rappels de la personne qui l’assiste arrivent à leur heure, sur une grande carte à laquelle elle répond.',
+  no_phone_here: 'Aucun téléphone connecté : ouvrez le visage sur le téléphone (Connecter et tester, étape 2).', omi: 'Omi Assist',
+  omi_none: 'Omi Assist ne répond pas : lancez le pont avec ./start.sh --omi', omi_on: 'en marche', omi_off: 'arrêté', omi_face: 'Visage debout sur le téléphone', omi_tour: 'Présenter Omi Assist',
+  omi_tour_d: 'Le téléphone dit ce qu’il sait faire, tuile par tuile, dans sa langue (environ deux minutes). Un toucher sur le téléphone l’arrête.',
+  omi_stops: 'En lancer un arrête l’autre (Gardien du bureau, Omi Assist) : ils partagent le visage.',
+  reminders: 'Rappels', rem_add: '+ Ajouter un rappel', rem_save: 'Enregistrer les rappels', rem_test: 'Essai : un dans une minute', rem_test_text: 'Boire un verre d’eau',
+  rem_text: 'De quoi se souvenir', rem_saved: 'enregistré', rem_next: 'prochain :', rem_none: 'pas encore de rappel', every_day: 'tous les jours', answers: 'réponses :',
+  ans_done: 'fait', ans_later: 'plus tard', picks: 'tuiles choisies :', days: ['lu', 'ma', 'me', 'je', 've', 'sa', 'di'],
+  show_card: 'Montrer l’image', show_allow: 'Lui permettre de montrer l’image de la caméra à ce PC (seulement quand elle appuie sur « Montrer »)',
+  show_note: 'Seulement pendant qu’elle montre : un badge rouge sur le téléphone, une minute au plus, un toucher l’arrête. L’image vient sur cette page seulement : elle n’est ni gardée, ni envoyée à ROS. Mettez-vous d’accord avec elle d’abord (docs/consent-show.md).',
+  show_live: 'elle montre', show_wait: 'rien de montré', show_stop: 'Arrêter de montrer', show_off: 'non permis',
+  lighter: 'Un téléphone plus léger', install_hint: 'Sur le téléphone, dans Chrome : ⋮ › Installer l’application (ou Ajouter à l’écran d’accueil). Le visage s’ouvre alors dans sa propre fenêtre, sans les onglets ni la barre d’adresse.',
+  tidy_hint: 'Sur ce PC : ce qui pèse sur le téléphone, et fermer les applis en arrière-plan quand vous le dites :', more_views: 'Gardien du bureau et Omi Assist : en haut de cette page.'
+});
+Object.assign(T.de, {
+  v_setup: 'Verbinden und testen', v_setup_d: 'Ein Handy verbinden, prüfen, jeden Teil testen', v_guard: 'Schreibtischwächter', v_guard_d: 'Er bewacht den Schreibtisch, begrüßt seinen Besitzer',
+  v_omi: 'Omi Assist', v_omi_d: 'Ein Helfer auf einem Ständer: große sprechende Kacheln, Erinnerungen',
+  omi_lead: 'Das Handy auf einem Ständer als Helfer. Ein Tipp auf die Augen öffnet große Kacheln, die ihren Namen sagen: die Uhrzeit, die Lupe, Vorlesen, „Was ist das?“, die vordere und hintere Kamera, Augen, die folgen, Zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie beantwortet.',
+  no_phone_here: 'Kein Handy verbunden: das Gesicht auf dem Handy öffnen (Verbinden und testen, Schritt 2).', omi: 'Omi Assist',
+  omi_none: 'Omi Assist antwortet nicht: die Brücke mit ./start.sh --omi starten', omi_on: 'läuft', omi_off: 'gestoppt', omi_face: 'Gesicht aufrecht auf dem Handy', omi_tour: 'Omi Assist vorstellen',
+  omi_tour_d: 'Das Handy sagt, was es kann, Kachel für Kachel, in seiner Sprache (etwa zwei Minuten). Ein Tipp auf das Handy beendet es.',
+  omi_stops: 'Das eine starten stoppt das andere (Schreibtischwächter, Omi Assist): sie teilen sich das Gesicht.',
+  reminders: 'Erinnerungen', rem_add: '+ Erinnerung hinzufügen', rem_save: 'Erinnerungen speichern', rem_test: 'Test: eine in einer Minute', rem_test_text: 'Ein Glas Wasser trinken',
+  rem_text: 'Woran erinnern', rem_saved: 'gespeichert', rem_next: 'nächste:', rem_none: 'noch keine Erinnerung', every_day: 'jeden Tag', answers: 'beantwortet:',
+  ans_done: 'erledigt', ans_later: 'später', picks: 'gewählte Kacheln:', days: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+  show_card: 'Das Bild zeigen', show_allow: 'Ihr erlauben, das Kamerabild diesem PC zu zeigen (nur solange sie „Zeigen“ drückt)',
+  show_note: 'Nur solange sie zeigt: ein rotes Abzeichen auf dem Handy, höchstens eine Minute, ein Tipp beendet es. Das Bild kommt nur auf diese Seite: es wird weder gespeichert noch an ROS weitergegeben. Vorher mit ihr absprechen (docs/consent-show.md).',
+  show_live: 'sie zeigt gerade', show_wait: 'nichts gezeigt', show_stop: 'Zeigen beenden', show_off: 'nicht erlaubt',
+  lighter: 'Ein leichteres Handy', install_hint: 'Auf dem Handy, in Chrome: ⋮ › App installieren (oder Zum Startbildschirm hinzufügen). Das Gesicht öffnet sich dann in einem eigenen Fenster, ohne Tabs und Adressleiste.',
+  tidy_hint: 'Auf diesem PC: was das Handy belastet, und Hintergrund-Apps schließen, wenn Sie es sagen:', more_views: 'Schreibtischwächter und Omi Assist: oben auf dieser Seite.'
+});
 var lang = 'en';
 try { lang = localStorage.getItem('atl-lang') || (navigator.language || 'en').slice(0, 2); } catch (e) {}
 if (!T[lang]) lang = 'en';
@@ -161,13 +253,21 @@ function el(tag, attrs, kids) {
   return e;
 }
 
-var STEPS = ['bridge', 'connect', 'check', 'test', 'summary'];
+var STEPS = ['bridge', 'connect', 'check', 'test', 'play', 'summary'];
+var VIEWS = ['setup', 'guard', 'omi'], view = 'setup';  // what to do, picked at the top (and kept in the address: #omi)
+try { view = VIEWS.indexOf(location.hash.slice(1)) >= 0 ? location.hash.slice(1) : localStorage.getItem('atl-view') || 'setup'; } catch (e) {}
+if (VIEWS.indexOf(view) < 0) view = 'setup';
 var step = 0, S = null, bridgeUp = null, lastModel = '', lastId = '';
 var answers = {};          // outputs: true / false, as the person says
 var touched = {};          // touches seen: tap-left, tap-centre, tap-right, long, swipe
 var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {}, turned = false;  // tilted to another side, or turned
 var passed = {};           // senses that worked once stay ticked, even if the phone reconnects
 var CODE = 'atl-phone camera test', OWNER = 'atl-guardian:owner';  // OWNER: guardian.py OWNER_CARD
+var THYMIO_PAD = [{ id: 'forward', label: '▲', color: [1, 0.3, 0.3] }, { id: 'left', label: '◀', color: [1, 0.3, 0.3] },  // contract.py THYMIO_PAD
+                  { id: 'centre', label: '●', color: [1, 0.3, 0.3] }, { id: 'right', label: '▶', color: [1, 0.3, 0.3] },
+                  { id: 'backward', label: '▼', color: [1, 0.3, 0.3] }];
+var ABCD = [{ id: 'a', label: 'A', color: [0.25, 0.85, 1] }, { id: 'b', label: 'B', color: [0.2, 1, 0.4] },  // contract.py DEFAULT_PANEL
+            { id: 'c', label: 'C', color: [1, 0.8, 0.2] }, { id: 'd', label: 'D', color: [1, 0.4, 0.7] }];
 
 // ---- talking to the bridge ---------------------------------------------------------------------------
 function act(body) {
@@ -191,6 +291,7 @@ function marks() {
   m.check = r ? (coreMissing(r).length ? 'no' : 'yes') : '';
   var res = results(), vals = Object.keys(res).map(function (k) { return res[k]; });
   m.test = vals.indexOf(false) >= 0 ? 'no' : vals.every(function (v) { return v === true || v === 'na'; }) ? 'yes' : 'wait';
+  m.play = guardianOn() ? 'yes' : '';
   m.summary = '';
   return m;
 }
@@ -202,14 +303,32 @@ function renderStepper() {
       [el('span', { class: 'mark ' + (m[s] || ''), text: sym }), el('span', { text: t('s' + (i + 1)) })]));
   });
 }
+var visionTest = false;  // the Vision card turned the camera on: it goes off when the step is left, so look gets it back
 function go(i) {
+  var was = step;
   step = Math.max(0, Math.min(STEPS.length - 1, i));
-  STEPS.forEach(function (s, j) { $('s-' + s).className = j === step ? 'on' : ''; });
+  if (STEPS[was] === 'test' && STEPS[step] !== 'test' && visionTest) { visionTest = false; act({ topic: 'see', value: { camera: 'front', find: [] } }); }
+  STEPS.forEach(function (s, j) { $('s-' + s).className = view === 'setup' && j === step ? 'on' : ''; });
   $('back').disabled = step === 0; $('next').style.visibility = step === STEPS.length - 1 ? 'hidden' : 'visible';
-  if (STEPS[step] === 'summary') renderSummary();
+  if (STEPS[step] === 'summary') { renderSummary(); if (STEPS[was] !== 'summary') keepSummary(); }
   renderStepper();
 }
 
+function showView(v) {
+  var was = view;
+  view = v;
+  try { localStorage.setItem('atl-view', v); history.replaceState(null, '', v === 'setup' ? location.pathname : '#' + v); } catch (e) {}
+  [].forEach.call($('views').children, function (b) { b.className = b.getAttribute('data-v') === v ? 'on' : ''; });
+  document.querySelector('.wrap').className = 'wrap' + (v === 'setup' ? '' : ' solo');
+  $('v-guard').className = v === 'guard' ? 'on' : ''; $('v-omi').className = v === 'omi' ? 'on' : '';
+  if (was === 'setup' && v !== 'setup' && visionTest) { visionTest = false; act({ topic: 'see', value: { camera: 'front', find: [] } }); }
+  go(step);
+}
+function phoneLine(id) {
+  var e = $(id), ph = (S && S.phone) || {};
+  e.textContent = S && S.connected ? '✓ ' + t('connected') + ' ' + (ph.model || '…') : '⚠ ' + t('no_phone_here');
+  e.className = 'status' + (S && S.connected ? '' : ' off');
+}
 function update() {
   renderStepper();
   // 1: the bridge
@@ -240,6 +359,8 @@ function update() {
     updateInputs();
     $('test-status').textContent = S.connected ? '✓ ' + t('connected') + ' ' + ((S.phone || {}).model || '…') : '⚠ ' + t('test_no_phone');
     $('test-status').className = 'status' + (S.connected ? '' : ' off');
+    // 5: scenarios, and the Desk Guard and Omi Assist views
+    updatePlay(); updateOmi(); phoneLine('guard-phone'); phoneLine('omi-phone');
     if (STEPS[step] === 'summary') renderSummary();
   }
 }
@@ -347,6 +468,162 @@ function buildInputs() {
       el('button', { class: 'b ghost small', text: 'familiar ' + t('on').toLowerCase(), onclick: function () { act({ topic: 'familiar', value: true }); } }),
       el('button', { class: 'b ghost small', text: t('forget'), onclick: function () { act({ topic: 'forget' }); } })]),
     el('div', { class: 'qr' }, [owner, el('div', {}, [el('div', { class: 'hint', text: t('owner') }), live.lookCode])])]));
+  // vision: what to find, on which camera; the boxes show where
+  var side = 'front', kinds = { faces: false, markers: true, blobs: false, objects: false, hands: false };
+  var hue = el('input', { type: 'color', value: '#e61e1e' }), size = el('input', { type: 'text', value: '5', size: '3', style: 'flex:0 0 3em' });
+  function seeValue(on) {
+    var h = hue.value, rgb = [1, 3, 5].map(function (i) { return parseInt(h.substr(i, 2), 16) / 255; });
+    var mx = Math.max.apply(null, rgb), mn = Math.min.apply(null, rgb), c = mx - mn, hh = 0;
+    if (c) hh = mx === rgb[0] ? ((rgb[1] - rgb[2]) / c + 6) % 6 : mx === rgb[1] ? (rgb[2] - rgb[0]) / c + 2 : (rgb[0] - rgb[1]) / c + 4;
+    return { camera: side, find: on ? Object.keys(kinds).filter(function (k) { return kinds[k]; }) : [],
+             blob: { hue: Math.round(hh * 60), tol: 18 }, marker_cm: parseFloat(size.value) || 5 };
+  }
+  var sheet = el('a', { href: 'markers.html?cm=5&lang=' + lang, target: '_blank', text: t('print_markers') });
+  size.oninput = function () { sheet.href = 'markers.html?cm=' + encodeURIComponent(size.value) + '&lang=' + lang; };
+  var sides = el('div', { class: 'tabs' }, ['front', 'back'].map(function (k) {
+    return el('button', { 'data-side': k, class: k === side ? 'on' : '', text: t('cam_' + k), onclick: function () {
+      side = k; [].forEach.call(sides.children, function (b) { b.className = b.getAttribute('data-side') === side ? 'on' : ''; });
+    } });
+  }));
+  var boxes = el('div', { class: 'row' }, Object.keys(kinds).map(function (k) {
+    var cb = el('input', { type: 'checkbox' }); cb.checked = kinds[k]; cb.onchange = function () { kinds[k] = cb.checked; };
+    return el('label', { class: 'row', style: 'margin:0' }, [cb, el('span', { text: t('f_' + k) })]);
+  }));
+  live.visionBox = el('div', { class: 'pad faces', style: 'width:240px;height:150px' }); live.vision = el('div', { class: 'live' });
+  live.visionMark = el('span', { class: 'mark' });
+  o.appendChild(card('vision', [el('div', { class: 'hint', text: t('vision_hint') }), sides, boxes,
+    el('div', { class: 'row' }, [el('span', { class: 'hint', text: t('f_blobs') }), hue, el('span', { class: 'hint', text: t('marker_cm') }), size,
+      sheet]),
+    el('div', { class: 'row' }, [
+      el('button', { class: 'b', text: t('on'), onclick: function () { visionTest = true; act({ topic: 'see', value: seeValue(true) }); } }),
+      el('button', { class: 'b ghost', text: t('off'), onclick: function () { visionTest = false; act({ topic: 'see', value: seeValue(false) }); } })]),
+    el('div', { class: 'row' }, [live.visionBox, el('div', {}, [el('div', { class: 'row' }, [live.visionMark, live.vision])])])]));
+}
+// ---- 5: scenarios ------------------------------------------------------------------------------------
+function guardianOn() { var g = S && S.guardian; return !!(g && g.state && g.state !== 'off' && S.now - g.at < 3); }
+function buildPlay() {
+  var o = $('play'); o.innerHTML = '';
+  live.drive = el('input', { type: 'checkbox', checked: 'checked' });
+  live.drive.onchange = function () { if (guardianOn()) act({ guardian: true, drive: live.drive.checked }); };
+  live.guard = el('div', { class: 'live' }); live.guardMark = el('span', { class: 'mark' }); live.guardMore = el('div', { class: 'live' });
+  $('guard-cards').innerHTML = '';
+  $('guard-cards').appendChild(card('guardian', [el('div', { class: 'hint', text: t('guardian_hint') }), el('div', { class: 'row' }, [
+    el('button', { class: 'b', text: '▶ ' + t('start'), onclick: function () { act({ omi: false }); act({ guardian: true, drive: live.drive.checked }); } }),
+    el('button', { class: 'b ghost', text: '■ ' + t('stop'), onclick: function () { act({ guardian: false }); } })]),
+    el('label', { class: 'row' }, [live.drive, el('span', { text: t('drive') })]),
+    el('div', { class: 'row', style: 'margin-top:8px' }, [live.guardMark, live.guard]), live.guardMore,
+    el('div', { class: 'hint', text: t('g_tip') }), el('div', { class: 'hint', text: t('omi_stops') })]));
+  o.appendChild(card('v_guard', [el('div', { class: 'hint', text: t('more_views') }), el('div', { class: 'row' }, [
+    el('button', { class: 'b ghost', text: t('v_guard') + ' →', onclick: function () { showView('guard'); } }),
+    el('button', { class: 'b ghost', text: t('v_omi') + ' →', onclick: function () { showView('omi'); } })])]));
+  buildOmi();
+  function layoutBtn(k) { return el('button', { class: 'b ghost small', text: t(k), onclick: function () { act({ open: 'face.html', layout: k }); } }); }
+  function modeBtn(k) { return el('button', { class: 'b ghost small', 'data-mode': k, text: t('mode_' + k), onclick: function () { act({ topic: 'panel', value: { mode: k } }); } }); }
+  live.modes = el('div', { class: 'row' }, [el('span', { class: 'hint', text: t('panel_mode') })].concat(['mouth', 'pad', 'off', 'camera', 'camera_back', 'sensors'].map(modeBtn)));
+  var pads = el('div', { class: 'row' }, [
+    el('button', { class: 'b ghost small', text: t('abcd_pad'), onclick: function () { act({ topic: 'panel', value: { mode: 'pad', buttons: ABCD } }); } }),
+    el('button', { class: 'b ghost small', text: t('thymio_pad'), onclick: function () { act({ topic: 'panel', value: { mode: 'pad', buttons: THYMIO_PAD } }); } })]);
+  live.pad = el('div', { class: 'row' }); live.padMark = el('span', { class: 'mark' }); live.topics = el('div', { class: 'hint' });
+  o.appendChild(card('panel', [el('div', { class: 'hint', text: t('panel_hint') }),
+    el('div', { class: 'row' }, [el('span', { class: 'hint', text: t('layout') }), layoutBtn('landscape'), layoutBtn('portrait'), layoutBtn('auto')]),
+    el('div', { class: 'hint', text: t('layout_note') }), live.modes, pads,
+    el('div', { class: 'row', style: 'margin-top:8px' }, [live.padMark, live.pad]), live.topics]));
+}
+function updatePlay() {
+  if (!live.guard) return;
+  var g = S.guardian || {}, on = guardianOn(), heard = g.at && S.now - g.at < 3;
+  setMark(live.guardMark, on ? true : heard ? 'na' : null);
+  live.guard.textContent = on ? t('st_' + g.state) + ' · ' + t('faces_n') + ' ' + (g.faces || 0) : heard ? t('g_off') : t('g_none');
+  live.guardMore.textContent = on ? (g.thymio ? t('thymio_yes') : t('thymio_no')) + (g.friends && g.friends.length ? ' · ' + t('friends') + ' ' + g.friends.join(', ') : '') : '';
+  if (heard && document.activeElement !== live.drive) live.drive.checked = g.drive !== false;
+  var mode = (S.panel && S.panel.mode) || 'mouth';
+  [].forEach.call(live.modes.querySelectorAll('button'), function (b) { b.style.borderColor = b.getAttribute('data-mode') === mode ? 'var(--accent)' : ''; });
+  var pads = (S.seen && S.seen.pad) || [];
+  live.pad.textContent = pads.length ? t('pad_seen') + ' ' + pads.slice(-5).map(function (x) { return x.id; }).join(' ') : t('none_yet');
+  setMark(live.padMark, inputResult('pad'));
+  live.topics.textContent = t('topics') + ' /' + S.robot + '/phone/panel → ' + t('pad').toLowerCase() + ' → /' + S.robot + '/phone/pad';
+}
+// ---- Omi Assist ---------------------------------------------------------------------------------------
+var DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];  // omi.py DAYS
+var rems = [], remsDirty = false, remsFrom = '', showAt = 0;
+function omiOn() { var g = S && S.omi; return !!(g && g.state === 'on' && S.now - g.at < 3); }
+function hhmm(d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function renderRems() {
+  var box = live.rems; box.innerHTML = '';
+  if (!rems.length) box.appendChild(el('div', { class: 'hint', text: t('rem_none') }));
+  rems.forEach(function (r, i) {
+    var at = el('input', { type: 'time', value: r.at }), text = el('input', { type: 'text', value: r.text, placeholder: t('rem_text'), maxlength: '150' });
+    at.oninput = function () { r.at = at.value; remsDirty = true; };
+    text.oninput = function () { r.text = text.value; remsDirty = true; };
+    var days = el('div', { class: 'days', title: t('every_day') }, DAYS.map(function (d, j) {
+      var b = el('button', { class: r.days.indexOf(d) >= 0 ? 'on' : '', text: t('days')[j] });
+      b.onclick = function () {
+        var k = r.days.indexOf(d); if (k >= 0) r.days.splice(k, 1); else r.days.push(d);
+        b.className = r.days.indexOf(d) >= 0 ? 'on' : ''; remsDirty = true;
+      };
+      return b;
+    }));
+    box.appendChild(el('div', { class: 'rem' }, [at, text, days,
+      el('button', { class: 'b ghost small', text: '✕', onclick: function () { rems.splice(i, 1); remsDirty = true; renderRems(); } })]));
+  });
+}
+function saveRems() {
+  var list = rems.filter(function (r) { return r.text.trim() && /^\d\d:\d\d$/.test(r.at); })
+    .map(function (r) { return { id: r.id, text: r.text.trim(), at: r.at, days: r.days.slice() }; });
+  act({ reminders: list }).then(function () { remsDirty = false; remsFrom = ''; live.remSaved.textContent = '✓ ' + t('rem_saved'); });
+}
+function buildOmi() {
+  var o = $('omi-cards'); o.innerHTML = '';
+  live.omiMark = el('span', { class: 'mark' }); live.omi = el('div', { class: 'live' }); live.omiMore = el('div', { class: 'live' });
+  o.appendChild(card('omi', [el('div', { class: 'row' }, [
+    el('button', { class: 'b', text: '▶ ' + t('start'), onclick: function () { act({ guardian: false }); act({ omi: true }); } }),
+    el('button', { class: 'b ghost', text: '■ ' + t('stop'), onclick: function () { act({ omi: false }); } }),
+    el('button', { class: 'b ghost', text: t('omi_face'), onclick: function () { act({ open: 'face.html', layout: 'auto' }); } })]),
+    el('div', { class: 'row', style: 'margin-top:8px' }, [live.omiMark, live.omi]), live.omiMore,
+    el('div', { class: 'row', style: 'margin-top:8px' }, [
+      el('button', { class: 'b', text: '🎤 ' + t('omi_tour'), onclick: function () { act({ omi_tour: true }); } })]),
+    el('div', { class: 'hint', text: t('omi_tour_d') }),
+    el('div', { class: 'hint', text: t('omi_stops') })]));
+  live.rems = el('div'); live.remSaved = el('span', { class: 'live' }); live.remNext = el('div', { class: 'live' }); live.answers = el('div', { class: 'live' });
+  o.appendChild(card('reminders', [live.rems, el('div', { class: 'row' }, [
+    el('button', { class: 'b ghost small', text: t('rem_add'), onclick: function () {
+      rems.push({ id: '', text: '', at: hhmm(new Date(Date.now() + 3600000)), days: [] }); remsDirty = true; renderRems(); } }),
+    el('button', { class: 'b ghost small', text: t('rem_test'), onclick: function () {
+      rems.push({ id: '', text: t('rem_test_text'), at: hhmm(new Date(Date.now() + 60000)), days: [] }); renderRems(); saveRems(); } }),
+    el('button', { class: 'b small', text: t('rem_save'), onclick: saveRems }), live.remSaved]), live.remNext, live.answers]));
+  renderRems();
+  live.allowShow = el('input', { type: 'checkbox', onchange: function () { act({ allow_show: live.allowShow.checked }); } });
+  live.showImg = el('img', { class: 'show', alt: '' }); live.showState = el('div', { class: 'live' });
+  live.showStop = el('button', { class: 'b ghost small', text: t('show_stop'), onclick: function () { act({ show: false }); } });
+  o.appendChild(card('show_card', [el('label', { class: 'row' }, [live.allowShow, el('span', { text: t('show_allow') })]),
+    el('div', { class: 'hint', text: t('show_note') }), el('div', { class: 'row', style: 'margin-top:8px' }, [live.showState, live.showStop]), live.showImg]));
+  o.appendChild(card('lighter', [el('div', { class: 'hint', text: t('install_hint') }), el('div', { class: 'hint', text: t('tidy_hint') }),
+    el('pre', {}, [el('span', { text: './scripts/phone_tidy.sh' })])]));
+}
+function updateOmi() {
+  if (!live.omi) return;
+  var g = S.omi || {}, on = omiOn(), heard = g.at && S.now - g.at < 3, sh = S.show || {};
+  setMark(live.omiMark, on ? true : heard ? 'na' : null);
+  live.omi.textContent = heard ? t(on ? 'omi_on' : 'omi_off') + (g.lang ? ' · ' + g.lang : '') : t('omi_none');
+  live.omiMore.textContent = heard && g.picks && g.picks.length ? t('picks') + ' ' + g.picks.map(function (p) { return p.id; }).join(' ') : '';
+  var from = JSON.stringify(g.reminders || []);
+  if (heard && !remsDirty && from !== remsFrom) {
+    remsFrom = from;
+    rems = (g.reminders || []).map(function (r) { return { id: r.id, text: r.text, at: r.at, days: (r.days || []).slice() }; });
+    if (!live.rems.contains(document.activeElement)) renderRems();
+  }
+  live.remNext.textContent = g.next ? t('rem_next') + ' ' + g.next.at.replace('T', ' ') + ' · ' + g.next.text : '';
+  live.answers.textContent = (g.answers || []).length ? t('answers') + ' ' + g.answers.slice(-3).map(function (a) {
+    return a.when.slice(11, 16) + ' ' + a.text + ': ' + t(a.answer === 'later' ? 'ans_later' : 'ans_done');
+  }).join(' · ') : '';
+  if (document.activeElement !== live.allowShow) live.allowShow.checked = !!sh.allowed;
+  live.showState.innerHTML = '';
+  live.showState.appendChild(sh.on ? el('span', { class: 'badge', text: '● ' + t('show_live') }) : document.createTextNode(sh.allowed ? t('show_wait') : t('show_off')));
+  live.showStop.style.display = sh.on ? '' : 'none';
+  if (sh.on && sh.fresh) {
+    if (Date.now() - showAt > 450) { showAt = Date.now(); live.showImg.src = '/api/show.jpg?' + showAt; }
+    live.showImg.style.display = 'block';
+  } else if (live.showImg.style.display !== 'none') { live.showImg.style.display = 'none'; live.showImg.removeAttribute('src'); }
 }
 function setMark(m, v) {
   m.className = 'mark ' + (v === true ? 'yes' : v === false ? 'no' : v === 'na' ? '' : 'wait');
@@ -400,6 +677,21 @@ function updateInputs() {
     lk.on && c && c.on ? t('look_wait') : S.look || fs.length ? t('faces_n') + ' ' + fs.length + (S.familiar ? ' · familiar' : '') : '';
   setMark(live.lookMark, inputResult('look'));
   live.lookCode.textContent = seen.codes ? t('code_seen') + ' ' + seen.codes[seen.codes.length - 1] : '';
+  // vision: each thing found in the last two seconds, where it is
+  var sr = seen.see || {}, vb = live.visionBox; vb.innerHTML = '';
+  function mark(x, y, d, text, colour) {
+    vb.appendChild(el('span', { style: 'left:' + (x + 1) * 50 + '%;top:' + (1 - y) * 50 + '%;width:' + d + 'px;height:' + d + 'px;margin:' + (-d / 2) +
+      'px;' + (colour ? 'border-color:' + colour + ';color:' + colour : ''), text: text }));
+  }
+  function fresh(k) { var v = seen[k]; return v && now - v.at < 2 ? v[k] : []; }
+  fresh('markers').forEach(function (m) { mark(m.x, m.y, Math.max(16, m.size * 150), '#' + m.id + (m.distance_m != null ? ' ' + Math.round(m.distance_m * 100) + 'cm' : '')); });
+  fresh('blobs').forEach(function (b) { mark(b.x, b.y, Math.max(10, b.size * 150), '', '#e61e1e'); });
+  fresh('objects').forEach(function (b) { mark(b.x, b.y, Math.max(16, b.h * 150), b.label + (b.distance_m != null ? ' ' + b.distance_m + 'm' : '')); });
+  fresh('hands').forEach(function (b) { mark(b.x, b.y, 22, b.gesture); });
+  live.vision.textContent = insecure() ? t('blocked') : sr.ok === false ? t('look_error') + ' ' + (sr.error || '?') : sr.on ?
+    t('vision_ms') + ' ' + Object.keys(sr.ms || {}).map(function (k) { return t('f_' + k) + ' ' + sr.ms[k] + ' ms'; }).join(', ') +
+    (sr.backend ? ' · ' + sr.backend : '') : '';
+  setMark(live.visionMark, inputResult('vision'));
 }
 function insecure() { return !!(S && S.connected && S.phone && S.phone.secure === false); }
 function noteOf(k, v) {  // why a result is not a plain yes or no
@@ -412,7 +704,7 @@ function noteOf(k, v) {  // why a result is not a plain yes or no
   if (k === 'look' && v === false && lk && lk.error) return t('look_error') + ' ' + lk.error;
   return '';
 }
-var NEED_SECURE = { camera: 1, torch: 1, code: 1, motion: 1, compass: 1, battery: 1, look: 1 };
+var NEED_SECURE = { camera: 1, torch: 1, code: 1, motion: 1, compass: 1, battery: 1, look: 1, vision: 1 };
 function inputResult(k) {
   var v = passed[k] || inputNow(k);
   if (v === true) passed[k] = true;
@@ -426,6 +718,8 @@ function inputNow(k) {
   if (k === 'compass') return seen.heading ? true : caps.compass === false ? 'na' : null;
   if (k === 'battery') return seen.battery ? true : caps.battery === false ? 'na' : null;
   if (k === 'look') return seen.faces && seen.faces.n > 0 ? true : seen.look && seen.look.ok === false ? false : null;
+  if (k === 'pad') return seen.pad && seen.pad.length ? true : null;
+  if (k === 'vision') return seen.see && seen.see.ok && Object.keys(seen.see.ms || {}).length ? true : seen.see && seen.see.ok === false ? false : null;
 }
 var GESTURES = ['tap-left', 'tap-centre', 'tap-right', 'long', 'swipe'];
 function partial(k) {  // a test begun but not finished: what is still missing
@@ -442,7 +736,7 @@ function results() {
   });
   if (r.torch === null && cam.torch === false && cam.ok !== false) r.torch = 'na';
   if (r.camera === null && cam.ok === false) r.camera = false;
-  ['touch', 'motion', 'compass', 'battery', 'code', 'look'].forEach(function (k) { r[k] = inputResult(k); });
+  ['touch', 'motion', 'compass', 'battery', 'code', 'look', 'vision', 'pad'].forEach(function (k) { r[k] = inputResult(k); });
   return r;
 }
 
@@ -458,6 +752,15 @@ function summaryText() {
     lines.push((v === true ? '[x] ' : v === false ? '[ ] ' : '[-] ') + k + more);
   });
   return lines.join('\n');
+}
+function keepSummary() {  // into the PC's registry of phones tested (reports/<model>/), each time the summary is shown
+  var ph = (S && S.phone) || {}, model = ph.model || lastModel;
+  if (!model) return;
+  fetch('/api/summary', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: model, id: ph.id || lastId, text: summaryText(), results: results(), robot: S && S.robot, contract: S && S.contract }) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); })
+    .then(function (j) { $('saved').textContent = j.saved ? t('saved_summary') + ' ' + j.saved : t('no_registry'); },
+          function (e) { $('saved').textContent = '⚠ ' + e.message; });
 }
 function renderSummary() {
   var r = results(), ph = (S && S.phone) || {}, tb = $('summary'); tb.innerHTML = '';
@@ -490,7 +793,7 @@ function translate() {
   [].forEach.call(document.querySelectorAll('[data-t]'), function (e) { e.textContent = t(e.getAttribute('data-t')); });
   [].forEach.call(document.querySelectorAll('.lang button'), function (b) { b.className = b.getAttribute('data-l') === lang ? 'on' : ''; });
   document.title = t('title');
-  buildOutputs(); buildInputs(); go(step);
+  buildOutputs(); buildInputs(); buildPlay(); showView(view);
   if (S) update();
 }
 [].forEach.call(document.querySelectorAll('.lang button'), function (b) {
@@ -505,8 +808,10 @@ function translate() {
 });
 [].forEach.call(document.querySelectorAll('[data-copy]'), function (b) { b.onclick = function () { copy(b.getAttribute('data-copy'), function () { b.textContent = t('copied'); }); }; });
 $('copy-wifi').onclick = function () { copy($('wifi-url').textContent, function () { $('copy-wifi').textContent = t('copied'); }); };
+$('save-summary').onclick = keepSummary;
 $('copy-summary').onclick = function () { copy(summaryText(), function () { $('copied').textContent = t('copied'); }); };
 $('open-check').onclick = function () { act({ open: 'check.html' }); };
+[].forEach.call($('views').children, function (b) { b.onclick = function () { showView(b.getAttribute('data-v')); }; });
 $('back').onclick = function () { go(step - 1); };
 $('next').onclick = function () { go(step + 1); };
 translate();

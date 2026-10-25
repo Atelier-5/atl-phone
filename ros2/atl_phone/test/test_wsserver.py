@@ -121,6 +121,11 @@ class FakeApi:
 
     def report(self, body):
         self.reports.append(body)
+        return {"saved": "reports/X/2026-10-25-check.json"} if body.get("model") == "X" else None
+
+    def summary(self, body):
+        self.reports.append(body)
+        return {"saved": "reports/X/2026-10-25-summary.txt"}
 
 
 @pytest.fixture
@@ -163,6 +168,17 @@ def test_report(api_server):
         with pytest.raises(urllib.error.HTTPError) as e:
             http(api_server, "/report", bad)
         assert e.value.code == 400
+
+
+def test_report_says_where_it_was_kept_and_the_summary_is_this_pcs_only(api_server):
+    r = http(api_server, "/report", {"model": "X", "checks": {}})
+    assert r.status == 200 and json.load(r) == {"saved": "reports/X/2026-10-25-check.json"}
+    r = http(api_server, "/api/summary", {"model": "X", "text": "Phone: X"})
+    assert r.status == 200 and json.load(r)["saved"].endswith("summary.txt")
+    for body, headers in [({"model": "X"}, None), ({"text": "t"}, {"Origin": "http://evil.example"})]:
+        with pytest.raises(urllib.error.HTTPError) as e:
+            http(api_server, "/api/summary", body, headers)
+        assert e.value.code in (400, 403)
 
 
 def test_no_api_no_routes(server):

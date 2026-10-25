@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# atl-phone's Webots twin: the phone image plus Webots' controller library (from webots_ros2_driver), so
+# webots/controllers/atl_phone_twin can play the phone in a Webots on the host (an extern controller over TCP).
+#
+#   docker build -f docker/Dockerfile -t atl-phone:kilted . && docker build -f docker/Dockerfile.twin -t atl-phone-twin:kilted .
+#   docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+#       -e WEBOTS_CONTROLLER_URL=tcp://127.0.0.1:1234/PH5v0001 atl-phone-twin:kilted \
+#       python3 /ws/webots/controllers/atl_phone_twin/atl_phone_twin.py --bridge ws://127.0.0.1:8782/ws
+FROM atl-phone:kilted
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends ros-kilted-webots-ros2-driver \
+    && rm -rf /var/lib/apt/lists/*
+ENV WEBOTS_HOME=/opt/ros/kilted
+COPY webots/ /ws/webots/
+CMD ["python3", "/ws/webots/controllers/atl_phone_twin/atl_phone_twin.py"]

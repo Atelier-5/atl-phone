@@ -1,0 +1,105 @@
+#VRML_SIM R2025a utf8
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# A phone as a robot's payload (atl-phone): its screen (a Display), front and back cameras (with Recognition), a
+# speaker and a torch. Its controller (atl_phone_twin) speaks the phone page's protocol to the bridge, so ROS sees the
+# same topics as with a real phone. The frame is the contract's: x right, y up the screen, z out of it, from the
+# phone's centre. A supervisor: it rides on the node whose DEF path is `follow` (a holder on a robot), at its origin.
+# The sizes come from webots/phones.json (scripts/phone_twin_world.py writes them).
+# template language: javascript
+
+PROTO AtlPhone [
+  field SFVec3f    translation     0 0 0.1
+  field SFRotation rotation        0 0 1 0
+  field SFString   name            "phone"
+  field SFString   controller      "<extern>"
+  field MFString   controllerArgs  []
+  field SFString   follow          ""                 # the DEF path of the node it rides on, e.g. "THYMIO1.PHONE_MOUNT"
+  field SFVec3f    size            0.0747 0.1585 0.0077
+  field SFVec2f    screenSize      0.068 0.147
+  field SFInt32    displayWidth    270
+  field SFInt32    displayHeight   585
+  field SFVec2f    frontAt         0 0.074
+  field SFVec2f    backAt          -0.022 0.062
+  field SFFloat    frontFov        1.047
+  field SFFloat    backFov         1.047
+  field SFInt32    cameraWidth     240
+  field SFInt32    cameraHeight    320
+]
+{
+  %< const s = fields.size.value, sc = fields.screenSize.value, fa = fields.frontAt.value, ba = fields.backAt.value; >%
+  Robot {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    model "atl-phone"
+    controller IS controller
+    controllerArgs IS controllerArgs
+    supervisor TRUE
+    customData IS follow
+    children [
+      Shape {
+        appearance PBRAppearance { baseColor 0.08 0.08 0.1 roughness 0.4 metalness 0.2 }
+        geometry Box { size %<= s.x >% %<= s.y >% %<= s.z >% }
+      }
+      Display {
+        name "screen"
+        width IS displayWidth
+        height IS displayHeight
+        children [
+          Pose {
+            translation 0 0 %<= s.z / 2 + 0.0002 >%
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColorMap ImageTexture { }
+                  roughness 1
+                  metalness 0
+                  emissiveColor 1 1 1
+                  emissiveColorMap ImageTexture { }
+                }
+                geometry Plane { size %<= sc.x >% %<= sc.y >% }
+              }
+            ]
+          }
+        ]
+      }
+      Camera {
+        name "camera_front"
+        translation %<= fa.x >% %<= fa.y >% %<= s.z / 2 + 0.0005 >%
+        rotation -0.5774 -0.5774 -0.5774 2.0944
+        fieldOfView IS frontFov
+        width IS cameraWidth
+        height IS cameraHeight
+        recognition Recognition { maxRange 4 occlusion 1 frameThickness 0 }
+      }
+      Camera {
+        name "camera_back"
+        translation %<= ba.x >% %<= ba.y >% %<= -s.z / 2 - 0.0005 >%
+        rotation -0.5774 0.5774 0.5774 2.0944
+        fieldOfView IS backFov
+        width IS cameraWidth
+        height IS cameraHeight
+        recognition Recognition { maxRange 4 occlusion 1 frameThickness 0 }
+      }
+      LED {
+        name "torch"
+        translation %<= ba.x + 0.01 >% %<= ba.y >% %<= -s.z / 2 - 0.0005 >%
+        color [ 1 1 0.9 ]
+        children [
+          SpotLight {
+            direction 0 0 -1
+            on FALSE
+            intensity 2
+            cutOffAngle 0.7
+            beamWidth 0.5
+            castShadows FALSE
+          }
+        ]
+      }
+      Speaker {
+        name "speaker"
+      }
+    ]
+  }
+}
