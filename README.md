@@ -416,4 +416,6 @@ file, the log or the setup page; ROS gets counts. Agree on it with the people at
 [consent note](docs/consent-translate.md).
 The browser's own speech recognition is not used: it sends voices to the cloud.
 
-License: GPL-3.0-or-later.
+License: GPL-3.0-or-later. The name "Atelier-5" and its logos are reserved for modified versions (GPLv3 §7(e),
+see [atl-hub/TRADEMARKS.md](https://github.com/Atelier-5/atl-hub/blob/main/TRADEMARKS.md)). What else it ships, fetches
+and runs on, and their licences: [NOTICE.md](NOTICE.md).

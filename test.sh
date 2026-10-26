@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
 # The tests: plain Python, no ROS, no phone (the bridge itself: contract_check, in the container).
 # A workstation's ROS environment (PYTHONPATH, pytest plugins) is kept out of it.
 #

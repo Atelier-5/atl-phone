@@ -1,4 +1,7 @@
 <?xml version="1.0"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (C) 2026 Atelier-5 -->
+<!-- The ROS 2 package of the phone bridge. -->
 <package format="3">
   <name>atl_phone</name>
   <version>0.2.0</version>
