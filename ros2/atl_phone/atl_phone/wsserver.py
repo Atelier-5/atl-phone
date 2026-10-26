@@ -46,6 +46,28 @@ MAX_FRAME = 128 * 1024   # a show frame (Omi) is the largest: a 320 px JPEG as b
 MAX_POST = 64 * 1024
 
 
+class Server(ThreadingHTTPServer):
+    """A threading HTTP server whose TLS handshake happens in each request's own thread, with a time limit: done in
+    accept(), on the only accepting thread, one silent connection would keep every other phone out."""
+    daemon_threads = True
+    HANDSHAKE_S = 10
+
+    def use_tls(self, cert, cert_key):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(cert, cert_key)
+        self.socket = ctx.wrap_socket(self.socket, server_side=True, do_handshake_on_connect=False)
+
+    def finish_request(self, request, client_address):
+        if isinstance(request, ssl.SSLSocket):
+            try:
+                request.settimeout(self.HANDSHAKE_S)
+                request.do_handshake()
+                request.settimeout(None)
+            except (OSError, ValueError):   # silent, too slow, or not TLS: this connection only (closed after)
+                return
+        super().finish_request(request, client_address)
+
+
 def accept_key(key: str) -> str:
     return base64.b64encode(hashlib.sha1((key + GUID).encode()).digest()).decode()
 
@@ -162,13 +184,10 @@ class PhoneServer:
         self.link = None
         self.mirrors, self.mlock = [], threading.Lock()   # its own lock: the phone's is held while a message is delivered
         self.lock = threading.Lock()
-        self.httpd = ThreadingHTTPServer((bind, port), partial(make_handler(self), directory=str(web_dir)))
-        self.httpd.daemon_threads = True
+        self.httpd = Server((bind, port), partial(make_handler(self), directory=str(web_dir)))
         self.scheme = "http"
         if cert:
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ctx.load_cert_chain(cert, cert_key)
-            self.httpd.socket = ctx.wrap_socket(self.httpd.socket, server_side=True)
+            self.httpd.use_tls(cert, cert_key)
             self.scheme = "https"
         self.port = self.httpd.server_port
 
@@ -430,12 +449,9 @@ class GuestServer:
         self.on_text = on_text or (lambda text: None)
         self.on_close = on_close or (lambda link: None)
         self.link, self.lock = None, threading.Lock()
-        self.httpd = ThreadingHTTPServer((bind, port), partial(make_guest_handler(self), directory=str(web_dir)))
-        self.httpd.daemon_threads = True
+        self.httpd = Server((bind, port), partial(make_guest_handler(self), directory=str(web_dir)))
         if cert:   # always, from the bridge (a guest's microphone needs https); the tests go without
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            ctx.load_cert_chain(cert, cert_key)
-            self.httpd.socket = ctx.wrap_socket(self.httpd.socket, server_side=True)
+            self.httpd.use_tls(cert, cert_key)
         self.port = self.httpd.server_port
 
     def start(self):

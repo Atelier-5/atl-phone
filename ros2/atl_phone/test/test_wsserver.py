@@ -2,6 +2,8 @@
 # Copyright (C) 2026 Atelier-5
 import json
 import queue
+import socket
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -325,16 +327,39 @@ def test_a_guest_needs_the_code_and_a_new_one_takes_over(guest):
         MockPhone(f"ws://127.0.0.1:{guest.port}/ws/talk?k=")
 
 
-def test_the_guest_port_speaks_https(tmp_path):
-    import ssl
+def make_cert(tmp_path):
     import subprocess
-    from atl_phone.wsserver import GuestServer
     subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(tmp_path / "k.pem"), "-out",
                     str(tmp_path / "c.pem"), "-days", "1", "-subj", "/CN=localhost"], check=True, capture_output=True)
-    s = GuestServer(WEB, 0, str(tmp_path / "c.pem"), str(tmp_path / "k.pem"), key=lambda: "x", bind="127.0.0.1").start()
+    ctx = ssl.create_default_context(cafile=str(tmp_path / "c.pem"))
+    ctx.check_hostname = False
+    return str(tmp_path / "c.pem"), str(tmp_path / "k.pem"), ctx
+
+
+def test_the_guest_port_speaks_https(tmp_path):
+    from atl_phone.wsserver import GuestServer
+    cert, key, ctx = make_cert(tmp_path)
+    s = GuestServer(WEB, 0, cert, key, key=lambda: "x", bind="127.0.0.1").start()
     try:
-        ctx = ssl.create_default_context(cafile=str(tmp_path / "c.pem"))
-        ctx.check_hostname = False
         assert "talk.js" in urllib.request.urlopen(f"https://127.0.0.1:{s.port}/talk.html", timeout=5, context=ctx).read().decode()
     finally:
+        s.stop()
+
+
+@pytest.mark.parametrize("which", ["phone", "guest"])
+def test_a_silent_connection_does_not_keep_other_phones_out(tmp_path, which):
+    from atl_phone.wsserver import GuestServer
+    cert, key, ctx = make_cert(tmp_path)
+    s = (PhoneServer(WEB, 0, bind="127.0.0.1", cert=cert, cert_key=key) if which == "phone"
+         else GuestServer(WEB, 0, cert, key, key=lambda: "x", bind="127.0.0.1")).start()
+    silent = socket.create_connection(("127.0.0.1", s.port))   # connects, says nothing (no TLS hello)
+    plain = socket.create_connection(("127.0.0.1", s.port))
+    plain.sendall(b"GET / HTTP/1.1\r\n\r\n")                  # not TLS at all
+    try:
+        time.sleep(0.2)
+        page = urllib.request.urlopen(f"https://127.0.0.1:{s.port}/face.html" if which == "phone" else
+                                      f"https://127.0.0.1:{s.port}/talk.html", timeout=3, context=ctx).read()
+        assert page
+    finally:
+        silent.close(), plain.close()
         s.stop()
