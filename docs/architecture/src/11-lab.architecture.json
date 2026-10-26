@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
+      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
     },
     "legend": {
       "entries": {
@@ -23,7 +23,7 @@
   "components": [
     {
       "id": "face", "type": "frontend", "label": "face.html", "sublabel": "face, vision, reading", "pos": [40, 220], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 447, "end_line": 460 }, { "path": "ros2/atl_phone/web/see.js", "line": 58, "end_line": 72 }, { "path": "ros2/atl_phone/web/omi.js", "line": 175, "end_line": 199 }]
+      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 447, "end_line": 460 }, { "path": "ros2/atl_phone/web/see.js", "line": 58, "end_line": 72 }, { "path": "ros2/atl_phone/web/omi.js", "line": 179, "end_line": 203 }]
     },
     {
       "id": "adb", "type": "external", "label": "adb server", "sublabel": "the PC, :5037", "pos": [280, 220], "size": [150, 64],

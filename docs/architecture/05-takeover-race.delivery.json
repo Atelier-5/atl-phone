@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "d04946d5-f1c0-41e8-aa3a-66b3ca38cf17",
+  "receiptId": "e46c9385-8896-4401-ae39-049871efadb2",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/05-takeover-race.sequence.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/05-takeover-race.html",
   "specification": {
-    "sha256": "eddb09508fd5db62118d8e3d42538b005ea3f7e79c01a14e033620b0a788b0d6",
+    "sha256": "e2e75c503453380c26c0582de0d1cc0c1d18e2bfe99a10e94d8553ffacb5b3aa",
     "bytes": 5966
   },
   "artifact": {
-    "sha256": "6e1c90260d58b8981c49e19fda9d22e7708746b14fd25e052d93239ee4a1ed77",
+    "sha256": "9a8ea3c8a22ba80a88cb1d418d4f10c6b8d46199ea3e22c162a2b3b2366e2f85",
     "bytes": 820220
   }
 }

@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
+      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
     },
     "legend": {
       "entries": {
@@ -53,8 +53,8 @@
         },
         {
           "path": "ros2/atl_phone/web/omi.js",
-          "line": 347,
-          "end_line": 367
+          "line": 351,
+          "end_line": 371
         }
       ]
     },
@@ -451,7 +451,7 @@
       "title": "The real phone",
       "items": [
         "USB: scripts/usb.sh runs adb reverse tcp:8782, so the page is http://localhost:8782 on the phone, a secure page for camera and motion without a certificate (usb.sh 9–16). Over Wi-Fi it needs the bridge's https and its key instead.",
-        "face.js opens one WebSocket to /ws and reconnects; code 4000 (another phone took over) stays quiet (face.js 447–460). The page reports its screen as keys and numbers every change and every 5 s (omi.js 347–367).",
+        "face.js opens one WebSocket to /ws and reconnects; code 4000 (another phone took over) stays quiet (face.js 447–460). The page reports its screen as keys and numbers every change and every 5 s (omi.js 351–371).",
         "phone_health speaks adb's own protocol to the adb server already on the host (shell, a DevTools forward), so the container needs no adb of its own, whose version would kill the host's server and the USB link (phone_health.py 21–88)."
       ]
     },

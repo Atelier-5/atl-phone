@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "a0075e53-e303-4c91-a3e9-8546db283042",
+  "receiptId": "5c7055c3-fa13-48d9-83a5-bbc19bafddd1",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/13-recognition.architecture.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/13-recognition.html",
   "specification": {
-    "sha256": "1a8db451b57185eb5479fd7122c780a22cf2262765555d9119e562a0242c7147",
+    "sha256": "b7e7b682c78a516326a44c6ee4d9f91d7a49281dc328376acfab1b30c413c75c",
     "bytes": 7479
   },
   "artifact": {
-    "sha256": "68d3b050ddbfc24f801033acc34411d452ff43e715f65840c94205c26ff10248",
+    "sha256": "ef5e264af1a33af2a1ad564cace0f7e7e353e784a775796b86ac8520f500b4ce",
     "bytes": 839844
   }
 }

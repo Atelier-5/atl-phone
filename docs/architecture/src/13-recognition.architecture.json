@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
+      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
     },
     "legend": {
       "entries": {
@@ -44,7 +44,7 @@
     },
     {
       "id": "tess", "type": "frontend", "label": "Tesseract.js", "sublabel": "reading, de/en/fr", "pos": [280, 420], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/omi.js", "line": 175, "end_line": 199 }, { "path": "ros2/atl_phone/web/omi.js", "line": 238, "end_line": 250 }]
+      "sources": [{ "path": "ros2/atl_phone/web/omi.js", "line": 179, "end_line": 203 }, { "path": "ros2/atl_phone/web/omi.js", "line": 242, "end_line": 254 }]
     },
     {
       "id": "bridge", "type": "security", "label": "bridge_node", "sublabel": "checked, ≤ 10 faces/s", "pos": [760, 300], "size": [150, 64],
@@ -92,7 +92,7 @@
       "title": "Onboard: on the phone",
       "items": [
         "MediaPipe Tasks Vision in the page, on the GPU when it can: BlazeFace for faces, EfficientDet-Lite0 for COCO's 80 objects, the gesture recogniser for hands (see.js 58–72). Measured on the ANE-LX1: faces 85 ms, hands 212 ms; \"what is this?\" 2.6 s, reading 2.7 s.",
-        "js-aruco2 for markers (distance and angle from their printed size), its own colour finder, the browser's BarcodeDetector for QR codes (see.js 83–88, 131, 240–242); Tesseract.js reads text in German, English and French and the phone says it (omi.js 175–199).",
+        "js-aruco2 for markers (distance and angle from their printed size), its own colour finder, the browser's BarcodeDetector for QR codes (see.js 83–88, 131, 240–242); Tesseract.js reads text in German, English and French and the phone says it (omi.js 179–203).",
         "The eyes follow the nearest face on the phone itself, at 4 looks a second while they hold one, 1 while nobody is there (see.js 20–21, 322–326)."
       ]
     },

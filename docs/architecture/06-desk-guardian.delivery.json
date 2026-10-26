@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "cfcb6b53-c729-4b87-9880-44afe92e3b7b",
+  "receiptId": "d5250e51-5eeb-4e03-bbd6-eb29aed331fe",
   "status": "current",
   "command": "deliver",
   "type": "lifecycle",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/06-desk-guardian.lifecycle.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/06-desk-guardian.html",
   "specification": {
-    "sha256": "8b4ed32cbbf2997217d1931f74dc008ed5fa10eca6ae2c0997317cd8404c1e18",
+    "sha256": "967c60b15dfef6868c02595cab8fe78d09fc9c2887324af22357e05779948147",
     "bytes": 5754
   },
   "artifact": {
-    "sha256": "f284d403542df27df45d37dbf9f5397e148f6258e62bb63d45185d06b286ec4b",
+    "sha256": "560c3853efca68267afa2d02cbdf366f3218e0b3b3a5ebb043d32676a5f7f37d",
     "bytes": 827478
   }
 }
