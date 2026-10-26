@@ -1,0 +1,9 @@
+{
+  "_": "What the Omi Assist twin flies in for a demo (the setup page, or keys 1-4 in Webots; 0 sends them away). at: where it goes, in the robot's frame (x ahead, y left, z up from the table top), metres; the phone's back camera looks back (-x), its front camera ahead. Parked below the floor until called. scripts/phone_twin_world.py makes them, atl_phone_twin moves them.",
+  "cup": {"def": "PROP_CUP", "model": "cup", "at": [-0.24, 0.0, 0.2], "key": "1"},
+  "letter": {"def": "PROP_LETTER", "model": "letter", "at": [-0.22, 0.0, 0.0], "key": "2"},
+  "hand": {"def": "PROP_HAND", "model": "letter", "at": [-0.16, 0.0, 0.21], "key": "3"},
+  "visitor": {"def": "PROP_VISITOR", "model": "face", "at": [0.75, 0.0, 0.0], "from": [0.75, -0.7, 0.0], "key": "4"},
+  "park": [0.0, 0.0, -1.5],
+  "fly_s": 1.5
+}

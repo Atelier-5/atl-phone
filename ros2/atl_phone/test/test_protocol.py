@@ -212,13 +212,53 @@ def test_panel_lang_and_the_tour():
         p.tour("xx")
 
 
+def texts() -> dict:
+    """web/texts.js: the words of the page and of the Webots twin (strict JSON after "var TEXTS =")."""
+    js = (Path(__file__).resolve().parents[1] / "web" / "texts.js").read_text()
+    return json.loads(js[js.index("var TEXTS = {") + 12:js.rindex("}") + 1])
+
+
 def test_the_tour_says_every_step_in_every_language():
     js = (Path(__file__).resolve().parents[1] / "web" / "omi.js").read_text()
     steps = re.findall(r"\{ k: '(\w+)'", js[js.index("var TOUR ="):])
+    assert set(steps + ["card"]) == set(c.TOUR_STEPS)
     for lang in ("en", "fr", "de"):
-        block = js[js.index(f"  {lang}: {{ hello:", js.index("var TOUR_TEXT")):]
-        block = block[:block.index("bye:") + 200]
-        assert all(f"{k}:" in block for k in steps + ["card"]), lang
+        assert set(texts()["tour"][lang]) == set(c.TOUR_STEPS), lang
+
+
+def test_every_screen_key_has_its_words_in_every_language():
+    t = texts()
+    for lang in c.LANGS:
+        for k in c.SCREEN_TOASTS:
+            assert k == "time" or t["omi"][lang].get(k), (lang, k)
+        assert set(t["mode"][lang]) >= set(c.PANEL_MODES) | set(c.TILES) | {"face", "showing"}, lang
+    assert set(t["what"]) == set(c.OBJECTS)
+
+
+def test_the_screen_report_carries_keys_never_free_text():
+    m = p.parse(json.dumps({"t": "screen", "lang": "de", "mode": "magnify", "expression": "love", "style": "tiles", "menu": 1,
+                            "tiles": ["time", "face", "<b>", 3], "hi": "time", "toast": "is", "arg": "cup", "note": "pill",
+                            "badge": True, "speaking": True}))
+    assert m == {"t": "screen", "lang": "de", "mode": "magnify", "expression": "love", "style": "tiles", "menu": True,
+                 "tiles": ["time", "face"], "hi": "time", "toast": "is", "arg": "cup", "note": "pill", "badge": True,
+                 "allowed": False, "speaking": True, "sensors": {}}
+    assert p.parse(json.dumps({"t": "screen", "toast": "tour.bye"}))["toast"] == "tour.bye"
+    for toast, arg in (("Lieber Herr Muster, Ihre Rechnung", ""), ("tour.nope", ""), ("reading", "cup"), ("is", "Muster")):
+        r = p.parse(json.dumps({"t": "screen", "toast": toast, "arg": arg}))
+        assert r["arg"] == "" and r["toast"] in ("", "reading", "is"), toast
+    bad = p.parse(json.dumps({"t": "screen", "lang": "xx", "mode": "film", "expression": "evil", "hi": "a b", "note": "<i>"}))
+    assert (bad["lang"], bad["mode"], bad["expression"], bad["hi"], bad["note"]) == ("en", "mouth", "neutral", "", "")
+    assert p.prop("cup") == {"t": "prop", "name": "cup"}
+    with pytest.raises(ValueError):
+        p.prop("cake")
+
+
+def test_the_sensors_panel_numbers_go_but_never_a_location():
+    s = p.parse(json.dumps({"t": "screen", "mode": "sensors", "sensors": {
+        "battery": 0.834, "charging": 1, "heading": 361.4, "acc": [0.04, 9.61, 2.0], "lat": 48.1, "lon": 11.5, "where": "home"}}))
+    assert s["sensors"] == {"battery": 0.83, "charging": True, "heading": 360, "acc": [0.0, 9.6, 2.0]}
+    assert p.parse(json.dumps({"t": "screen", "sensors": {"battery": "full", "acc": [1, 2]}}))["sensors"] == {}
+    assert p.parse(json.dumps({"t": "screen", "sensors": "48.1, 11.5"}))["sensors"] == {}
 
 
 def test_the_face_knows_every_panel_mode_and_vision_every_gesture():
@@ -280,13 +320,10 @@ def test_omi_messages_to_the_phone():
 
 
 def test_the_phone_knows_every_tile_and_names_every_object():
-    import re
     from pathlib import Path
     web = Path(__file__).resolve().parent.parent / "web"
     assert f"var TILES = {list(c.TILES)};".replace('"', "'") in (web / "face.js").read_text()
-    omi = (web / "omi.js").read_text()
-    table = omi[omi.index("var WHAT = {"):omi.index("var omi = {")]
-    names = re.findall(r"(?:^|[{,]\s*)'?([a-z][a-z ]*?)'?: \['", table, re.M)
-    assert sorted(names) == sorted(c.OBJECTS)
-    for row in re.findall(r": \[('[^\]]*')\]", table):  # English, French, German, each said with its article
-        assert len(re.findall(r"'([^']+)'", row)) == 3, row
+    what = texts()["what"]   # English, French, German, each said with its article
+    assert sorted(what) == sorted(c.OBJECTS)
+    for label, row in what.items():
+        assert len(row) == 3 and all(isinstance(w, str) and w for w in row), label

@@ -8,10 +8,13 @@ that carries the phone, /<robot>/phone/..., so a robot with a phone keeps its
 own contract and gains these. Bump CONTRACT when a topic changes.
 """
 
-CONTRACT = "atl-phone/0.5"         # 0.2: the front camera (look), faces, codes; 0.3: the panel and its pad (portrait);
+CONTRACT = "atl-phone/0.6"         # 0.2: the front camera (look), faces, codes; 0.3: the panel and its pad (portrait);
                                    # 0.4: vision (see: markers, blobs, objects, hands), the panel's menu and its mode;
-                                   # 0.5: tiles (the spoken menu) and their picks, notes, read, what, follow (Omi Assist)
+                                   # 0.5: tiles (the spoken menu) and their picks, notes, read, what, follow (Omi Assist);
+                                   # 0.6: the phone's screen report and the mirror socket (its Webots twin in step), props
 PORT = 8782                 # the bridge's page and WebSocket (atl-ide 8780, the Thymio gateway 8781)
+MIRROR = "/ws/mirror"       # the mirror socket: what the phone is sent and what its screen shows, for its Webots twin to
+                            # draw the same (this PC, or the pairing key); it only listens. No picture, no text read.
 
 
 def topics(robot: str) -> dict:
@@ -74,8 +77,17 @@ PANEL_STYLES = ("chips", "tiles")   # the menu a tap on the eyes opens: a strip 
 TILES = ("time", "magnify", "read", "what", "front", "back", "show", "follow")   # what a tile does, besides a mode
 MAX_MENU = 9                # entries of the menu
 MAX_NOTE_BUTTONS = 3
-OMI_MENU = ["time", "front", "back", "magnify", "read", "what", "follow", "show"]   # Omi Assist's tiles
+OMI_MENU = ["time", "front", "back", "magnify", "read", "sensors", "follow"]   # Omi Assist's tiles ("what" and "show" are
+# buttons in the camera views: the back camera asks what it sees, every camera view can show its picture when allowed)
 MAX_BUTTONS = 8
+# the screen report (phone -> bridge -> mirrors): what the phone's screen says, as keys of texts.js, never free text.
+# OMI_TEXT's keys that are said as they are, and "tour.<step>" for the presentation; "time" is the clock (the mirror
+# says its own), "is"/"think" come with an OBJECTS label; while reading aloud, only "reading": the text stays on the phone
+SCREEN_TOASTS = ("wait", "reading", "notext", "is", "think", "nothing", "person", "followOn", "followOff", "showOn",
+                 "showOff", "showNo", "noCam", "back", "time")
+TOUR_STEPS = ("hello", "menu", "time", "front", "back", "magnify", "read", "sensors", "follow", "show", "remind", "card",
+              "face", "bye")
+PROPS = ("cup", "letter", "hand", "visitor", "away")   # what the Webots twin flies in for a demo (mirror socket only)
 DEFAULT_PANEL = {"mode": "mouth", "buttons": [{"id": "a", "label": "A", "color": [0.25, 0.85, 1.0]},
                                             {"id": "b", "label": "B", "color": [0.2, 1.0, 0.4]},
                                             {"id": "c", "label": "C", "color": [1.0, 0.8, 0.2]},

@@ -1,5 +1,5 @@
 {
-  "_": "Phones as Webots twins: AtlPhone.proto's fields for each (scripts/phone_twin_world.py writes them). Sizes in mm, the phone frame of atl-phone's contract: x right, y up the screen, z out of it, from the phone's centre. Cameras: where they sit and their field of view across a portrait picture (estimated from the maker's data, not measured).",
+  "_": "Phones as Webots twins: AtlPhone.proto's fields for each (scripts/phone_twin_world.py writes them). Sizes in mm, the phone frame of atl-phone's contract: x right, y up the screen, z out of it, from the phone's centre. Cameras: where they sit and their field of view across a portrait picture (estimated from the maker's data, not measured). buttons_mm: the side buttons, from-to above the phone's bottom edge, which the holder's arms must miss.",
   "A50": {
     "model": "Galaxy A50 (SM-A505)",
     "size_mm": [74.7, 158.5, 7.7],
@@ -19,5 +19,16 @@
     "screen_mm": [66, 140],
     "front": {"at_mm": [0, 70], "fov_deg": 60, "px": [240, 320]},
     "back": {"at_mm": [-20, 60], "fov_deg": 60, "px": [240, 320]}
+  },
+  "ANE-LX1": {
+    "model": "Huawei P20 lite (ANE-LX1)",
+    "size_mm": [71.2, 148.6, 7.4],
+    "mass_g": 145,
+    "screen_px": [1080, 2280],
+    "display_px": [270, 570],
+    "screen_mm": [63.5, 134.0],
+    "buttons_mm": {"side": "right", "from": [88, 128]},
+    "front": {"at_mm": [0, 70], "fov_deg": 60, "px": [240, 320]},
+    "back": {"at_mm": [-23, 59], "fov_deg": 60, "px": [240, 320]}
   }
 }

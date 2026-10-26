@@ -4,7 +4,7 @@
 
 Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "camera" | "look" | "faces" | "code" | "pad" | "panel"
                        | "see" | "markers" | "blobs" | "objects" | "hands" | "menu" | "answer" | "read" | "what" | "show"
-                       | "frame", ...}
+                       | "frame" | "screen", ...}
 Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera" | "look" | "forget" | "panel"
                        | "see" | "note" | "read" | "what" | "show" | "tour", ...}
 
@@ -17,6 +17,10 @@ whether it works and which codes it read; pictures never leave the phone.
 "look" turns the front camera on: the phone finds faces itself and sends only where they are ("faces");
 with "familiar" it also tells them apart, by a signature it keeps in its memory for this session.
 Neither pictures nor signatures leave the phone, and a "faces" message cannot carry them.
+
+"screen" says what the phone's screen shows (mode, expression, the tiles, the words as keys of texts.js): the bridge
+passes it on to the mirrors (its Webots twin), with a copy of all it sends the phone, so the twin's screen follows the
+real one. Keys only: a sentence the phone reads aloud is never in it.
 
 A phone is not trusted: parse() returns a clean message or raises ValueError,
 and every number is finite and clamped.
@@ -217,6 +221,8 @@ def parse(raw: str) -> dict:
         if m.get("error"):
             out["error"] = _text(m["error"], 80)
         return out
+    if t == "screen":  # what the screen shows: keys and ids only, for the mirrors
+        return screen_report(m)
     if t == "pad":
         if not isinstance(m.get("id"), str) or not BUTTON_ID.fullmatch(m["id"]):
             raise ValueError("pad: not a button id")
@@ -227,6 +233,53 @@ def parse(raw: str) -> dict:
             raise ValueError("code: empty")
         return {"t": "code", "text": text}
     raise ValueError(f"unknown message {t!r}")
+
+
+def screen_report(m: dict) -> dict:
+    """The phone's screen report, checked: an unknown key is dropped (""), so no free text can pass."""
+    toast = m.get("toast") or ""
+    ok_toast = toast in c.SCREEN_TOASTS or (toast.startswith("tour.") and toast[5:] in c.TOUR_STEPS) if isinstance(toast, str) else False
+    ids = lambda v: v if isinstance(v, str) and BUTTON_ID.fullmatch(v) else ""
+    tiles = m.get("tiles") if isinstance(m.get("tiles"), list) else []
+    return {"t": "screen", "lang": m.get("lang") if m.get("lang") in c.LANGS else "en",
+            "mode": m.get("mode") if m.get("mode") in c.PANEL_MODES else "mouth",
+            "expression": m.get("expression") if m.get("expression") in c.EXPRESSIONS else "neutral",
+            "style": m.get("style") if m.get("style") in c.PANEL_STYLES else "chips",
+            "menu": bool(m.get("menu")), "tiles": [i for i in map(ids, tiles[:c.MAX_MENU + 1]) if i],
+            "hi": ids(m.get("hi")), "toast": toast if ok_toast else "",
+            "arg": m.get("arg") if ok_toast and toast in ("is", "think") and m.get("arg") in c.OBJECTS else "",
+            "note": ids(m.get("note")), "badge": bool(m.get("badge")), "allowed": bool(m.get("allowed")),
+            "speaking": bool(m.get("speaking")),
+            "sensors": sensor_report(m.get("sensors"))}
+
+
+def sensor_report(s) -> dict:
+    """What the sensors panel shows, as numbers (the battery, the tilt, the compass): only while it shows. Never the
+    location, which the phone keeps on its own screen."""
+    if not isinstance(s, dict):
+        return {}
+    try:
+        return _sensors(s)
+    except ValueError:  # a number that is none: the panel's numbers are left out, the report stays
+        return {}
+
+
+def _sensors(s: dict) -> dict:
+    out = {}
+    if s.get("battery") is not None:
+        out["battery"] = round(_num(s["battery"], 0, 1), 2)
+        out["charging"] = bool(s.get("charging"))
+    if s.get("heading") is not None:
+        out["heading"] = round(_num(s["heading"], 0, 360))
+    acc = s.get("acc")
+    if isinstance(acc, list) and len(acc) == 3:
+        out["acc"] = [round(_num(v, -40, 40), 1) for v in acc]
+    return out
+
+
+def prop(name) -> dict:
+    """A prop for the Webots twin's demo (the mirror socket only: a real phone never gets one)."""
+    return {"t": "prop", "name": _one_of(name, c.PROPS)}
 
 
 # bridge -> phone

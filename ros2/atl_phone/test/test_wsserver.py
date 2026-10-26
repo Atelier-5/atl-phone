@@ -54,6 +54,47 @@ def test_both_ways(server):
     assert not server.connected
 
 
+def test_a_mirror_gets_a_copy_and_cannot_drive_the_phone(server):
+    phone = MockPhone(url(server))
+    assert server.events.get(timeout=3) == "open"
+    twin = MockPhone(f"ws://127.0.0.1:{server.port}/ws/mirror?key=k3y")
+    for _ in range(50):
+        if server.mirror_count:
+            break
+        time.sleep(0.05)
+    assert server.mirror_count == 1 and server.connected   # beside the phone: no takeover
+    assert server.send(json.dumps({"t": "face", "expression": "love"}))
+    assert phone.expect("face")["expression"] == "love" and twin.expect("face")["expression"] == "love"
+    assert server.send_mirrors(json.dumps({"t": "prop", "name": "cup"})) == 1
+    assert twin.expect("prop")["name"] == "cup"
+    twin.send(t="touch", kind="tap", zone="left")            # dropped: only the phone is heard
+    phone.send(t="battery", level=0.5, charging=False)
+    assert server.events.get(timeout=3)["t"] == "battery"
+    with pytest.raises(queue.Empty):
+        phone.got.get(timeout=0.3)                           # the phone never got the prop
+    twin.close()
+    phone.close()
+
+
+def test_a_shown_picture_reaches_only_the_mirrors_on_this_computer(server):
+    twin = MockPhone(f"ws://127.0.0.1:{server.port}/ws/mirror?key=k3y")
+    for _ in range(50):
+        if server.mirror_count:
+            break
+        time.sleep(0.05)
+    assert server.send_mirrors('{"t": "frame", "jpeg": ""}', local_only=True) == 1   # on this computer: as the setup page
+    assert twin.expect("frame")["t"] == "frame"
+    server.mirrors[0].peer = "192.168.1.20"                                           # a mirror on the Wi-Fi, with the key
+    assert server.send_mirrors('{"t": "frame", "jpeg": ""}', local_only=True) == 0
+    assert server.send_mirrors('{"t": "prop", "name": "cup"}') == 1                   # it still gets the rest
+    twin.close()
+
+
+def test_a_mirror_needs_the_key(server):
+    with pytest.raises(OSError):
+        MockPhone(f"ws://127.0.0.1:{server.port}/ws/mirror?key=nope")
+
+
 def test_an_idle_link_stays_open(server):
     phone = MockPhone(url(server), timeout=0.5)
     time.sleep(1.0)

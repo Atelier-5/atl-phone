@@ -32,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ros2" / "atl_phone"))
 from atl_phone.mock_phone import MockPhone  # noqa: E402  (a WebSocket client is all CDP needs)
+from atl_phone import mock_adb  # noqa: E402
 
 DEBUG_PORT = 9333
 
@@ -114,6 +115,8 @@ def main() -> int:
     a.add_argument("--robot", default="thymio_1")
     a.add_argument("--shots", type=Path)
     a.add_argument("--face", type=Path, help="a picture with one face, for the fake front camera")
+    a.add_argument("--fake-adb", metavar="ADB:CDP", help="the ports the test bridge was given (-e ADB_SERVER_PORT, -e ATL_CDP_PORT): "
+                   "a fake adb and phone Chrome there, for the setup page's lighter-phone card (never the real phone)")
     args = a.parse_args()
     ns = f"/{args.robot}/phone"
     failed = 0
@@ -284,7 +287,7 @@ def main() -> int:
         act({"topic": "panel", "value": {"mode": "sensors"}})
         tiles = page.wait_for("getComputedStyle(document.getElementById('sensors')).display === 'grid' && "
                               "document.querySelectorAll('#sensors .tile').length")
-        ok("panel: the sensors, six tiles drawn on the phone", tiles == 6, tiles)
+        ok("panel: the sensors, seven tiles drawn on the phone (the location among them)", tiles == 7, tiles)
         shoot("portrait-sensors.png")
         act({"topic": "panel", "value": {"mode": "camera_back"}})
         c = page.wait_for("camFacing === 'environment' && document.getElementById('pcam').videoWidth > 0 && "
@@ -388,15 +391,15 @@ def main() -> int:
         page.size(360, 760, mobile=True)
         page.wait_for("ws && ws.readyState === 1")
         act({"topic": "see", "value": {"find": []}})
-        act({"topic": "panel", "value": {"mode": "mouth", "style": "tiles", "menu": ["time", "front", "back", "magnify", "read", "what", "follow", "show"]}})
+        act({"topic": "panel", "value": {"mode": "mouth", "style": "tiles", "menu": ["time", "front", "back", "magnify", "read", "sensors", "follow"]}})
         page.wait_for("panel.style === 'tiles'")
         page.tap(180, 100)
         fit = page.wait_for("document.getElementById('menu').style.display === 'grid' && (function () {"
                             " var bs = [].slice.call(document.querySelectorAll('#menu button'));"
-                            " return bs.length === 9 && bs.every(function (b) { var r = b.getBoundingClientRect(), s = b.querySelector('span');"
+                            " return bs.length === 8 && bs.every(function (b) { var r = b.getBoundingClientRect(), s = b.querySelector('span');"
                             " return r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight && r.height >= 90 && s.scrollWidth <= b.clientWidth"
                             " && parseFloat(getComputedStyle(b).fontSize) >= 17; }) && bs.length; })()")
-        ok("Omi: a tap on the eyes opens nine big tiles (eight and Gesicht), each whole on a 360 px phone", fit == 9, fit)
+        ok("Omi: a tap on the eyes opens eight big tiles (seven, Sensoren among them, and Gesicht), each whole on a 360 px phone", fit == 8, fit)
         shoot("omi-tiles.png")
         r = page.js("(function () { var b = document.querySelector('#menu button[data-mode=time]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
         page.tap(int(r[0]), int(r[1]))
@@ -404,6 +407,18 @@ def main() -> int:
         picked = [x["id"] for x in seen().get("menu", [])]
         ok("Omi: the time tile says the time and the day, in German, and ROS hears the pick (menu)",
            bool(said) and said.startswith("Es ist") and "Heute ist" in said and picked[-1:] == ["time"], (said, picked[-1:]))
+
+        def screen_until(pred, timeout=4.0):  # the phone's screen report, as the bridge passes it to the mirrors (0.6)
+            end, sc = time.monotonic() + timeout, None
+            while time.monotonic() < end:
+                sc = state().get("screen") or {}
+                if pred(sc):
+                    return sc
+                time.sleep(0.2)
+            return sc
+        sc = screen_until(lambda x: x.get("toast") == "time")
+        ok("0.6: the screen report says what shows, as keys: the time's words, in German (the clock's own words stay out)",
+           sc.get("toast") == "time" and sc.get("lang") == "de" and sc.get("style") == "tiles" and "Es ist" not in json.dumps(sc), sc)
         act({"topic": "note", "value": {"id": "r1", "text": "Tabletten nehmen", "buttons": [{"id": "done", "label": {"de": "Erledigt"}},
                                                                                            {"id": "later", "label": {"de": "Später"}}]}})
         b = page.wait_for("document.getElementById('card').style.display === 'flex' && document.querySelector('#card button').textContent")
@@ -428,6 +443,14 @@ def main() -> int:
         spoken = page.js("document.getElementById('toast').textContent")
         ok("Omi: read: the printed page is read on the phone, three lines; only the counts reach ROS",
            bool(rd) and rd.get("ok") is True and rd.get("lines") == 3 and "text" not in rd, (rd, spoken))
+        reports = []
+        for _ in range(8):  # while it reads aloud, what the mirrors get
+            reports.append(json.dumps(state().get("screen") or {}))
+            time.sleep(0.25)
+        words = [w for w in (page.js("document.getElementById('toast').textContent") or spoken or "").split() if len(w) > 3]
+        leaked = [w for w in words if any(w in r for r in reports)]
+        ok("0.6: while the phone reads aloud, its screen report says only \"reading\": no word of the page leaves it",
+           bool(words) and not leaked and all(json.loads(r).get("toast") in ("reading", "") for r in reports), (leaked, reports[-1][:120]))
         page.js("stopReading()")
         act({"topic": "what", "value": {"lang": "de"}})
         wt = None
@@ -450,6 +473,13 @@ def main() -> int:
                          " vision.follow = false; return out.join(); })()")
         ok("Omi: the follower holds the nearest; another takes over only when 25 % nearer for 0.5 s; a lost one is held 1 s",
            follow == "faces,faces,faces,markers,markers,null", follow)
+        paced = page.js("(function () { var out = [], F = seeing.follow; vision.follow = true;"
+                        " seeing.follow = { cur: null, cand: null, candAt: 0 }; out.push(pace(['faces']));"            # nobody: 1 s
+                        " seeing.follow.cur = { kind: 'faces', x: 0, y: 0, d: 1, at: 0 }; out.push(pace(['faces']));"  # someone: 0.25 s
+                        " out.push(pace(['faces', 'markers']));"                                                    # another finder: full pace
+                        " vision.follow = false; out.push(pace(['faces'])); seeing.follow = F; return out.join(); })()")
+        ok("Omi: following alone rests the phone: a look every 0.25 s with someone in view, every 1 s with nobody",
+           paced == "1000,250,100,100", paced)
         act({"allow_show": False})
         page.wait_for("!omi.showAllowed")
         page.js("omiTile('show')")
@@ -478,6 +508,30 @@ def main() -> int:
         page.js("magnify('plus')")
         shoot("omi-magnify.png")
         ok("Omi: the magnifier: the back camera big in the panel, with zoom, torch and hold", bool(mag) and page.js("omi.zoom") > 1, page.js("omi.zoom"))
+        bar = "[].filter.call(document.querySelectorAll('#mag button'), function (b) { return b.style.display !== 'none'; }).map(function (b) { return b.dataset.id; }).join()"
+        views = {}
+        for allowed in (False, True):
+            act({"allow_show": allowed})
+            page.wait_for("omi.showAllowed" if allowed else "!omi.showAllowed")
+            for mode in ("camera", "camera_back", "magnify"):
+                page.js(f"setPanel({{ mode: '{mode}' }}, true)")
+                views[(allowed, mode)] = page.wait_for(f"panel.mode === '{mode}' && {bar}")
+        page.js("setPanel({ mode: 'camera_back' }, true)")
+        page.js("camButton('show')")
+        shown = page.wait_for("omi.showing && document.querySelector('#mag button[data-id=show]').classList.contains('on')")
+        shoot("omi-back-buttons.png")
+        page.js("camButton('show')")
+        page.wait_for("!omi.showing")
+        act({"allow_show": False})
+        want = {(False, "camera"): "", (False, "camera_back"): "what", (False, "magnify"): "minus,plus,torch,hold",
+                (True, "camera"): "show", (True, "camera_back"): "what,show", (True, "magnify"): "minus,plus,torch,hold,show"}
+        ok("Omi: the camera views' buttons: what is this? on the back camera, Zeigen on each view only when allowed (and on while showing)",
+           all((views[k] or "") == v for k, v in want.items()) and bool(shown), views)
+        page.js("setPanel({ mode: 'sensors' }, true)")
+        sc = screen_until(lambda x: x.get("mode") == "sensors")
+        ok("0.6: the sensors panel's numbers go in the screen report (for the twin), never the location",
+           sc.get("mode") == "sensors" and set(sc.get("sensors") or {}) <= {"battery", "charging", "heading", "acc"}
+           and "lat" not in json.dumps(sc) and "location" not in json.dumps(sc), sc)
         page.tap(180, 100)
         r = page.wait_for("document.getElementById('menu').style.display === 'grid' && (function () { var b = document.querySelector('#menu button[data-mode=face]');"
                           " if (!b || b !== document.querySelector('#menu').lastElementChild) return null; b = b.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
@@ -507,11 +561,14 @@ def main() -> int:
         page.js("tour('de')")
         hello = page.wait_for("omi.touring && document.getElementById('toast').textContent")
         menu = page.wait_for("omi.touring && document.getElementById('menu').style.display === 'grid' && 'menu'", 80)
+        sc = screen_until(lambda x: x.get("toast") == "tour.menu" and x.get("menu"))
         shoot("omi-tour.png")
         page.tap(180, 60)
         ended = page.wait_for("!omi.touring && !document.querySelector('#menu .tour') && 'ended'")  # (the tap on the eyes: the menu)
         ok("Omi: the presentation says hello in German, opens the tiles, and a tap ends it",
            bool(hello) and hello.startswith("Hallo Omi! Ich bin Omi Assist") and menu == "menu" and ended == "ended", (hello, menu, ended))
+        ok("0.6: the screen report follows the presentation: its step (tour.menu), the tiles open, Gesicht among them",
+           sc.get("toast") == "tour.menu" and sc.get("menu") is True and "face" in sc.get("tiles", []), sc)
         act({"topic": "panel", "value": {"mode": "mouth", "style": "chips", "menu": ["mouth", "pad", "off", "camera", "camera_back", "sensors"]}})
         page.wait_for("panel.style === 'chips' && cam === null")
     finally:
@@ -556,6 +613,35 @@ def main() -> int:
         act({"omi": False})
         off = page.wait_for("!omiOn() && live.omi.textContent.indexOf(t('omi_off')) === 0", tries=40)
         ok("setup page, Omi Assist: Stop stops it", bool(off))
+        if args.fake_adb:   # the lighter-phone card, against a fake phone: the real one's tabs are never listed here
+            ap, cp = (int(x) for x in args.fake_adb.split(":"))
+            fadb, fchrome = mock_adb.start(args.port, ap, cp)
+            try:
+                page.js("window.confirm = function () { return true; }")   # the card asks first; here, yes
+                page.js("phone('look')")
+                looked = page.wait_for("live.ph.textContent.indexOf('ANE-LX1 · Android 9') === 0 && live.ph.textContent", tries=60)
+                page.js("[].filter.call(document.querySelectorAll('#omi-cards button'), function (b) { return b.textContent === t('ph_kill'); })[0].click()")
+                page.wait_for("live.ph.textContent.indexOf('ANE-LX1') === 0", tries=60)
+                page.js("listTabs()")
+                titles = page.wait_for("live.phTabs.querySelectorAll('input').length && [].map.call(live.phTabs.querySelectorAll('label span'),"
+                                       " function (x) { return x.textContent; }).join('|')", tries=60)
+                ticked = page.js("[].filter.call(live.phTabs.querySelectorAll('input'), function (b) { return b.checked; }).length")
+                page.js("live.phTabs.querySelector('input[data-id=B]').click();"
+                        " [].filter.call(live.phTabs.querySelectorAll('button'), function (b) { return b.textContent === t('ph_close'); })[0].click()")
+                closed = page.wait_for("live.phTabs.textContent.indexOf(t('ph_closed')) === 0 && live.phTabs.textContent", tries=60)
+                if args.shots:
+                    page.size(1100, 1400)
+                    page.js("phone('look')")
+                    page.wait_for("live.ph.textContent.indexOf('ANE-LX1') === 0", tries=60)
+                    page.js("listTabs()")
+                    page.wait_for("live.phTabs.querySelectorAll('input').length", tries=60)
+                    page.js("live.ph.scrollIntoView()")
+                    page.shot(args.shots / "setup-lighter.png")
+                ok("setup page, a lighter phone: the load as numbers; stop background apps and close the tabs ticked, never the face's",
+                   bool(looked) and "load 41.8, 43.08, 42.62" in looked and "am kill-all" in fadb.shells
+                   and titles == "Some news|https://example.com/x" and ticked == 0 and fchrome.closed == ["B"], (titles, fchrome.closed, closed))
+            finally:
+                mock_adb.stop(fadb, fchrome)
     finally:
         page.close()
         if tmp:

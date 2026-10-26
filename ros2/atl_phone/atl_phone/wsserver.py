@@ -4,6 +4,8 @@
 
 GET /        -> face.html (any file of web/ is served as is)
 GET /ws      -> the WebSocket (RFC 6455, text frames only); ?key=... when the bridge has a pairing key
+GET /ws/mirror -> a mirror (the phone's Webots twin): it gets a copy of all the phone is sent, and what the bridge
+                passes on (the phone's screen report); it only listens. This PC only, or with the pairing key
 POST /report -> a phone check's report (check.html), from any phone; kept in the registry when the bridge has one
 POST /api/summary -> the setup page's summary, into the registry: this PC only
 GET /api/show.jpg -> the picture the person shows right now (Omi Assist, opt-in): this PC only, kept in memory only
@@ -12,6 +14,7 @@ GET /api/state, POST /api/act -> the setup page's view of the phone and its test
                 a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
 
 One phone at a time: a new phone takes over and the old one is closed; a frame the old one had already sent is dropped.
+Mirrors: any number, beside the phone.
 A browser on another site is refused (Origin must match Host).
 """
 import base64
@@ -27,6 +30,9 @@ import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
+
+MIRROR = "/ws/mirror"   # contract.MIRROR (this module imports no ROS and nothing of the package)
+MAX_MIRRORS = 4
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 MAX_FRAME = 128 * 1024   # a show frame (Omi) is the largest: a 320 px JPEG as base64 (protocol.MAX_FRAME)
@@ -120,17 +126,20 @@ class PhoneServer:
     on_open(link), on_text(text), on_close(link)."""
 
     def __init__(self, web_dir, port, bind="0.0.0.0", key="", on_open=None, on_text=None, on_close=None,
-                 cert=None, cert_key=None, api=None, ca=None):
+                 cert=None, cert_key=None, api=None, ca=None, on_mirror=None):
         """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict) and
         summary(dict) -> None or what to answer (where it was kept).
-        ca: the authority that signed cert, offered at /ca.crt (public: it is what a phone needs to trust the bridge)."""
+        ca: the authority that signed cert, offered at /ca.crt (public: it is what a phone needs to trust the bridge).
+        on_mirror(link): a mirror came; what it should know already (the panel, the last screen) goes to link."""
         self.key = key
         self.ca = ca
         self.api = api
         self.on_open = on_open or (lambda link: None)
         self.on_text = on_text or (lambda text: None)
         self.on_close = on_close or (lambda link: None)
+        self.on_mirror = on_mirror or (lambda link: None)
         self.link = None
+        self.mirrors, self.mlock = [], threading.Lock()   # its own lock: the phone's is held while a message is delivered
         self.lock = threading.Lock()
         self.httpd = ThreadingHTTPServer((bind, port), partial(make_handler(self), directory=str(web_dir)))
         self.httpd.daemon_threads = True
@@ -150,12 +159,29 @@ class PhoneServer:
         with self.lock:
             if self.link:
                 self.link.close(1001)
+        with self.mlock:
+            for m in self.mirrors:
+                m.close(1001)
         self.httpd.shutdown()
         self.httpd.server_close()
 
     def send(self, text: str) -> bool:
+        """To the phone, and a copy to each mirror. True when the phone got it."""
         link = self.link
+        self.send_mirrors(text)
         return bool(link and link.send(text))
+
+    def send_mirrors(self, text: str, local_only: bool = False) -> int:
+        """To the mirrors only (the screen report, a prop): how many got it. local_only: to the mirrors on this computer
+        only (loopback), as the setup page: a picture the person shows never goes further."""
+        with self.mlock:
+            self.mirrors = [m for m in self.mirrors if m.open]
+            mirrors = [m for m in self.mirrors if not local_only or ipaddress.ip_address(m.peer).is_loopback]
+        return sum(m.send(text) for m in mirrors)
+
+    @property
+    def mirror_count(self) -> int:
+        return sum(1 for m in self.mirrors if m.open)
 
     @property
     def connected(self) -> bool:
@@ -232,13 +258,15 @@ def make_handler(server: PhoneServer):
                 self.end_headers()
                 self.wfile.write(jpeg)
                 return
-            if url.path != "/ws":
+            if url.path not in ("/ws", MIRROR):
                 return super().do_GET()
             if self.refused():
                 return
             given = parse_qs(url.query).get("key", [""])[0]
             if server.key and not hmac.compare_digest(given, server.key):
                 return self.send_error(403, "wrong key")
+            if url.path == MIRROR and not (server.key or ipaddress.ip_address(self.client_address[0]).is_loopback):
+                return self.send_error(403, "this PC only")
             ws_key = self.headers.get("Sec-WebSocket-Key")
             if self.headers.get("Upgrade", "").lower() != "websocket" or not ws_key:
                 return self.send_error(400, "not a WebSocket")
@@ -249,7 +277,7 @@ def make_handler(server: PhoneServer):
             super(SimpleHTTPRequestHandler, self).end_headers()  # no Cache-Control on a 101
             self.wfile.flush()
             self.close_connection = True
-            self.serve_ws()
+            self.serve_mirror() if url.path == MIRROR else self.serve_ws()
 
         def refused(self, local=False) -> bool:
             """A browser on another site, or (local) someone not on this PC: refused, with the answer sent."""
@@ -319,5 +347,30 @@ def make_handler(server: PhoneServer):
                 link.close()
                 if server.release(link):
                     server.on_close(link)
+
+        def serve_mirror(self):
+            """A mirror only listens: its frames are read and dropped (pings answered), so it cannot drive the phone."""
+            link = Link(self.wfile, self.client_address[0])
+            with server.mlock:
+                server.mirrors = [m for m in server.mirrors if m.open]
+                full = len(server.mirrors) >= MAX_MIRRORS
+                if not full:
+                    server.mirrors.append(link)
+            if full:
+                link.close(4001)
+                return
+            server.on_mirror(link)
+            try:
+                while link.open:
+                    opcode, data = read_frame(self.rfile)
+                    if opcode == 9:
+                        with link.lock:
+                            self.wfile.write(frame(data, opcode=10))
+                    elif opcode == 8:
+                        break
+            except (OSError, ValueError):
+                pass
+            finally:
+                link.close()
 
     return Handler

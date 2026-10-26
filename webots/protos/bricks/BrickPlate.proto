@@ -1,0 +1,65 @@
+#VRML_SIM R2025a utf8
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# template language: javascript
+# A brick, plate or tile from Webots primitives (a copy of atl-sim's protos/bricks/BrickPlate.proto at 966baec, with a
+# mass field added): for atl-phone's robot stack (AtlOmiStack). The measures of the common building bricks:
+# 8 mm stud pitch, 3.2 mm per plate, studs 4.8 mm across and 1.7 mm high.
+# The origin is the centre of the body (studs not counted), as for every object on the table;
+# studsX runs along x. Collision is the body alone, so stacked bricks rest on each other steadily.
+
+PROTO BrickPlate [
+  field SFVec3f    translation     0 0 0
+  field SFRotation rotation        0 0 1 0
+  field SFString   name            "brick"
+  field SFInt32    studsX          4            # length, in studs
+  field SFInt32    studsY          2            # width, in studs
+  field SFInt32    plates          3            # height, in plates: 1 = plate, 3 = brick
+  field SFBool     studs           TRUE         # FALSE: a smooth tile
+  field SFColor    color           0.79 0.1 0.1
+  field SFBool     physics         TRUE         # FALSE: a fixed part of the scenery
+  field SFFloat    mass            -1           # kg; -1: an ABS brick's own (hollow), else what is inside counts too
+  field SFString   contactMaterial "default"
+]
+{
+  %<
+    const nx = Math.max(1, fields.studsX.value);
+    const ny = Math.max(1, fields.studsY.value);
+    const h = 0.0032 * Math.max(1, fields.plates.value);
+    const sx = 0.008 * nx - 0.0002;   // 0.1 mm play on each side, as on the real bricks
+    const sy = 0.008 * ny - 0.0002;
+    const mass = fields.mass.value > 0 ? fields.mass.value : 1050 * 0.45 * sx * sy * h;   // ABS, hollow: a 2 x 4 brick weighs 2.3 g
+  >%
+  Solid {
+    translation IS translation
+    rotation IS rotation
+    name IS name
+    contactMaterial IS contactMaterial
+    children [
+      Shape {
+        appearance DEF BRICK_LOOK PBRAppearance { baseColor IS color roughness 0.35 metalness 0 }
+        geometry Box { size %<= sx >% %<= sy >% %<= h >% }
+      }
+      %< if (fields.studs.value) { >%
+        %< for (let i = 0; i < nx; ++i) { >%
+          %< for (let j = 0; j < ny; ++j) { >%
+            Pose {
+              translation %<= 0.008 * (i + 0.5 - nx / 2) >% %<= 0.008 * (j + 0.5 - ny / 2) >% %<= h / 2 + 0.00085 >%
+              children [
+                %< if (i === 0 && j === 0) { >%
+                  Shape { appearance USE BRICK_LOOK geometry DEF BRICK_STUD Cylinder { height 0.0017 radius 0.0024 subdivision 16 } }
+                %< } else { >%
+                  Shape { appearance USE BRICK_LOOK geometry USE BRICK_STUD }
+                %< } >%
+              ]
+            }
+          %< } >%
+        %< } >%
+      %< } >%
+    ]
+    boundingObject Box { size %<= sx >% %<= sy >% %<= h >% }
+    %< if (fields.physics.value) { >%
+    physics Physics { density -1 mass %<= mass >% centerOfMass [ 0 0 0 ] }
+    %< } >%
+  }
+}

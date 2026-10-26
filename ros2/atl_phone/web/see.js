@@ -18,6 +18,7 @@ var GESTURE = { None: 'none', Closed_Fist: 'fist', Open_Palm: 'open_palm', Point
 var vision = { find: [], camera: 'front', blob: { hue: 0, tol: 20 }, marker_cm: 5, fov_deg: null, follow: false };  // as "see" asked
 var SIZE_M = { faces: 0.2, hands: 0.19, objects: 0.25 };  // a thing's height when nothing better is known: for its distance
 var NEARER = 0.75, SWITCH_MS = 500, HOLD_MS = 1000, QUICK_MS = 400;  // follow: 25 % nearer for 0.5 s; held 1 s once lost
+var FOLLOW_MS = 250, IDLE_MS = 1000;  // only following: a search every 0.25 s while it holds something, every 1 s while nothing is in view
 var seeing = { familiar: false, timer: 0, video: document.createElement('video'), canvas: document.createElement('canvas'),
                known: [], prev: [], sigAt: 0, codeAt: 0, code: '', codeSent: 0, det: null, ok: null, lastAt: 0, period: 0,
                ms: {}, backend: {}, mp: null, tasks: {}, faceApi: null, recog: null, aruco: null, hadFace: false, reportAt: 0,
@@ -319,13 +320,17 @@ function followPick(cands, now) {  // the thing the eyes hold: the nearest, kept
   return F.cur;
 }
 function followTarget() { var c = seeing.follow.cur; return c ? { kind: c.kind, x: c.x, y: c.y } : null; }
+function pace(f) {  // ms between two searches: a phone that only follows rests (its load: the camera and the GPU)
+  if (!vision.follow || f.some(function (k) { return k !== 'faces' && k !== 'hands'; })) return EVERY;
+  return followTarget() ? FOLLOW_MS : IDLE_MS;
+}
 function seeTick() {
   var f = finders();
   if (!f.length) return;
   var started = performance.now();
   function next() {
     clearTimeout(seeing.timer);
-    seeing.timer = setTimeout(seeTick, Math.max(0, EVERY - (performance.now() - started)));
+    seeing.timer = setTimeout(seeTick, Math.max(0, pace(f) - (performance.now() - started)));
   }
   function fail(e) {
     seeing.ok = false;

@@ -170,23 +170,9 @@ var MODES = ['mouth', 'pad', 'off', 'camera', 'camera_back', 'sensors', 'magnify
 // the menu's style: chips (a strip, for the class) or tiles (big, each says its name, for someone who sees less well);
 // an entry is a mode, a tile (TILES: omi.js does it), or a program's own {id, label, icon}: every pick goes to ROS (menu)
 var TILES = ['time', 'magnify', 'read', 'what', 'front', 'back', 'show', 'follow'];
-var ICON = { mouth: '🙂', pad: '🔘', off: '👀', camera: '🤳', camera_back: '📷', sensors: '📈', magnify: '🔍', time: '🕒',
-             read: '📖', what: '❓', front: '🤳', back: '📷', show: '📡', follow: '👁', face: '🙂' };
+var ICON = TEXTS.icon;
 var SPEAKS = ['time', 'read', 'what', 'follow', 'show', 'face'];  // these tiles speak for themselves: not their name first
-var MODE_TEXT = {
-  en: { mouth: 'Mouth', pad: 'Buttons', off: 'Eyes only', camera: 'Front camera', camera_back: 'Back camera', sensors: 'Sensors',
-        magnify: 'Magnifier', time: 'Time', read: 'Read aloud', what: 'What is this?', front: 'Front camera', back: 'Back camera',
-        show: 'Show', follow: 'Follow', face: 'Face', showing: 'SHOWING',
-        battery: 'Battery', tilt: 'Tilt', compass: 'Compass', link: 'Link', vision: 'Camera', pressed: 'Pressed', busy: 'the camera is in use', none: '–' },
-  fr: { mouth: 'Bouche', pad: 'Boutons', off: 'Yeux seuls', camera: 'Caméra avant', camera_back: 'Caméra arrière', sensors: 'Capteurs',
-        magnify: 'Loupe', time: 'L’heure', read: 'Lire', what: 'Qu’est-ce que c’est ?', front: 'Caméra avant', back: 'Caméra arrière',
-        show: 'Montrer', follow: 'Suivre', face: 'Visage', showing: 'JE MONTRE',
-        battery: 'Batterie', tilt: 'Inclinaison', compass: 'Boussole', link: 'Liaison', vision: 'Caméra', pressed: 'Appuyé', busy: 'la caméra est occupée', none: '–' },
-  de: { mouth: 'Mund', pad: 'Tasten', off: 'Nur Augen', camera: 'Frontkamera', camera_back: 'Rückkamera', sensors: 'Sensoren',
-        magnify: 'Lupe', time: 'Uhrzeit', read: 'Vorlesen', what: 'Was ist das?', front: 'Vordere Kamera', back: 'Hintere Kamera',
-        show: 'Zeigen', follow: 'Folgen', face: 'Gesicht', showing: 'ZEIGEN',
-        battery: 'Akku', tilt: 'Neigung', compass: 'Kompass', link: 'Verbindung', vision: 'Kamera', pressed: 'Gedrückt', busy: 'die Kamera ist belegt', none: '–' }
-};
+var MODE_TEXT = TEXTS.mode;  // the words: texts.js, shared with the Webots twin
 function mt(k) { return MODE_TEXT[lang][k] || MODE_TEXT.en[k] || k; }
 var DEFAULT_PANEL = { mode: 'mouth', buttons: [{ id: 'a', label: 'A', rgb: [64, 217, 255] }, { id: 'b', label: 'B', rgb: [51, 255, 102] },
                                                { id: 'c', label: 'C', rgb: [255, 204, 51] }, { id: 'd', label: 'D', rgb: [255, 102, 178] }] };
@@ -296,7 +282,8 @@ function showPanel() {
   var picture = mode === 'camera' || mode === 'camera_back' || mode === 'magnify';
   pcam.style.display = picture ? 'block' : 'none';
   pcam.style.transform = mode === 'camera' ? 'scaleX(-1)' : 'none';  // the front camera as a mirror
-  if (typeof magnifyShow === 'function') magnifyShow(mode === 'magnify');  // omi.js: its zoom, torch and hold buttons
+  if (typeof camBar === 'function') camBar(mode);  // omi.js: the camera view's buttons (zoom, torch, hold; what is this?; Zeigen)
+  geoWatch(mode === 'sensors');
   var cols = panel.buttons.length <= 4 ? 2 : panel.buttons.length <= 6 ? 3 : 4;
   padEl.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
   var key = panel.buttons.map(function (b) { return b.id + '|' + b.label + '|' + b.rgb; }).join(',');
@@ -359,8 +346,16 @@ function noteCard(m) {
   cardEl.appendChild(p); cardEl.appendChild(row); cardEl.style.display = 'flex';
   if (m.say) speak(m.text, lang);
 }
-// the sensor panel: what this phone senses, drawn here; nothing new is sent for it
-var acc = null, sentN = 0, sentRate = 0;
+// the sensor panel: what this phone senses, drawn here. Its numbers go in the screen report (for the twin), but the
+// location never leaves this screen: it is asked only while the panel shows, and given to no one
+var acc = null, sentN = 0, sentRate = 0, geo = { watch: null, at: null, err: '' };
+function geoWatch(on) {
+  if (!navigator.geolocation) return;
+  if (on && geo.watch === null) {
+    geo.watch = navigator.geolocation.watchPosition(function (p) { geo.at = p.coords; geo.err = ''; },
+      function (e) { geo.err = e.code === 1 ? 'blocked' : ''; }, { enableHighAccuracy: false, maximumAge: 60000, timeout: 30000 });
+  } else if (!on && geo.watch !== null) { navigator.geolocation.clearWatch(geo.watch); geo.watch = null; geo.at = null; }
+}
 setInterval(function () { sentRate = sentN; sentN = 0; }, 1000);
 function tile(k, v, extra) { return '<div class="tile"><b>' + mt(k) + '</b><span>' + v + '</span>' + (extra || '') + '</div>'; }
 function updateSensors() {
@@ -377,6 +372,8 @@ function updateSensors() {
     tile('compass', lastHeading >= 0 ? Math.round(lastHeading) + '°' : mt('none'),
          lastHeading >= 0 ? '<i class="needle" style="transform:rotate(' + lastHeading + 'deg)"></i>' : '') +
     tile('link', (ws && ws.readyState === 1 ? '● ' : '○ ') + sentRate + '/s') +
+    tile('location', geo.at ? geo.at.latitude.toFixed(4) + '°' : geo.err ? mt('blocked') : mt('none'),
+         geo.at ? '<small>' + geo.at.longitude.toFixed(4) + '° ±' + Math.round(geo.at.accuracy) + ' m</small>' : '') +
     tile('vision', v || mt('none')) +
     tile('pressed', lastPad || mt('none'));
 }

@@ -8,4 +8,4 @@ set -euo pipefail
 cd "$(dirname "$0")"
 unset PYTHONPATH
 export PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
-exec uv run -q --no-project --python 3.11 --with pytest python -m pytest tests ros2/atl_phone/test "$@"
+exec uv run -q --no-project --python 3.11 --with pytest --with rdflib --with pyshacl python -m pytest tests ros2/atl_phone/test "$@"

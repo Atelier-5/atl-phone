@@ -8,6 +8,7 @@ Prints one line per check (PASS/FAIL) and exits 1 if any failed. Also the setup 
 phone on the bridge: the mock phone takes over, and a real one would be closed.
 """
 import argparse
+import base64
 import json
 import math
 import sys
@@ -268,6 +269,7 @@ class Check:
         self.ok("setup page: with no phone, see can still be turned off: the phone that comes gets none", m is None and kept == [], (m, kept))
         third.close()
         self.omi(url, api)
+        self.mirror(url, api)
 
         print(f"{'all passed' if not self.failed else f'{self.failed} failed'}")
         self.n.destroy_node()
@@ -381,6 +383,75 @@ class Check:
                 bool(m) and m.get("style") == "chips" and late == 400, (m, late))
         api("/api/act", {"reminders": []})
         phone.close()
+
+    def mirror(self, url, api):
+        """0.6: the mirror socket (the phone's Webots twin): a copy of what the phone gets, its screen report, the props."""
+        from urllib.parse import urlsplit, urlunsplit
+        u = urlsplit(url)
+
+        def code(body):
+            try:
+                api("/api/act", body)
+                return 204
+            except urllib.error.HTTPError as e:
+                return e.code
+
+        def get(link, t, timeout=3.0):
+            try:
+                return link.expect(t, timeout)
+            except TimeoutError:
+                return None
+
+        none = code({"prop": "cup"})
+        twin = MockPhone(urlunsplit((u.scheme, u.netloc, c.MIRROR, u.query, "")))
+        first = get(twin, "phone")
+        phone = MockPhone(url)
+        phone.hello()
+        self.status(True)
+        hello, end = None, time.monotonic() + 3.0
+        while time.monotonic() < end and not (hello and hello.get("connected")):   # the step before's phone may still be
+            hello = get(twin, "phone", max(0.1, end - time.monotonic()))           # going: its "gone" can come first
+        self.ok("0.6: a mirror connects beside the phone, and hears when the phone comes",
+                none == 400 and first is not None and bool(hello) and hello.get("connected") is True
+                and json.load(api("/api/state")).get("mirrors") == 1, (none, first, hello))
+        self.pub["expression"].publish(String(data="love"))
+        a, b = get(phone, "face"), get(twin, "face")
+        self.ok("0.6: the mirror gets a copy of what the phone is sent", a == b == {"t": "face", "expression": "love"}, (a, b))
+        phone.send(t="screen", lang="de", mode="mouth", expression="love", style="tiles", menu=True, tiles=["time", "face"],
+                   hi="time", toast="Lieber Herr Muster, Ihre Rechnung", note="", badge=False, speaking=True)
+        sneak = get(twin, "screen")
+        phone.send(t="screen", lang="de", mode="mouth", expression="love", style="tiles", menu=True, tiles=["time", "face"],
+                   hi="time", toast="tour.time", note="", badge=False, speaking=True)
+        good = get(twin, "screen")
+        self.ok("0.6: the phone's screen report reaches the mirror as keys only (free text dropped), not ROS",
+                bool(sneak) and sneak["toast"] == "" and bool(good) and good["toast"] == "tour.time" and good["tiles"] == ["time", "face"]
+                and json.load(api("/api/state")).get("screen", {}).get("hi") == "time", (sneak, good))
+        sent = code({"prop": "cup"})
+        prop = get(twin, "prop")
+        on_phone = get(phone, "prop", 0.5)
+        before = len(self.got.get("touch", []))
+        twin.send(t="touch", kind="tap", zone="left")
+        self.wait("touch", lambda m: False, timeout=0.5)
+        self.ok("0.6: a prop goes to the mirror only; a mirror cannot drive the phone (its frames are dropped)",
+                sent == 204 and prop == {"t": "prop", "name": "cup"} and on_phone is None
+                and len(self.got.get("touch", [])) == before and code({"prop": "cake"}) == 400, (sent, prop, on_phone))
+        jpeg = base64.b64encode(b"\xff\xd8" + b"\x22" * 200 + b"\xff\xd9").decode()
+        phone.send(t="frame", jpeg=jpeg)                   # not showing: dropped, the mirror gets nothing
+        unshown = get(twin, "frame", 0.5)
+        api("/api/act", {"allow_show": True})
+        get(phone, "show", 1.0)
+        phone.send(t="show", on=True)
+        time.sleep(0.2)
+        phone.send(t="frame", jpeg=jpeg)
+        shown = get(twin, "frame")
+        api("/api/act", {"show": False})
+        api("/api/act", {"allow_show": False})
+        self.ok("0.6: a picture reaches the mirror on this computer only while she shows it (Zeigen), never otherwise",
+                unshown is None and bool(shown) and shown.get("jpeg") == jpeg, (unshown, bool(shown)))
+        phone.close()
+        gone = get(twin, "phone")
+        self.ok("0.6: the mirror hears when the phone goes", bool(gone) and gone.get("connected") is False, gone)
+        twin.close()
 
 
 def main():

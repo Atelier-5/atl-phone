@@ -191,12 +191,21 @@ var T = {
 };
 // the three choices at the top, and Omi Assist
 Object.assign(T.en, {
+  ph_look: 'Look at the phone', ph_wait: 'asking the phone (about ten seconds)…', ph_free: 'free memory', ph_of: 'of',
+  ph_load: 'load', ph_load_d: '(tasks waiting: far above its cores, it slows down)', ph_tabs: 'Chrome tabs', ph_batt: 'battery',
+  ph_thermal: 'thermal status', ph_thermal_d: '(0 none … 3 severe: the phone slows itself down)', ph_busy: 'the busiest apps (CPU %)',
+  ph_mem: 'the apps that hold most memory', ph_kill: 'Stop background apps', ph_kill_q: 'Stop the apps in the background? They start again when opened; no data is lost.',
+  ph_stay: 'Screen stays on (on USB)', ph_sleep: 'Screen may sleep', ph_stay_on: 'the screen stays on while on USB', ph_stay_off: 'the screen may sleep again',
+  ph_list: 'Chrome tabs…', ph_list_d: 'The phone’s own tabs, other than the face: tick the ones to close.', ph_close: 'Close the ticked tabs',
+  ph_close_q: 'Close {n} tabs on the phone?', ph_closed: 'closed:', ph_none: 'no other tab',
   v_setup: 'Connect and Test', v_setup_d: 'Connect a phone, check it, test each part', v_guard: 'Desk Guard', v_guard_d: 'It watches the desk, greets its owner',
   v_omi: 'Omi Assist', v_omi_d: 'A helper on a stand: big spoken tiles, reminders',
-  omi_lead: 'The phone on a stand as a helper. A tap on its eyes opens big tiles that say their name: the time, the magnifier, reading aloud, “what is this?”, the front and back camera, eyes that follow, showing. Her assistant’s reminders come at their time, as a big card she answers.',
+  omi_lead: 'The phone on a stand as a helper. A tap on its eyes opens big tiles that say their name: the time, the front and back camera, the magnifier, reading aloud, the sensors, eyes that follow. The back camera asks “what is this?”; each camera view can show its picture. Her assistant’s reminders come at their time, as a big card she answers.',
   no_phone_here: 'No phone connected: open the face on the phone (Connect and Test, step 2).', omi: 'Omi Assist',
   omi_none: 'Omi Assist does not answer: start the bridge with ./start.sh --omi', omi_on: 'running', omi_off: 'stopped', omi_face: 'Face upright on the phone', omi_tour: 'Introduce Omi Assist',
   omi_tour_d: 'The phone says what it can, tile by tile, in its language (about two minutes). A tap on the phone ends it.',
+  twin: 'Webots twin', twin_d: 'Fly something in front of the twin, for a demo: the cup for “What is this?”, the letter for “Read aloud” (on its stand behind the robot, or held), a visitor for the greeting.',
+  prop_cup: 'Cup', prop_letter: 'Letter', prop_hand: 'Held letter', prop_visitor: 'Visitor', prop_away: 'Away',
   omi_stops: 'Starting one stops the other (Desk Guard, Omi Assist): they share the face.',
   reminders: 'Reminders', rem_add: '+ Add a reminder', rem_save: 'Save the reminders', rem_test: 'Test: one in a minute', rem_test_text: 'Drink a glass of water',
   rem_text: 'What to remind', rem_saved: 'saved', rem_next: 'next:', rem_none: 'no reminder yet', every_day: 'every day', answers: 'answered:',
@@ -205,15 +214,24 @@ Object.assign(T.en, {
   show_note: 'Only while she shows: a red badge on the phone, at most a minute, a tap stops it. The picture comes to this page only: it is not kept, nor sent on to ROS. Agree on it with her first (docs/consent-show.md).',
   show_live: 'showing now', show_wait: 'not showing', show_stop: 'Stop showing', show_off: 'not allowed',
   lighter: 'A lighter phone', install_hint: 'On the phone, in Chrome: ⋮ › Install app (or Add to Home screen). The face then opens as its own window, without the tabs and the address bar.',
-  tidy_hint: 'On this PC: what weighs on the phone, and closing background apps when you say so:', more_views: 'Desk Guard and Omi Assist: at the top of this page.'
+  tidy_hint: 'Or in a terminal on this PC, the same:', more_views: 'Desk Guard and Omi Assist: at the top of this page.'
 });
 Object.assign(T.fr, {
+  ph_look: 'Regarder le téléphone', ph_wait: 'je demande au téléphone (environ dix secondes)…', ph_free: 'mémoire libre', ph_of: 'sur',
+  ph_load: 'charge', ph_load_d: '(tâches en attente : bien au-dessus de ses cœurs, il ralentit)', ph_tabs: 'onglets Chrome', ph_batt: 'batterie',
+  ph_thermal: 'état thermique', ph_thermal_d: '(0 rien … 3 sévère : le téléphone se ralentit)', ph_busy: 'les applis les plus actives (CPU %)',
+  ph_mem: 'les applis qui tiennent le plus de mémoire', ph_kill: 'Arrêter les applis en arrière-plan', ph_kill_q: 'Arrêter les applis en arrière-plan ? Elles repartent quand on les ouvre ; rien n’est perdu.',
+  ph_stay: 'Écran allumé (sur USB)', ph_sleep: 'Écran peut s’éteindre', ph_stay_on: 'l’écran reste allumé sur USB', ph_stay_off: 'l’écran peut de nouveau s’éteindre',
+  ph_list: 'Onglets Chrome…', ph_list_d: 'Les onglets du téléphone, autres que le visage : cochez ceux à fermer.', ph_close: 'Fermer les onglets cochés',
+  ph_close_q: 'Fermer {n} onglets sur le téléphone ?', ph_closed: 'fermés :', ph_none: 'aucun autre onglet',
   v_setup: 'Connecter et tester', v_setup_d: 'Connecter un téléphone, le vérifier, tester chaque partie', v_guard: 'Gardien du bureau', v_guard_d: 'Il surveille le bureau, salue son propriétaire',
   v_omi: 'Omi Assist', v_omi_d: 'Un assistant sur un support : de grandes tuiles qui parlent, des rappels',
-  omi_lead: 'Le téléphone sur un support, comme assistant. Un toucher sur ses yeux ouvre de grandes tuiles qui disent leur nom : l’heure, la loupe, lire à voix haute, « qu’est-ce que c’est ? », la caméra avant et arrière, des yeux qui suivent, montrer. Les rappels de la personne qui l’assiste arrivent à leur heure, sur une grande carte à laquelle elle répond.',
+  omi_lead: 'Le téléphone sur un support, comme assistant. Un toucher sur ses yeux ouvre de grandes tuiles qui disent leur nom : l’heure, la caméra avant et arrière, la loupe, lire à voix haute, les capteurs, des yeux qui suivent. La caméra arrière demande « qu’est-ce que c’est ? » ; chaque vue de caméra peut montrer son image. Les rappels de la personne qui l’assiste arrivent à leur heure, sur une grande carte à laquelle elle répond.',
   no_phone_here: 'Aucun téléphone connecté : ouvrez le visage sur le téléphone (Connecter et tester, étape 2).', omi: 'Omi Assist',
   omi_none: 'Omi Assist ne répond pas : lancez le pont avec ./start.sh --omi', omi_on: 'en marche', omi_off: 'arrêté', omi_face: 'Visage debout sur le téléphone', omi_tour: 'Présenter Omi Assist',
   omi_tour_d: 'Le téléphone dit ce qu’il sait faire, tuile par tuile, dans sa langue (environ deux minutes). Un toucher sur le téléphone l’arrête.',
+  twin: 'Jumeau Webots', twin_d: 'Faites venir un objet devant le jumeau, pour une démo : la tasse pour « Qu’est-ce que c’est ? », la lettre pour « Lire » (sur son support derrière le robot, ou tenue), un visiteur pour le bonjour.',
+  prop_cup: 'Tasse', prop_letter: 'Lettre', prop_hand: 'Lettre tenue', prop_visitor: 'Visiteur', prop_away: 'Enlever',
   omi_stops: 'En lancer un arrête l’autre (Gardien du bureau, Omi Assist) : ils partagent le visage.',
   reminders: 'Rappels', rem_add: '+ Ajouter un rappel', rem_save: 'Enregistrer les rappels', rem_test: 'Essai : un dans une minute', rem_test_text: 'Boire un verre d’eau',
   rem_text: 'De quoi se souvenir', rem_saved: 'enregistré', rem_next: 'prochain :', rem_none: 'pas encore de rappel', every_day: 'tous les jours', answers: 'réponses :',
@@ -222,15 +240,24 @@ Object.assign(T.fr, {
   show_note: 'Seulement pendant qu’elle montre : un badge rouge sur le téléphone, une minute au plus, un toucher l’arrête. L’image vient sur cette page seulement : elle n’est ni gardée, ni envoyée à ROS. Mettez-vous d’accord avec elle d’abord (docs/consent-show.md).',
   show_live: 'elle montre', show_wait: 'rien de montré', show_stop: 'Arrêter de montrer', show_off: 'non permis',
   lighter: 'Un téléphone plus léger', install_hint: 'Sur le téléphone, dans Chrome : ⋮ › Installer l’application (ou Ajouter à l’écran d’accueil). Le visage s’ouvre alors dans sa propre fenêtre, sans les onglets ni la barre d’adresse.',
-  tidy_hint: 'Sur ce PC : ce qui pèse sur le téléphone, et fermer les applis en arrière-plan quand vous le dites :', more_views: 'Gardien du bureau et Omi Assist : en haut de cette page.'
+  tidy_hint: 'Ou dans un terminal sur ce PC, la même chose :', more_views: 'Gardien du bureau et Omi Assist : en haut de cette page.'
 });
 Object.assign(T.de, {
+  ph_look: 'Das Handy ansehen', ph_wait: 'ich frage das Handy (etwa zehn Sekunden)…', ph_free: 'freier Speicher', ph_of: 'von',
+  ph_load: 'Last', ph_load_d: '(wartende Aufgaben: weit über seinen Kernen wird es langsam)', ph_tabs: 'Chrome-Tabs', ph_batt: 'Akku',
+  ph_thermal: 'Wärmestatus', ph_thermal_d: '(0 nichts … 3 stark: das Handy bremst sich selbst)', ph_busy: 'die aktivsten Apps (CPU %)',
+  ph_mem: 'die Apps mit dem meisten Speicher', ph_kill: 'Hintergrund-Apps beenden', ph_kill_q: 'Die Apps im Hintergrund beenden? Sie starten wieder, wenn man sie öffnet; nichts geht verloren.',
+  ph_stay: 'Bildschirm bleibt an (an USB)', ph_sleep: 'Bildschirm darf aus', ph_stay_on: 'der Bildschirm bleibt an USB an', ph_stay_off: 'der Bildschirm darf wieder ausgehen',
+  ph_list: 'Chrome-Tabs…', ph_list_d: 'Die Tabs des Handys außer dem Gesicht: die zu schließenden ankreuzen.', ph_close: 'Angekreuzte Tabs schließen',
+  ph_close_q: '{n} Tabs auf dem Handy schließen?', ph_closed: 'geschlossen:', ph_none: 'kein anderer Tab',
   v_setup: 'Verbinden und testen', v_setup_d: 'Ein Handy verbinden, prüfen, jeden Teil testen', v_guard: 'Schreibtischwächter', v_guard_d: 'Er bewacht den Schreibtisch, begrüßt seinen Besitzer',
   v_omi: 'Omi Assist', v_omi_d: 'Ein Helfer auf einem Ständer: große sprechende Kacheln, Erinnerungen',
-  omi_lead: 'Das Handy auf einem Ständer als Helfer. Ein Tipp auf die Augen öffnet große Kacheln, die ihren Namen sagen: die Uhrzeit, die Lupe, Vorlesen, „Was ist das?“, die vordere und hintere Kamera, Augen, die folgen, Zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie beantwortet.',
+  omi_lead: 'Das Handy auf einem Ständer als Helfer. Ein Tipp auf die Augen öffnet große Kacheln, die ihren Namen sagen: die Uhrzeit, die vordere und hintere Kamera, die Lupe, Vorlesen, die Sensoren, Augen, die folgen. Die hintere Kamera fragt „Was ist das?“; jede Kameraansicht kann ihr Bild zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie beantwortet.',
   no_phone_here: 'Kein Handy verbunden: das Gesicht auf dem Handy öffnen (Verbinden und testen, Schritt 2).', omi: 'Omi Assist',
   omi_none: 'Omi Assist antwortet nicht: die Brücke mit ./start.sh --omi starten', omi_on: 'läuft', omi_off: 'gestoppt', omi_face: 'Gesicht aufrecht auf dem Handy', omi_tour: 'Omi Assist vorstellen',
   omi_tour_d: 'Das Handy sagt, was es kann, Kachel für Kachel, in seiner Sprache (etwa zwei Minuten). Ein Tipp auf das Handy beendet es.',
+  twin: 'Webots-Zwilling', twin_d: 'Etwas vor den Zwilling fliegen lassen, für eine Vorführung: die Tasse für „Was ist das?“, den Brief für „Vorlesen“ (auf seinem Ständer hinter dem Roboter, oder in der Hand), einen Besuch für die Begrüßung.',
+  prop_cup: 'Tasse', prop_letter: 'Brief', prop_hand: 'Brief in der Hand', prop_visitor: 'Besuch', prop_away: 'Weg damit',
   omi_stops: 'Das eine starten stoppt das andere (Schreibtischwächter, Omi Assist): sie teilen sich das Gesicht.',
   reminders: 'Erinnerungen', rem_add: '+ Erinnerung hinzufügen', rem_save: 'Erinnerungen speichern', rem_test: 'Test: eine in einer Minute', rem_test_text: 'Ein Glas Wasser trinken',
   rem_text: 'Woran erinnern', rem_saved: 'gespeichert', rem_next: 'nächste:', rem_none: 'noch keine Erinnerung', every_day: 'jeden Tag', answers: 'beantwortet:',
@@ -239,7 +266,7 @@ Object.assign(T.de, {
   show_note: 'Nur solange sie zeigt: ein rotes Abzeichen auf dem Handy, höchstens eine Minute, ein Tipp beendet es. Das Bild kommt nur auf diese Seite: es wird weder gespeichert noch an ROS weitergegeben. Vorher mit ihr absprechen (docs/consent-show.md).',
   show_live: 'sie zeigt gerade', show_wait: 'nichts gezeigt', show_stop: 'Zeigen beenden', show_off: 'nicht erlaubt',
   lighter: 'Ein leichteres Handy', install_hint: 'Auf dem Handy, in Chrome: ⋮ › App installieren (oder Zum Startbildschirm hinzufügen). Das Gesicht öffnet sich dann in einem eigenen Fenster, ohne Tabs und Adressleiste.',
-  tidy_hint: 'Auf diesem PC: was das Handy belastet, und Hintergrund-Apps schließen, wenn Sie es sagen:', more_views: 'Schreibtischwächter und Omi Assist: oben auf dieser Seite.'
+  tidy_hint: 'Oder in einem Terminal auf diesem PC, dasselbe:', more_views: 'Schreibtischwächter und Omi Assist: oben auf dieser Seite.'
 });
 var lang = 'en';
 try { lang = localStorage.getItem('atl-lang') || (navigator.language || 'en').slice(0, 2); } catch (e) {}
@@ -584,6 +611,11 @@ function buildOmi() {
       el('button', { class: 'b', text: '🎤 ' + t('omi_tour'), onclick: function () { act({ omi_tour: true }); } })]),
     el('div', { class: 'hint', text: t('omi_tour_d') }),
     el('div', { class: 'hint', text: t('omi_stops') })]));
+  live.twin = card('twin', [el('div', { class: 'row' }, [['cup', '🥤'], ['letter', '✉️'], ['hand', '✋'], ['visitor', '🙂'], ['away', '✕']].map(function (p) {
+    return el('button', { class: 'b ghost small', text: p[1] + ' ' + t('prop_' + p[0]), onclick: function () { act({ prop: p[0] }); } });
+  })), el('div', { class: 'hint', text: t('twin_d') })]);
+  live.twin.style.display = 'none';   // only while a twin listens (the bridge's mirrors)
+  o.appendChild(live.twin);
   live.rems = el('div'); live.remSaved = el('span', { class: 'live' }); live.remNext = el('div', { class: 'live' }); live.answers = el('div', { class: 'live' });
   o.appendChild(card('reminders', [live.rems, el('div', { class: 'row' }, [
     el('button', { class: 'b ghost small', text: t('rem_add'), onclick: function () {
@@ -597,14 +629,57 @@ function buildOmi() {
   live.showStop = el('button', { class: 'b ghost small', text: t('show_stop'), onclick: function () { act({ show: false }); } });
   o.appendChild(card('show_card', [el('label', { class: 'row' }, [live.allowShow, el('span', { text: t('show_allow') })]),
     el('div', { class: 'hint', text: t('show_note') }), el('div', { class: 'row', style: 'margin-top:8px' }, [live.showState, live.showStop]), live.showImg]));
-  o.appendChild(card('lighter', [el('div', { class: 'hint', text: t('install_hint') }), el('div', { class: 'hint', text: t('tidy_hint') }),
-    el('pre', {}, [el('span', { text: './scripts/phone_tidy.sh' })])]));
+  live.ph = el('div', { class: 'live' }); live.phTabs = el('div');
+  o.appendChild(card('lighter', [el('div', { class: 'hint', text: t('install_hint') }), el('div', { class: 'row' }, [
+    el('button', { class: 'b ghost small', text: '🔍 ' + t('ph_look'), onclick: function () { phone('look'); } }),
+    el('button', { class: 'b ghost small', text: t('ph_kill'), onclick: function () { if (confirm(t('ph_kill_q'))) phone('kill'); } }),
+    el('button', { class: 'b ghost small', text: t('ph_stay'), onclick: function () { phone('stay_on'); } }),
+    el('button', { class: 'b ghost small', text: t('ph_sleep'), onclick: function () { phone('stay_off'); } }),
+    el('button', { class: 'b ghost small', text: t('ph_list'), onclick: listTabs })]), live.ph, live.phTabs,
+    el('div', { class: 'hint', text: t('tidy_hint') }), el('pre', {}, [el('span', { text: './scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]' })])]));
+}
+// ---- a lighter phone: what weighs on it, and lighter when asked (the bridge's phone_health, over this PC's adb) -----
+function actGet(body) {  // as act(), with the bridge's answer
+  return fetch('/api/act', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); });
+}
+function phone(what) {
+  live.ph.textContent = t('ph_wait');
+  actGet({ phone: what }).then(function (h) {
+    if (h.stay_on !== undefined) { live.ph.textContent = t(h.stay_on ? 'ph_stay_on' : 'ph_stay_off'); return; }
+    var n = function (x) { return x === null || x === undefined ? '?' : x; };
+    var list = function (title, rows) { return el('div', {}, [el('b', { text: title })].concat(rows.map(function (r) { return el('div', { text: '  ' + r }); }))); };
+    live.ph.innerHTML = '';
+    [h.model + ' · Android ' + h.android,
+     t('ph_free') + ' ' + h.free_mb + ' ' + t('ph_of') + ' ' + h.total_mb + ' MB · ' + t('ph_tabs') + ' ' + n(h.tabs),
+     t('ph_load') + ' ' + (h.load ? h.load.join(', ') : '?') + ' ' + t('ph_load_d'),
+     t('ph_batt') + ' ' + n(h.battery_c) + ' °C · ' + t('ph_thermal') + ' ' + n(h.thermal) + ' ' + t('ph_thermal_d')
+    ].forEach(function (line) { live.ph.appendChild(el('div', { text: line })); });
+    live.ph.appendChild(list(t('ph_busy'), h.busy.map(function (b) { return b.cpu + ' · ' + b.res + ' · ' + b.name; })));
+    live.ph.appendChild(list(t('ph_mem'), h.memory.map(function (m) { return m.mb + ' MB · ' + m.name; })));
+  }).catch(function (e) { live.ph.textContent = '⚠ ' + e.message; });
+}
+function listTabs() {
+  live.phTabs.textContent = t('ph_wait');
+  actGet({ phone: 'tabs' }).then(function (r) {
+    live.phTabs.innerHTML = '';
+    if (!r.tabs.length) { live.phTabs.appendChild(el('div', { class: 'hint', text: t('ph_none') })); return; }
+    var boxes = r.tabs.map(function (tab) { return el('input', { type: 'checkbox', 'data-id': tab.id }); });   // none ticked
+    live.phTabs.appendChild(el('div', { class: 'hint', text: t('ph_list_d') }));
+    r.tabs.forEach(function (tab, i) { live.phTabs.appendChild(el('label', { class: 'row' }, [boxes[i], el('span', { text: tab.title })])); });
+    live.phTabs.appendChild(el('button', { class: 'b small', text: t('ph_close'), onclick: function () {
+      var ids = boxes.filter(function (b) { return b.checked; }).map(function (b) { return b.getAttribute('data-id'); });
+      if (!ids.length || !confirm(t('ph_close_q').replace('{n}', ids.length))) return;
+      actGet({ phone: 'close', ids: ids }).then(function (c) { live.phTabs.textContent = t('ph_closed') + ' ' + c.closed; });
+    } }));
+  }).catch(function (e) { live.phTabs.textContent = '⚠ ' + e.message; });
 }
 function updateOmi() {
   if (!live.omi) return;
   var g = S.omi || {}, on = omiOn(), heard = g.at && S.now - g.at < 3, sh = S.show || {};
   setMark(live.omiMark, on ? true : heard ? 'na' : null);
   live.omi.textContent = heard ? t(on ? 'omi_on' : 'omi_off') + (g.lang ? ' · ' + g.lang : '') : t('omi_none');
+  if (live.twin) live.twin.style.display = S.mirrors ? '' : 'none';
   live.omiMore.textContent = heard && g.picks && g.picks.length ? t('picks') + ' ' + g.picks.map(function (p) { return p.id; }).join(' ') : '';
   var from = JSON.stringify(g.reminders || []);
   if (heard && !remsDirty && from !== remsFrom) {

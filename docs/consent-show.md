@@ -16,7 +16,8 @@ sits at the PC: a letter, a pill box, a photo. It is meant for her assistant, he
   the red badge, or on "Show" again, stops it. Someone at the PC can stop it too.
 - **Always visible:** while it shows, the phone has a red **● SHOWING** badge on top, and its screen shows what the
   camera sees, so she knows what is being shown.
-- **Where it goes:** a small picture (320 pixels wide, two a second) to the setup page on this PC only. The bridge keeps
+- **Where it goes:** a small picture (320 pixels wide, two a second) to the setup page and to the robot's twin in Webots,
+  on this PC only (the one the bridge runs on). The bridge keeps
   the last one in memory for three seconds; it writes nothing to disk, and nothing goes to ROS, the robot's programs,
   or the internet.
 - **Who decides:** she does. Agree on it with her before allowing it, and turn it off when she says so.
@@ -34,8 +35,8 @@ l'assiste, depuis la pièce d'à côté.
   au plus. Un toucher sur le badge rouge, ou de nouveau sur « Montrer », l'arrête. Au PC, on peut l'arrêter aussi.
 - **Toujours visible :** pendant ce temps, le téléphone affiche en haut un badge rouge **● JE MONTRE**, et son écran
   montre ce que voit la caméra : elle sait ce qui est montré.
-- **Où va l'image :** une petite image (320 pixels de large, deux par seconde) vers la page d'installation de ce PC
-  seulement. Le pont garde la dernière en mémoire trois secondes ; il n'écrit rien sur le disque, et rien ne va à ROS,
+- **Où va l'image :** une petite image (320 pixels de large, deux par seconde) vers la page d'installation et vers le
+  jumeau du robot dans Webots, sur ce PC seulement (celui où tourne le pont). Le pont garde la dernière en mémoire trois secondes ; il n'écrit rien sur le disque, et rien ne va à ROS,
   aux programmes du robot, ni sur internet.
 - **Qui décide :** elle. Mettez-vous d'accord avec elle avant de le permettre, et arrêtez quand elle le dit.
 
@@ -51,7 +52,8 @@ einen Brief, eine Tablettendose, ein Foto. Gedacht ist es für ihre Assistenz, d
   Tipp auf das rote Abzeichen oder noch einmal auf „Zeigen" beendet es. Am PC kann man es auch beenden.
 - **Immer sichtbar:** solange es zeigt, steht oben auf dem Handy ein rotes **● ZEIGEN**, und sein Bildschirm zeigt, was
   die Kamera sieht: sie weiß, was gezeigt wird.
-- **Wohin es geht:** ein kleines Bild (320 Pixel breit, zwei pro Sekunde) nur an die Einrichtungsseite auf diesem PC.
+- **Wohin es geht:** ein kleines Bild (320 Pixel breit, zwei pro Sekunde) nur an die Einrichtungsseite und an den
+  Zwilling des Roboters in Webots, auf diesem PC (dem, auf dem die Brücke läuft).
   Die Brücke behält das letzte drei Sekunden im Speicher; sie schreibt nichts auf die Festplatte, und nichts geht an
   ROS, an die Programme des Roboters oder ins Internet.
 - **Wer entscheidet:** sie. Sprechen Sie es vorher mit ihr ab, und schalten Sie es aus, wenn sie es sagt.

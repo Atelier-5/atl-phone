@@ -1,0 +1,185 @@
+@prefix atl:    <https://atelier-5.github.io/atl/ontology#> .
+@prefix omi:    <https://atelier-5.github.io/atl/phone#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# Omi Assist as one robot (contract atl-phone/0.6): a Thymio II, the Raspberry Pi 4 in its brick box on top, a brick
+# riser and a phone clamp, and the phone. What is mounted where (the same numbers as webots/protos/AtlOmiStack.proto),
+# the cables, what runs where, and the constraints that follow. Copy it with payload.ttl into a workspace's
+# mydocs/library/; it uses atl-ide's library (atl:model_thymio2, atl:part_atlrpi4, atl:part_atlpowerbank).
+#
+# Frames: each part's frame is its bottom centre, the clamp's is its seat (where the bottom edge of the phone's screen
+# rests), the phone's is its centre; Webots axes (x ahead, y left, z up), metres. The mounting tree's root is the chassis.
+
+# -- terms atl-ide's T-Box does not have yet (proposed for its atl.ttl; until then they live here) -------------------
+
+omi:Constraint a owl:Class ;
+    rdfs:label "constraint"@en , "contrainte"@fr , "Randbedingung"@de ;
+    rdfs:comment "Something the robot's build must respect, with its value where it has one, where it comes from, and whether it is estimated."@en .
+omi:constraint a owl:ObjectProperty ; rdfs:domain atl:RobotModel ; rdfs:range omi:Constraint ;
+    rdfs:label "constraint"@en , "contrainte"@fr , "Randbedingung"@de .
+omi:measurement a owl:ObjectProperty ; rdfs:domain omi:Constraint ; rdfs:range atl:Measurement ;
+    rdfs:label "measurement"@en , "mesure"@fr , "Messung"@de ;
+    rdfs:comment "What was measured to set or prove it (on the twin, later on the robot)."@en .
+omi:unit a owl:DatatypeProperty ; rdfs:domain omi:Constraint ; rdfs:range xsd:string ;
+    rdfs:label "unit"@en , "unité"@fr , "Einheit"@de .
+omi:source a owl:DatatypeProperty ; rdfs:domain omi:Constraint ; rdfs:range xsd:string ;
+    rdfs:label "source"@en , "source"@fr , "Quelle"@de ;
+    rdfs:comment "Where the value comes from: a PROTO, a check, a spec sheet."@en .
+omi:Software a owl:Class ;
+    rdfs:label "software"@en , "logiciel"@fr , "Software"@de .
+omi:Host a owl:Class ;
+    rdfs:label "host"@en , "hôte"@fr , "Rechner"@de ;
+    rdfs:comment "Where software runs: a board in the robot, the phone, a PC beside it."@en .
+omi:runsOn a owl:ObjectProperty ; rdfs:domain omi:Software ;
+    rdfs:label "runs on"@en , "tourne sur"@fr , "läuft auf"@de .
+omi:hasSoftware a owl:ObjectProperty ; rdfs:domain atl:RobotModel ; rdfs:range omi:Software ;
+    rdfs:label "software"@en , "logiciel"@fr , "Software"@de .
+omi:cable a owl:ObjectProperty ; rdfs:domain atl:RobotModel ; rdfs:range atl:Cable ;
+    rdfs:label "cable"@en , "câble"@fr , "Kabel"@de .
+omi:from a owl:ObjectProperty ; rdfs:domain atl:Cable ; rdfs:label "from"@en , "de"@fr , "von"@de .
+omi:to a owl:ObjectProperty ; rdfs:domain atl:Cable ; rdfs:label "to"@en , "vers"@fr , "nach"@de .
+
+# -- the robot ----------------------------------------------------------------------------------------------------
+
+atl:model_omiAssist a atl:RobotModel ; atl:nameCode "OMI" ;
+    schema:name "Omi Assist" ; atl:maker "Atelier-5" ;
+    atl:contract "atl-phone/0.6" ;
+    atl:webotsProto "webots/protos/AtlOmiStack.proto"^^xsd:anyURI ;
+    atl:bodyImage "atl-phone:kilted" ;
+    atl:virtual atl:ready ;
+    atl:physical atl:planned ;
+    atl:hasChassis atl:model_thymio2 ;
+    atl:hasHolder atl:model_omiPiBox , atl:model_omiRiser , atl:model_phoneClamp ;
+    atl:hasPayload atl:model_phone ;
+    atl:hasController atl:part_atlrpi4 , atl:controller_phone , atl:controller_thymio2 ;
+    atl:hasMounting omi:mount_piBox , omi:mount_riser , omi:mount_clamp , omi:mount_phone ;
+    omi:cable omi:cable_piPhone , omi:cable_piThymio ;
+    omi:hasSoftware omi:sw_bridge , omi:sw_omi , omi:sw_thymioLink , omi:sw_face , omi:sw_vision , omi:sw_reader ,
+        omi:sw_speech , omi:sw_setup ;
+    omi:constraint omi:c_mass , omi:c_cog , omi:c_speed , omi:c_power , omi:c_backView , omi:c_buttons ,
+        omi:c_phoneWidth , omi:c_screen , omi:c_privacy ;
+    schema:description "A helper on the table for an older person: the phone is its face, eyes and voice (it reads letters aloud, says what an object is, reminds, greets), the Thymio carries it, and the Raspberry Pi 4 in a brick box between them runs the bridge, Omi Assist and the Thymio link. The phone is clamped on top: the robot is all three together."@en ,
+        "Un assistant sur la table pour une personne âgée : le téléphone est son visage, ses yeux et sa voix (il lit les lettres à voix haute, dit ce qu'est un objet, rappelle, salue), le Thymio le porte, et le Raspberry Pi 4 dans une boîte en briques entre les deux fait tourner le pont, Omi Assist et le lien avec le Thymio. Le téléphone est fixé dessus : le robot, c'est les trois ensemble."@fr ,
+        "Ein Helfer auf dem Tisch für einen älteren Menschen: das Handy ist sein Gesicht, seine Augen und seine Stimme (es liest Briefe vor, sagt, was ein Gegenstand ist, erinnert, begrüßt), der Thymio trägt es, und der Raspberry Pi 4 in einer Box aus Steinen dazwischen führt die Brücke, Omi Assist und die Verbindung zum Thymio aus. Das Handy ist oben festgeklemmt: der Roboter ist alle drei zusammen."@de .
+
+atl:model_omiPiBox a atl:Holder ; atl:nameCode "PIB" ;
+    schema:name "Raspberry Pi 4 box (on the Thymio)" ; atl:maker "Atelier-5" ;
+    atl:hasController atl:part_atlrpi4 ;
+    atl:mass 0.08 ; atl:estimated true ;
+    schema:description "ATL's brick box around the Raspberry Pi 4 (atlrpi4: 12 x 8 studs, 8 plates high), lengthwise on the Thymio's top, its ports at the back. It carries the riser."@en ,
+        "La boîte en briques d'ATL autour du Raspberry Pi 4 (atlrpi4 : 12 x 8 tenons, 8 plaques de haut), dans la longueur sur le dessus du Thymio, ses prises à l'arrière. Elle porte la rehausse."@fr ,
+        "ATLs Box aus Steinen um den Raspberry Pi 4 (atlrpi4: 12 x 8 Noppen, 8 Platten hoch), längs auf dem Thymio, die Anschlüsse hinten. Sie trägt den Aufsatz."@de .
+
+atl:model_omiRiser a atl:Holder ; atl:nameCode "RSR" ;
+    schema:name "Brick riser" ; atl:maker "Atelier-5" ;
+    atl:mass 0.014 ; atl:estimated true ;
+    schema:description "A 4 x 6 plate and two bricks (6 plates, 19.2 mm) on the Pi's box: the phone clamp is embedded in it."@en ,
+        "Une plaque 4 x 6 et deux briques (6 plaques, 19,2 mm) sur la boîte du Pi : le support du téléphone y est encastré."@fr ,
+        "Eine 4 x 6 Platte und zwei Steine (6 Platten, 19,2 mm) auf der Box des Pi: die Handyhalterung steckt darin."@de .
+
+omi:mount_piBox a atl:Mounting ; atl:what atl:model_omiPiBox ; atl:onto atl:model_thymio2 ;
+    atl:translation "0.013 0 0.0537" ; atl:rotation "0 0 1 0" .
+omi:mount_riser a atl:Mounting ; atl:what atl:model_omiRiser ; atl:onto atl:model_omiPiBox ;
+    atl:translation "0 0 0.0256" ; atl:rotation "0 0 1 0" .
+omi:mount_clamp a atl:Mounting ; atl:what atl:model_phoneClamp ; atl:onto atl:model_omiRiser ;
+    atl:translation "0.02 0 0.0449" ; atl:rotation "0 0 1 0" .
+omi:mount_phone a atl:Mounting ; atl:what atl:model_phone ; atl:onto atl:model_phoneClamp ;
+    atl:translation "-0.0227 0 0.0709" ; atl:rotation "0 1 0 -0.26" .
+
+# -- the cables (not drawn in Webots; short USB cables, the way from the Pi's ports at the back estimated) --------------
+
+omi:cable_piPhone a atl:Cable ; omi:from atl:part_atlrpi4 ; omi:to atl:model_phone ;
+    atl:cableLength 20 ; atl:needs 14.0 ; atl:reaches true ; atl:estimated true ;
+    schema:name "USB: Pi to phone" ;
+    schema:description "Data (the face page on localhost through adb reverse) and charging the phone."@en ,
+        "Les données (la page du visage sur localhost par adb reverse) et la charge du téléphone."@fr ,
+        "Daten (die Gesichtsseite auf localhost über adb reverse) und das Laden des Handys."@de .
+omi:cable_piThymio a atl:Cable ; omi:from atl:part_atlrpi4 ; omi:to atl:model_thymio2 ;
+    atl:cableLength 20 ; atl:needs 10.0 ; atl:reaches true ; atl:estimated true ;
+    schema:name "USB: Pi to Thymio" ;
+    schema:description "The Thymio link (driving, sensors). The Thymio keeps its own battery."@en ,
+        "Le lien avec le Thymio (conduite, capteurs). Le Thymio garde sa propre batterie."@fr ,
+        "Die Verbindung zum Thymio (Fahren, Sensoren). Der Thymio behält seinen eigenen Akku."@de .
+
+# -- what runs where ----------------------------------------------------------------------------------------------
+
+omi:host_pc a omi:Host ; schema:name "A PC beside it (Wi-Fi)" .
+atl:part_atlrpi4 a omi:Host .
+atl:model_phone a omi:Host .
+
+omi:sw_bridge a omi:Software ; omi:runsOn atl:part_atlrpi4 ; schema:name "The phone bridge (ROS 2 Kilted in Docker, port 8782)" .
+omi:sw_omi a omi:Software ; omi:runsOn atl:part_atlrpi4 ; schema:name "Omi Assist (the guardian, reminders, the tour)" .
+omi:sw_thymioLink a omi:Software ; omi:runsOn atl:part_atlrpi4 ; schema:name "The Thymio link (atl-bot-thymio's driver and gateway)" .
+omi:sw_face a omi:Software ; omi:runsOn atl:model_phone ; schema:name "The face page (face.html)" .
+omi:sw_vision a omi:Software ; omi:runsOn atl:model_phone ; schema:name "Vision: faces, objects, markers (only numbers leave the phone)" .
+omi:sw_reader a omi:Software ; omi:runsOn atl:model_phone ; schema:name "The reader (text recognition on the phone)" .
+omi:sw_speech a omi:Software ; omi:runsOn atl:model_phone ; schema:name "Speech (the phone's voice; keywords offline)" .
+omi:sw_setup a omi:Software ; omi:runsOn omi:host_pc ; schema:name "The setup page (opened over Wi-Fi, with the pairing key)" .
+
+# -- the constraints ----------------------------------------------------------------------------------------------
+
+omi:c_mass a omi:Constraint ; schema:name "Mass" ; atl:value 0.547 ; omi:unit "kg" ; atl:estimated true ;
+    omi:source "the PROTOs: Thymio2 0.248 (body and wheels), Pi box 0.08, riser 0.014, clamp 0.06, ANE-LX1 0.145" ;
+    schema:description "The whole robot weighs about 0.55 kg, more than half of it on top of the Thymio."@en ,
+        "Le robot entier pèse environ 0,55 kg, dont plus de la moitié au-dessus du Thymio."@fr ,
+        "Der ganze Roboter wiegt etwa 0,55 kg, mehr als die Hälfte davon über dem Thymio."@de .
+
+omi:c_cog a omi:Constraint ; schema:name "Centre of gravity" ; atl:value 0.089 ; omi:unit "m above the table" ; atl:estimated true ;
+    omi:source "the PROTOs' masses at their places (the Thymio's body at about 25 mm)" ;
+    schema:description "The centre of gravity is high, about 9 cm: the phone, 15 degrees back, is the heaviest part on top."@en ,
+        "Le centre de gravité est haut, environ 9 cm : le téléphone, incliné de 15 degrés, est la pièce la plus lourde en haut."@fr ,
+        "Der Schwerpunkt liegt hoch, etwa 9 cm: das Handy, 15 Grad nach hinten geneigt, ist das schwerste Teil oben."@de .
+
+omi:c_speed a omi:Constraint ; schema:name "Speed" ; atl:value 0.12 ; omi:unit "m/s" ; atl:estimated false ;
+    omi:source "scripts/omi_twin_check.py on the twin (Webots' motors start and stop at once)" ;
+    omi:measurement omi:meas_safe , omi:meas_turn , omi:meas_full ;
+    schema:description "With the stack, the Thymio drives at 0.12 m/s at most: from 0.14 m/s it rocks, at its full 0.2 m/s it rears up and falls on its back. The guardian drives at 0.06 m/s at most."@en ,
+        "Avec la pile, le Thymio roule à 0,12 m/s au plus : dès 0,14 m/s il bascule, à son plein 0,2 m/s il se cabre et tombe sur le dos. Le gardien roule à 0,06 m/s au plus."@fr ,
+        "Mit dem Aufbau fährt der Thymio höchstens 0,12 m/s: ab 0,14 m/s schaukelt er, bei seinen vollen 0,2 m/s bäumt er sich auf und fällt auf den Rücken. Der Wächter fährt höchstens 0,06 m/s."@de .
+omi:meas_safe a atl:Measurement ; atl:measuredOn "twin" ; atl:value 0.0 ;
+    atl:situation "degrees of tilt after a start and a sudden stop at 0.1 m/s"@en .
+omi:meas_turn a atl:Measurement ; atl:measuredOn "twin" ; atl:value 0.0 ;
+    atl:situation "degrees of tilt after a turn at 1.5 rad/s and a stop"@en .
+omi:meas_full a atl:Measurement ; atl:measuredOn "twin" ; atl:value 158 ;
+    atl:situation "degrees of tilt after a start at 0.2 m/s: it fell over"@en .
+
+omi:c_power a omi:Constraint ; schema:name "Power" ; atl:value 3.0 ; omi:unit "A at 5 V" ; atl:estimated false ;
+    omi:source "Raspberry Pi 4's power supply spec (5 V, 3 A); atl:part_atlpowerbank" ;
+    schema:description "The Pi 4 needs 5 V and 3 A: from a power bank (atlpowerbank, 0.2 kg: on the robot it changes the balance, so check it on the twin first) or from the mains when the robot stays on a stand. The phone charges from the Pi's USB; the Thymio keeps its own battery."@en ,
+        "Le Pi 4 a besoin de 5 V et 3 A : d'une batterie externe (atlpowerbank, 0,2 kg : sur le robot elle change l'équilibre, à vérifier d'abord sur le jumeau) ou du secteur quand le robot reste sur un socle. Le téléphone se charge sur l'USB du Pi ; le Thymio garde sa propre batterie."@fr ,
+        "Der Pi 4 braucht 5 V und 3 A: aus einer Powerbank (atlpowerbank, 0,2 kg: auf dem Roboter verändert sie das Gleichgewicht, also zuerst am Zwilling prüfen) oder aus dem Netz, wenn der Roboter auf einem Ständer bleibt. Das Handy lädt am USB des Pi; der Thymio behält seinen eigenen Akku."@de .
+
+omi:c_backView a omi:Constraint ; schema:name "The back camera's view" ; atl:estimated false ;
+    omi:source "scripts/omi_twin_check.py: the letter on its easel and the letter held in a hand are both read" ;
+    schema:description "Nothing of the riser, the clamp or the Pi hides the back camera: it reads a letter behind the robot."@en ,
+        "Rien de la rehausse, du support ou du Pi ne cache la caméra arrière : elle lit une lettre derrière le robot."@fr ,
+        "Nichts vom Aufsatz, der Halterung oder dem Pi verdeckt die hintere Kamera: sie liest einen Brief hinter dem Roboter."@de .
+
+omi:c_buttons a omi:Constraint ; schema:name "The clamp's arms miss the side buttons" ; atl:value 0.06 ; omi:unit "m above the phone's bottom edge" ;
+    atl:estimated true ; omi:source "webots/phones.json buttons_mm (ANE-LX1: 88 to 128 mm, right side); scripts/phone_twin_world.py chooses armAt" ;
+    schema:description "The spring arms grip the phone below its volume and power buttons, so the clamp presses none of them."@en ,
+        "Les bras à ressort tiennent le téléphone sous ses boutons de volume et d'allumage : le support n'en presse aucun."@fr ,
+        "Die Federarme greifen das Handy unter seinen Lautstärke- und Einschalttasten: die Halterung drückt keine davon."@de .
+
+omi:c_phoneWidth a omi:Constraint ; schema:name "Phones that fit" ; atl:value 0.09 ; omi:unit "m wide at most (0.055 at least)" ;
+    atl:estimated true ; omi:source "a generic spring side clamp, until the real holder is measured (AtlPhoneClamp.proto)" ;
+    schema:description "The clamp takes phones from 55 to 90 mm wide."@en ,
+        "Le support prend les téléphones de 55 à 90 mm de large."@fr ,
+        "Die Halterung nimmt Handys von 55 bis 90 mm Breite."@de .
+
+omi:c_screen a omi:Constraint ; schema:name "The screen for a seated person" ; atl:value 0.26 ; omi:unit "rad back (about 15 degrees)" ;
+    atl:estimated true ; omi:source "AtlOmiStack.proto: the screen from about 12 to 25 cm above the table" ;
+    schema:description "The screen stands from about 12 to 25 cm above the table, leaning back 15 degrees: seen well by someone sitting at the table."@en ,
+        "L'écran se tient à environ 12 à 25 cm au-dessus de la table, incliné de 15 degrés : bien visible pour une personne assise à la table."@fr ,
+        "Der Bildschirm steht etwa 12 bis 25 cm über dem Tisch, 15 Grad nach hinten geneigt: gut zu sehen für jemanden, der am Tisch sitzt."@de .
+
+omi:c_privacy a omi:Constraint ; schema:name "Privacy" ; atl:estimated false ;
+    omi:source "README (privacy), docs/consent-show.md, contract atl-phone/0.6 (the screen report)" ;
+    schema:description "Pictures stay on the phone; only numbers go to the Pi. The one exception is Show, switched on with consent. Nobody is recognised across sessions. The twin's mirror gets only keys of the fixed texts and the sensors' numbers (never the location): never a sentence read aloud, and a picture only while she shows it, on the bridge's own computer."@en ,
+        "Les images restent sur le téléphone ; seuls des nombres vont au Pi. La seule exception est Montrer, activé avec un accord. Personne n'est reconnu d'une séance à l'autre. Le miroir du jumeau ne reçoit que des clés des textes fixes et les nombres des capteurs (jamais la position) : jamais une phrase lue, et une image seulement pendant qu'elle la montre, sur l'ordinateur du pont."@fr ,
+        "Bilder bleiben auf dem Handy; nur Zahlen gehen zum Pi. Die einzige Ausnahme ist Zeigen, mit Einverständnis eingeschaltet. Niemand wird über Sitzungen hinweg wiedererkannt. Der Spiegel des Zwillings bekommt nur Schlüssel der festen Texte und die Zahlen der Sensoren (nie den Ort): nie einen vorgelesenen Satz, und ein Bild nur, solange sie es zeigt, auf dem Rechner der Brücke."@de .

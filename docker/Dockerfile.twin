@@ -5,11 +5,12 @@
 #
 #   docker build -f docker/Dockerfile -t atl-phone:kilted . && docker build -f docker/Dockerfile.twin -t atl-phone-twin:kilted .
 #   docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp \
-#       -e WEBOTS_CONTROLLER_URL=tcp://127.0.0.1:1234/PH5v0001 atl-phone-twin:kilted \
-#       python3 /ws/webots/controllers/atl_phone_twin/atl_phone_twin.py --bridge ws://127.0.0.1:8782/ws
+#       -e WEBOTS_CONTROLLER_URL=tcp://127.0.0.1:1240/PH5v0001 atl-phone-twin:kilted \
+#       python3 /ws/webots/controllers/atl_phone_twin/atl_phone_twin.py --bridge ws://127.0.0.1:8782/ws [--model ANE-LX1]
+#   (or --mirror ws://127.0.0.1:8782/ws/mirror: the real phone is in charge, the twin's screen follows it)
 FROM atl-phone:kilted
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends ros-kilted-webots-ros2-driver \
+RUN apt-get update && apt-get install -y --no-install-recommends ros-kilted-webots-ros2-driver python3-pil python3-numpy \
     && rm -rf /var/lib/apt/lists/*
 ENV WEBOTS_HOME=/opt/ros/kilted
 COPY webots/ /ws/webots/

@@ -13,6 +13,7 @@ familiar: whether a program may ask the phone to tell faces apart (look/familiar
 facilitator turns it on (this parameter, or the setup page) once the people at the table agreed. While it is
 off, faces reach ROS without their numbers, whatever the phone sends.
 """
+import base64
 import json
 import re
 import time
@@ -27,6 +28,7 @@ from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Int32, String
 
 from . import contract as c
 from . import omi
+from . import phone_health
 from . import protocol as p
 from .registry import Registry
 from .wsserver import PhoneServer, lan_address
@@ -48,6 +50,7 @@ class Bridge(Node):
         self.showing = False                          # the person is showing now (the phone's show tile)
         self.frame = (b"", 0.0)                       # the last show frame and when: for the setup page only, in memory only
         self.note = None                              # the card a program put over the face (note): a phone that comes gets it
+        self.screen = None                            # what the phone's screen shows (its screen report), for the mirrors
         self.omi = {}                                 # Omi Assist's last state (omi_assist), for the setup page
         self.look = {"on": False, "familiar": False}  # as programs ask (look, look/familiar)
         self.panel = None                             # the last panel a program set: a phone that comes gets it
@@ -108,7 +111,7 @@ class Bridge(Node):
                        "read": String, "what": String}.items()}
 
         self.server = PhoneServer(web, port, bind, key, on_open=self.opened, on_text=self.text, on_close=self.closed,
-                                  cert=cert, cert_key=cert_key, api=self, ca=ca).start()
+                                  cert=cert, cert_key=cert_key, api=self, ca=ca, on_mirror=self.mirrored).start()
         self.status()
         q = f"?key={key}" if key else ""
         self.get_logger().info(f"{c.CONTRACT} for /{self.robot}: {self.server.scheme}://<this PC>:{self.server.port}/{q}"
@@ -192,6 +195,16 @@ class Bridge(Node):
             s.update(self.phone)
         self.pub["status"].publish(String(data=json.dumps(s)))
 
+    def mirrored(self, link):
+        """A mirror came (the phone's Webots twin): what the phone has now, so its screen starts the same."""
+        link.send(json.dumps(self.phone_line()))
+        for m in (self.panel, self.note if self.note and self.note["text"] else None, self.screen):
+            if m:
+                link.send(json.dumps(m))
+
+    def phone_line(self) -> dict:
+        return {"t": "phone", "connected": self.server.connected, "model": self.phone.get("model", "")}
+
     def opened(self, link):
         self.phone = {"peer": link.peer}
         self.seen = {}
@@ -202,6 +215,8 @@ class Bridge(Node):
         self.get_logger().info(f"phone at {link.peer} gone")
         self.phone = {}
         self.showing, self.frame = False, (b"", 0.0)
+        self.screen = None
+        self.server.send_mirrors(json.dumps(self.phone_line()))
         self.status()
 
     def text(self, raw: str):
@@ -216,6 +231,7 @@ class Bridge(Node):
                               caps=m["caps"], screen=m["screen"])
             self.get_logger().info(f"phone says hello: {self.phone['model']}")
             self.status()
+            self.server.send_mirrors(json.dumps(self.phone_line()))
             if self.look["on"]:  # a phone that comes (back) looks on, as asked
                 self.out(p.look, True, self.familiar())
             if self.panel:
@@ -313,9 +329,14 @@ class Bridge(Node):
                 self.out(p.show, False)
             self.get_logger().info(f"show: {'on' if self.showing else 'off'}" + ("" if self.allow_show else " (not allowed)"))
             self.status()
+        elif t == "screen":  # what the phone's screen shows (keys only): for the mirrors, not for ROS
+            self.screen = m
+            self.server.send_mirrors(json.dumps(m))
         elif t == "frame":
             if self.showing:  # else dropped at once: nothing is kept that was not allowed
                 self.frame = (m["jpeg"], time.time())
+                # and to the Webots twin on this computer, while she shows (the same consent as the setup page's)
+                self.server.send_mirrors(json.dumps({"t": "frame", "jpeg": base64.b64encode(m["jpeg"]).decode()}), local_only=True)
 
     # the setup page (wsserver api): what the bridge sees, and the tests it asks for
 
@@ -329,7 +350,8 @@ class Bridge(Node):
                 "phone": self.phone, "seen": self.seen, "reports": self.reports, "expressions": c.EXPRESSIONS,
                 "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar,
                 "panel": self.panel, "see": self.see, "guardian": self.guardian, "note": self.note, "omi": self.omi,
-                "show": {"allowed": self.allow_show, "on": self.showing, "fresh": self.show_frame() is not None}}
+                "show": {"allowed": self.allow_show, "on": self.showing, "fresh": self.show_frame() is not None},
+                "mirrors": self.server.mirror_count, "screen": self.screen}
 
     def act(self, body: dict):
         """A test from the setup page. Outputs go through ROS, on the contract's own topics, so the whole chain is tested."""
@@ -345,6 +367,28 @@ class Bridge(Node):
             return
         if "allow_show" in body or "show" in body:  # the facilitator's choice, and a stop, on this PC only
             self.set_show(body.get("allow_show"), stop=body.get("show") is False)
+            return
+        if "phone" in body:  # the phone's load, and lighter on request (phone_health: the host's adb server, this PC only)
+            what = body["phone"]
+            try:
+                if what == "look":
+                    return phone_health.look()
+                if what == "kill":
+                    phone_health.kill()
+                    return phone_health.look()
+                if what in ("stay_on", "stay_off"):
+                    phone_health.stay_on(what == "stay_on")
+                    return {"stay_on": what == "stay_on"}
+                if what == "tabs":
+                    return {"tabs": phone_health.tabs(self.server.port)}
+                if what == "close":
+                    return {"closed": phone_health.close(self.server.port, body.get("ids"))}
+            except (phone_health.AdbError, OSError) as e:
+                raise ValueError(str(e)) from e
+            raise ValueError("phone: look, kill, stay_on, stay_off, tabs or close")
+        if "prop" in body:  # the Webots twin's demo: a cup, a letter... flies in (to the mirrors only: never the phone)
+            if not self.server.send_mirrors(json.dumps(p.prop(body["prop"]))):
+                raise ValueError("no Webots twin")
             return
         if "omi_tour" in body:  # Omi Assist's presentation, straight to the phone, in Omi's language
             if (self.omi.get("state") != "on" or time.time() - self.omi.get("at", 0) > 3):

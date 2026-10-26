@@ -42,8 +42,9 @@ docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thy
     [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=fr] [familiar:=true] [guardian:=true] \
     [omi:=true] [omi_folder:=/omi] [show:=true] [reports:=/reports]
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
-docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 47 checks
-python3 scripts/browser_check.py --container <container> [--face <picture>]   # the face page in headless Chrome: 49 checks with a face picture
+docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 54 checks
+python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C]   # the pages in headless Chrome: 56 checks
+    # (--fake-adb: a fake adb and phone Chrome on the ports the bridge got as ADB_SERVER_PORT, ATL_CDP_PORT; never the real phone)
 ./test.sh                                                        # protocol, WebSocket, check server, guardian, reminders: no ROS, no phone
 ./scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]      # what weighs on the phone (adb); changes only what you confirm
 ```
@@ -53,7 +54,7 @@ bridge the phone's `localhost`, which counts as secure, and the cable charges th
 Over **Wi-Fi** the bridge needs HTTPS (`cert`, `cert_key`, `ca`): `./start.sh --make-cert`, with the authority installed once on each phone.
 On the phone, tap ▶: full screen, landscape, the screen stays on (`face.html?layout=portrait`: upright, with the panel). A `key` pairs the bridge with its phones (`/?key=...`).
 
-## The contract: `atl-phone/0.5` (`atl_phone/contract.py`)
+## The contract: `atl-phone/0.6` (`atl_phone/contract.py`)
 
 Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's own contract stays as it is.
 
@@ -97,6 +98,17 @@ torch and the camera test (back camera) win, and look (front camera) waits for t
 `panel` and `note` are still taken and kept for the phone that comes (so a test left on can be turned off); the setup
 page's other tests are refused with "no phone".
 
+**The mirror** (`/ws/mirror`, from 0.6): a twin or a second screen can watch the phone without taking over. It
+connects from this computer (or with the pairing key), says hello and then only listens: it gets a copy of what the
+bridge sends the phone (face, gaze, colour, panel, say, note, tour), the phone's comings and goings, and the phone's
+**`screen` reports**: what its screen shows, as ids only (`{"t": "screen", "mode", "expression", "menu", "tiles",
+"hi", "toast", "arg", "note", "badge", "allowed", "sensors"}`; `sensors`: the sensors panel's numbers while it shows,
+battery, compass and tilt, never the location). A toast is a key of the fixed texts (`web/texts.js`: `time`, `reading`,
+`is` with an object's label, `tour.<step>`, …), never the words read aloud: the bridge refuses anything
+else (`protocol.py`). No picture either, except while she shows one (Zeigen, allowed): then a mirror on the bridge's
+own computer gets the frames too (`{"t": "frame", "jpeg"}`), as the setup page does; a mirror over Wi-Fi never. What a mirror sends besides hello is dropped. `/api/act {"prop": "cup"}` goes to the mirrors
+only (the Webots twin's demo objects, below); `/api/state` says how many mirrors are connected.
+
 **Portrait.** Held upright (`layout=portrait`, or `auto` as the phone is held; the setup page's Scenarios step
 switches it), the eyes move to the top and the lower part becomes the robot's own input device:
 - **Mouth** (the default): it follows the expression; while the robot speaks it becomes a scrolling sound wave, drawn
@@ -134,7 +146,9 @@ once, before ROS answers; `faces` says how long a search takes, so the guardian 
 **Follow.** With `"follow": true` on `see`, the eyes look at the nearest thing found: a face, a hand, a marker, or an
 object when objects are quick on this phone (under 400 ms). Nearness is the distance when it is known, else the
 thing's size in the picture. The eyes hold what they follow: another one takes over only when it is 25 % nearer for
-half a second, and a lost one is held a second. A `face/gaze` from a program still wins. The `see` report says what
+half a second, and a lost one is held a second. A `face/gaze` from a program still wins. When following is all the
+camera does (faces, hands), the phone rests: a search every 0.25 s while the eyes hold something, every second while
+nothing is in view; other finders keep the full pace (at most 10 a second). The `see` report says what
 the eyes follow (`"target": {"kind", "x", "y"}`).
 
 **Further, not built yet:** line following with the back camera turned down; depth from one picture (too heavy for an
@@ -144,17 +158,17 @@ cannot drive them; over USB the PC can (adb), when the person allows it, or a sm
 
 ## The phone's Webots twin
 
-The phone is a payload like any other: `webots/protos/AtlPhone.proto` (sizes from `webots/phones.json`: the A50, and a
-generic phone; others follow), standing on `AtlPhoneHolder.proto` in a Thymio's body slot, upright or across, leaning
-back. Its controller (`webots/controllers/atl_phone_twin`) speaks the face page's protocol to the bridge, so the bridge
+The phone is a payload like any other: `webots/protos/AtlPhone.proto` (sizes from `webots/phones.json`: the ANE-LX1,
+the A50, and a generic phone), standing in `AtlPhoneClamp.proto` on Omi Assist's stack, or on the placeholder block
+`AtlPhoneHolder.proto` in a Thymio's body slot (the busy table below). Its controller (`webots/controllers/atl_phone_twin`) speaks the face page's protocol to the bridge, so the bridge
 cannot tell it from a real phone and a program runs unchanged on both:
 - its screen (a Display) shows the eyes, the panel's mouth, wave, pad or sensors; `say` speaks through Webots;
 - `imu` and `heading` come from its motion on the robot; `torch` is a light;
 - `see` and `look` use Webots' Recognition: a Solid whose `model` is `face` is a face, `aruco:<id>` a marker, a COCO
   label an object, and a `recognitionColors` within the asked hue a blob. Hands are not simulated.
 
-`webots/payload.ttl` is its card for atl-ide's library (copy it into `mydocs/library/`): the phone, the holder, and the
-phone as its own controller.
+`webots/payload.ttl` is its card for atl-ide's library (copy it into `mydocs/library/`): the phone, its holders, and
+the phone as its own controller. `webots/omi_robot.ttl` is the whole Omi Assist robot (below).
 
 ```bash
 docker build -f docker/Dockerfile.twin -t atl-phone-twin:kilted .            # on top of atl-phone:kilted
@@ -170,6 +184,57 @@ The check reads only the bridge and the Thymio's gateway: the twin rides leaning
 east, finds the marker within 2 cm of the world's geometry, the cup and the face on the left, the red ball on the
 right, nothing with the back camera; and the Desk Guardian, unchanged, turns the Thymio to the face it sees through the
 twin's camera.
+
+### Omi Assist's robot: Thymio + Pi 4 + phone
+
+🇬🇧 Omi Assist is one robot: a Thymio II, a Raspberry Pi 4 in its brick box on top, a brick riser and a phone clamp
+in it, and the phone. The Pi runs the bridge, Omi Assist and the Thymio link; the phone and the Thymio are on its USB;
+a PC opens only the setup page, over Wi-Fi. 🇫🇷 Omi Assist est un seul robot : un Thymio II, un Raspberry Pi 4 dans sa
+boîte en briques dessus, une rehausse en briques avec un support de téléphone, et le téléphone. Le Pi fait tourner le
+pont, Omi Assist et le lien avec le Thymio ; le téléphone et le Thymio sont sur son USB ; un PC n'ouvre que la page de
+réglage, par le Wi-Fi. 🇩🇪 Omi Assist ist ein Roboter: ein Thymio II, ein Raspberry Pi 4 in seiner Box aus Steinen
+darauf, ein Aufsatz aus Steinen mit einer Handyhalterung und das Handy. Der Pi führt die Brücke, Omi Assist und die
+Verbindung zum Thymio aus; Handy und Thymio hängen an seinem USB; ein PC öffnet nur die Einstellseite, über WLAN.
+
+- **The model** (`webots/protos/AtlOmiStack.proto`, in the Thymio2's body slot): the Pi's box (ATL's `atlrpi4`, 12×8
+  studs, 8 plates, 80 g), a 4×6 riser of 6 plates, and `AtlPhoneClamp.proto`, a generic spring side clamp until the
+  real one is measured (55–90 mm, 15° back, its arms below the phone's buttons, 60 g). Every part has its mass and is
+  part of the Thymio's body, so the twin tips as the robot would: the phone's 145 g ride as a ballast at its centre.
+- **The ontology** (`webots/omi_robot.ttl`, in atl-ide's vocabulary; `./test.sh` runs atl-ide's SHACL shapes on it):
+  the mounting tree with the PROTO's numbers, the two USB cables, what runs on the Pi, the phone and the PC, and the
+  constraints: about 0.55 kg with its centre of gravity about 9 cm up; **at most 0.12 m/s** (measured on the twin: it
+  rocks from 0.14 m/s and falls over backwards at the Thymio's full 0.2 m/s; the guardian drives at 0.06 m/s at most);
+  5 V 3 A for the Pi (a power bank on the robot changes the balance: try it on the twin first); the back camera's view
+  free; phones 55–90 mm wide; the screen 12–25 cm above the table for someone sitting; privacy. Its new terms
+  (`omi:Constraint`, `omi:runsOn`, …) are proposed for atl-ide's T-Box and live in this file until then.
+- **An empty table** (`--scene omi`): the robot alone. Its demo objects wait under the table and **fly in** when
+  called (the setup page's twin card, shown while a twin is connected: 🥤 cup · ✉️ letter · ✋ held · 🙂 visitor · away;
+  or keys 1–4 and 0 in Webots): a cup behind the robot for "Was ist das?", a German letter on an easel behind it or held
+  in a hand for "Vorlesen", a visitor in front for the greeting. As the phone, the twin reads the letter's text from
+  `webots/letter.json` (`scripts/make_letter.py` draws it) and names the nearest object it recognises, marked
+  `"backend": "webots"`.
+- **Two modes:** `--bridge ws://…/ws` the twin is the phone (simulation only), and listens on the mirror for the
+  props; `--mirror ws://…/ws/mirror` the real phone is in charge, and the twin's screen follows its `screen` reports
+  (the tiles with the highlighted one in yellow, the toast at the top, the note card, the ZEIGEN badge, the sensors'
+  numbers, the camera views' buttons, "…" while the phone is away). In the camera views it shows the real phone's
+  picture only while she shows it (Zeigen), else a camera symbol; as the phone, its own Webots camera. `--snap FILE`
+  saves its screen as a PNG every second. The twin sends nothing then; the words come from the same `web/texts.js`
+  as the phone's.
+
+```bash
+python3 scripts/phone_twin_world.py ~/atl/atl-ide/mydocs/twin --scene omi     # webots/worlds/table_omi.wbt (+ .json)
+/snap/bin/webots --port=1240 webots/worlds/table_omi.wbt
+# atl-bot-thymio's launch with table:=webots/worlds/table_omi.json, and the twin as the phone (test bridge):
+docker run -d --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp -e WEBOTS_CONTROLLER_URL=tcp://127.0.0.1:1240/PH5v0001 \
+    atl-phone-twin:kilted /entrypoint.sh python3 /ws/webots/controllers/atl_phone_twin/atl_phone_twin.py --bridge ws://127.0.0.1:8792/ws --model ANE-LX1
+python3 scripts/omi_twin_check.py --port 8792                                 # 10 checks
+# or beside the real phone: ... atl_phone_twin.py --mirror ws://127.0.0.1:8782/ws/mirror --model ANE-LX1
+```
+
+The check: the twin is the ANE-LX1 in its clamp, leaning back 15° (gravity in its frame); the table is empty for
+both cameras; the cup is named; the letter is read on its easel and in a hand (its six lines); the visitor's face is
+seen; "away" empties the table; and the robot stays on its wheels starting, stopping and turning as the guardian does.
+It prints the full-speed tip as INFO.
 
 ## The Desk Guardian
 
@@ -212,23 +277,25 @@ containers do not share their memory.
 ## Omi Assist
 
 🇬🇧 The phone on a fixed or movable stand as a helper for someone who sees or hears less well, or finds a phone's
-menus tricky. A tap on its eyes opens big tiles that say their name: the time, a magnifier, reading aloud, "what is
-this?", the front and the back camera, eyes that follow, showing something to her assistant. The assistant's reminders come
+menus tricky. A tap on its eyes opens big tiles that say their name: the time, the front and the back camera, a
+magnifier, reading aloud, the sensors, eyes that follow. In the back camera, "what is this?"; in each camera view,
+showing the picture to her assistant. The assistant's reminders come
 at their time, as a big card she answers. 🇫🇷 Le téléphone sur un support, fixe ou mobile, comme assistant pour
 quelqu'un qui voit ou entend moins bien, ou que les menus d'un téléphone embrouillent. Un toucher sur ses yeux ouvre de
-grandes tuiles qui disent leur nom : l'heure, une loupe, lire à voix haute, « qu'est-ce que c'est ? », la caméra avant et
-arrière, des yeux qui suivent, montrer quelque chose à la personne qui l'assiste. Ses rappels arrivent à leur heure, sur
+grandes tuiles qui disent leur nom : l'heure, la caméra avant et arrière, une loupe, lire à voix haute, les capteurs,
+des yeux qui suivent. Dans la caméra arrière, « qu'est-ce que c'est ? » ; dans chaque vue de caméra, montrer l'image à la
+personne qui l'assiste. Ses rappels arrivent à leur heure, sur
 une grande carte à laquelle elle répond. 🇩🇪 Das Handy auf einem festen oder beweglichen Ständer als Helfer für jemanden,
 der schlechter sieht oder hört oder mit den Menüs eines Handys nicht zurechtkommt. Ein Tipp auf die Augen öffnet große
-Kacheln, die ihren Namen sagen: die Uhrzeit, eine Lupe, Vorlesen, „Was ist das?", die vordere und die hintere Kamera,
-Augen, die folgen, der Assistenz etwas zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie
+Kacheln, die ihren Namen sagen: die Uhrzeit, die vordere und die hintere Kamera, eine Lupe, Vorlesen, die Sensoren,
+Augen, die folgen. In der hinteren Kamera „Was ist das?"; in jeder Kameraansicht der Assistenz das Bild zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie
 beantwortet.
 
 ```bash
 ./start.sh --omi [--show]     # in German unless --lang says otherwise; then the setup page's Omi Assist (setup.html#omi)
 ```
 
-- **Tiles** (`face.js`): nine in three rows in the lower three quarters (eight, and **Gesicht** last, which goes back
+- **Tiles** (`face.js`): eight in three rows in the lower three quarters (seven, and **Gesicht** last, which goes back
   to the face from anything: reading, the magnifier, showing), an icon and one word, 18 px and more; a touch vibrates,
   says the tile's name and acts; they close after 10 s. The words and the voice are Omi's language (`lang`, German with
   `--omi`), even on a phone set to French.
@@ -238,11 +305,13 @@ beantwortet.
 - **The helpers run on the phone** (`web/omi.js`): the time and the date from its clock; the **magnifier** (the back
   camera big in the panel, zoom with the camera's own zoom or a scale, the torch, hold; tap again for the whole screen);
   **reading** a still from the back camera with [Tesseract.js](https://github.com/naptha/tesseract.js) (German, English
-  and French, in `web/vendor/tesseract/`), said sentence by sentence and written big, a tap stops it; **what is this?**,
-  one look of the object finder, said with its article ("Das ist eine Tasse."); **front** and **back** show that camera
-  big on her screen. With tiles, what she picks wins the camera over the eyes' following, which waits meanwhile.
+  and French, in `web/vendor/tesseract/`), said sentence by sentence and written big, a tap stops it; **front** and
+  **back** show that camera big on her screen, with buttons over the picture as the magnifier has: **❓ Was ist das?**
+  on the back camera (one look of the object finder, said with its article: "Das ist eine Tasse.") and **📡 Zeigen**
+  on every camera view when allowed; **Sensoren**: the battery, the tilt, the compass, the location (asked only while
+  the panel shows, and kept on its screen: never sent), the link, the camera, the last press. With tiles, what she picks wins the camera over the eyes' following, which waits meanwhile.
 - **Omi Assist** (`atl_phone/omi_assist.py`, beside the bridge, waiting like the guardian) sets the tiles and the eyes'
-  following, greets a face that comes after five minutes alone, and brings the reminders (`atl_phone/omi.py`): a text,
+  following (faces only, the lightest), greets a face that comes after five minutes alone, and brings the reminders (`atl_phone/omi.py`): a text,
   a time, the days (none: every day). At their time it says them and shows a card with **Erledigt** and **Später**
   (ten minutes later). The setup page edits them; they are kept in `omi/reminders.json` and the answers in
   `omi/answers.jsonl` (git-ignored). Stopped, it puts the chips back. Starting it stops the Desk Guardian, and the
@@ -254,13 +323,20 @@ beantwortet.
   `./scripts/phone_tidy.sh` shows what weighs on the phone (free memory, the load, the busiest apps, the Chrome tab
   count, the battery's temperature) and, each only on a typed y: `--kill` stops background apps (`am kill-all`, no
   data lost), `--stay-on` keeps the screen on while on USB, `--close-tabs` closes Chrome tabs other than the bridge's,
-  one by one. The check page's **Headroom** says memory, cores and how busy the phone is.
+  one by one. The setup page's Omi Assist view has the same as a card, **A lighter phone**: look at the phone, stop
+  background apps (it asks first), screen on or sleeping, and the Chrome tabs other than the face, listed unticked, to
+  tick and close (it asks first; the face's own tab is never offered, nor closed). The bridge does it for this PC only
+  (`/api/act {"phone": "look"|"kill"|"stay_on"|"stay_off"|"tabs"|"close"}`, `phone_health.py`), through the adb server
+  already running on the computer, in adb's own protocol, so no second adb (of another version) kills the phone's
+  link; the tab titles go to the setup page only, nothing else of the tabs. The check page's **Headroom** says memory,
+  cores and how busy the phone is.
 
 Measured on the ANE-LX1 over USB (2026-10-25): the nine tiles fit its 360×730 screen (105×168 px each, every word whole);
 the eyes' following searches every 0.33–0.37 s (faces 85 ms, hands 212 ms, on the GPU); the time is spoken 0.33 s after
 the tap (1.0 s for the first words after a reload); reading takes 2.7 s and "what is this?" 2.6 s (10.8 s and 7.6 s the
 first time, while their models load). Its load average was about 40 with 45 Chrome tabs open: the app window and
-`phone_tidy.sh` are for that. The Webots twin shows the tiles' panel but does not run the helpers.
+`phone_tidy.sh` are for that. The Webots twin follows the phone's screen as a mirror, or plays the helpers itself
+(simulated: [Omi Assist's robot](#omi-assists-robot-thymio--pi-4--phone)).
 
 ## The phone check, and the phones tested
 
@@ -295,8 +371,9 @@ screen; ROS gets only how many lines and characters, or a label.
 **Showing (Omi Assist, opt-in).** The one exception: the person may show the camera's picture to the PC, so her assistant
 can help from the next room. Only when the facilitator allows it (`--show`, or the setup page), only while she presses
 **Zeigen** (show), at most a minute, with a red **● ZEIGEN** badge on the face; a tap stops it. The frames (320 px, two
-a second) go to the setup page only (`/api/show.jpg`, this PC): the bridge keeps the last one three seconds in memory,
-writes nothing, and puts nothing on a ROS topic. Agree on it with her first: [consent note](docs/consent-show.md).
+a second) go to the setup page (`/api/show.jpg`) and the Webots twin's mirror, both on the bridge's own computer only:
+the bridge keeps the last one three seconds in memory, writes nothing, and puts nothing on a ROS topic. (With the bridge
+on Omi's Raspberry Pi, a PC over Wi-Fi gets no pictures yet.) Agree on it with her first: [consent note](docs/consent-show.md).
 The browser's own speech recognition is not used: it sends voices to the cloud.
 
 License: GPL-3.0-or-later.

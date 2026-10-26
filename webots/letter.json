@@ -1,0 +1,14 @@
+{
+  "_": "The letter on the easel in the Omi Assist twin (scripts/make_letter.py draws it; the twin says it when it is in front of the back camera). Made up: no real names. lang: the language it is said in.",
+  "lang": "de",
+  "lines": [
+    "Liebe Omi,",
+    "",
+    "heute scheint die Sonne.",
+    "Am Sonntag kommen wir",
+    "zum Kaffee vorbei.",
+    "Wir bringen Kuchen mit.",
+    "",
+    "Bis bald!"
+  ]
+}

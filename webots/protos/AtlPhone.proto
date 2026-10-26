@@ -91,6 +91,7 @@ PROTO AtlPhone [
             direction 0 0 -1
             on FALSE
             intensity 2
+            attenuation 0 0 1
             cutOffAngle 0.7
             beamWidth 0.5
             castShadows FALSE

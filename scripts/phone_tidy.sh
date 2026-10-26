@@ -41,10 +41,13 @@ t=$(sh_ dumpsys battery | awk '/temperature/ {print $2/10; exit}')
 th=$(sh_ dumpsys thermalservice | awk -F': ' '/Thermal Status/ {print $2; exit}')
 echo "  battery ${t:-?} °C · thermal status ${th:-?} (0 none … 3 severe: the phone slows itself down)"
 echo "the busiest apps now (CPU %):"
-sh_ top -b -n 1 -o %CPU,RES,NAME -s 1 2>/dev/null | awk '$1 ~ /^[0-9.]+$/ && $1+0 > 0.5' | head -6 | sed 's/^/  /' \
-  || sh_ top -n 1 -m 6 | tail -n +5 | sed 's/^/  /'
-echo "the apps that hold most memory:"
-sh_ dumpsys meminfo | awk '/Total (PSS|RSS) by process/ {f=1; next} f && NF==0 {exit} f' | head -6 | sed 's/^ */  /'
+# head and awk stop reading early, and adb then ends on a broken pipe: not an error here (pipefail would end the script)
+busy=$(set +o pipefail; sh_ top -b -n 1 -o %CPU,RES,NAME -s 1 | awk '$1 ~ /^[0-9.]+$/ && $1+0 > 0.5' | head -6)
+[ -n "$busy" ] || busy=$(set +o pipefail; sh_ top -n 1 -m 6 | tail -n +5)   # an older top: its own columns
+echo "$busy" | sed 's/^/  /'
+echo "the apps that hold most memory (this takes a few seconds):"
+mem=$(set +o pipefail; sh_ dumpsys meminfo | awk '/Total (PSS|RSS) by process/ {f=1; next} f && NF==0 {exit} f' | head -6)
+echo "$mem" | sed 's/^ */  /'
 
 if [ "$KILL" = 1 ] && yes_ "Stop the apps in the background (no data is lost)?"; then sh_ am kill-all; echo "  stopped"; fi
 if [ "$STAY" = 1 ] && yes_ "Keep the screen on while on USB?"; then sh_ svc power stayon usb; echo "  the screen stays on while on USB"; fi

@@ -1,0 +1,70 @@
+#VRML_SIM R2025a utf8
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atelier-5
+# template language: javascript
+# Omi Assist's stack on a Thymio II: the Raspberry Pi 4 (or 5) in its brick box on the Thymio's top, a brick riser on
+# it, and the phone holder (AtlPhoneClamp) embedded in the riser. It goes into the Thymio2's bodySlot with a DEF; the
+# phone (AtlPhone follow "<ROBOT DEF>.<this DEF>") rides on the clamp's seat, placed by its controller from these
+# fields: the seat is at (0.02, 0, the box + riser*3.2 mm + 1.7 mm studs + neck). The box's sizes are ATL's atlrpi4 and
+# atlrpi5 (atl-sim tools/bricks/placeholders.py: 12 x 8 studs, 8 or 10 plates, 80 or 90 g, estimated); the cables (USB
+# to the phone and to the Thymio) are not drawn. Everything here has its mass and is part of the Thymio's body (a Pose,
+# no joint), so the twin tips as the robot would.
+
+EXTERNPROTO "bricks/BrickPlate.proto"
+EXTERNPROTO "AtlPhoneClamp.proto"
+
+PROTO AtlOmiStack [
+  field SFVec3f    translation  0.013 0 0.0537    # a Thymio II's top (atl-ide world.py's top mount, estimated)
+  field SFRotation rotation     0 0 1 0
+  field SFString   pi           "4"              # "4" or "5": the box is 8 or 10 plates high
+  field SFInt32    riser        6                # the riser's height in plates (6: two bricks)
+  field SFBool     upright      TRUE             # the phone stands in portrait (the clamp holds it so)
+  field SFFloat    tilt         0.26             # rad the screen leans back
+  field SFFloat    width        0.0712           # the phone's sizes (webots/phones.json)
+  field SFFloat    thickness    0.0074
+  field SFFloat    height       0.1486
+  field SFFloat    phoneMass    0.145
+  field SFFloat    armAt        0.06
+  field SFFloat    neck         0.024
+]
+{
+  %<
+    const piH = fields.pi.value === "5" ? 0.032 : 0.0256, plates = fields.pi.value === "5" ? 10 : 8;
+    const riserH = 0.0032 * Math.max(1, fields.riser.value);
+    const seatZ = piH + riserH + 0.0017 + fields.neck.value;
+  >%
+  Pose {
+    translation IS translation
+    rotation IS rotation
+    children [
+      BrickPlate {  # the Raspberry Pi's box, lengthwise
+        translation 0 0 %<= piH / 2 >%
+        name "Raspberry Pi %<= fields.pi.value >% box"
+        studsX 12 studsY 8 plates %<= plates >%
+        color 0.16 0.55 0.3
+        mass %<= fields.pi.value === "5" ? 0.09 : 0.08 >%
+      }
+      Pose {  # its ports at the back: USB and Ethernet (the cables to the phone and the Thymio go here)
+        translation -0.0495 0 %<= piH / 2 >%
+        children [ Shape { appearance PBRAppearance { baseColor 0.7 0.72 0.74 roughness 0.3 metalness 0.6 }
+                           geometry Box { size 0.003 0.05 0.014 } } ]
+      }
+      BrickPlate {  # the riser: the holder is embedded in it
+        translation 0 0 %<= piH + riserH / 2 >%
+        name "riser"
+        studsX 4 studsY 6 plates IS riser
+        color 0.95 0.95 0.95
+      }
+      AtlPhoneClamp {
+        translation 0.02 0 %<= seatZ >%
+        tilt IS tilt
+        width IS width
+        thickness IS thickness
+        height IS height
+        armAt IS armAt
+        neck IS neck
+        phoneMass IS phoneMass
+      }
+    ]
+  }
+}

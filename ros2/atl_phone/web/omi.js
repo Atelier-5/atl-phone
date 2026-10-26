@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Atelier-5
-// Omi Assist's helpers, on the phone (contract atl-phone/0.5): the time, the magnifier, reading aloud, "what is this?",
+// Omi Assist's helpers, on the phone (contract atl-phone/0.6): the time, the magnifier, reading aloud, "what is this?",
 // the eyes following, and showing the picture to the PC. Loaded after face.js and see.js, whose camera, speech, panel and
 // vision it uses. Reading (vendor/tesseract) and "what is this?" (MediaPipe's objects) run here: what they read or see
 // is said and written on this screen, and ROS only hears how it went (lines, characters, a label, how long). Showing is
@@ -10,110 +10,18 @@
 
 var TESS = 'vendor/tesseract', OCR_LANG = { en: 'eng', fr: 'fra', de: 'deu' };
 var SHOW_FPS = 2, SHOW_PX = 320, SHOW_MAX_MS = 60000, STILL_SETTLE_MS = 700;
-var OMI_TEXT = {
-  en: { wait: 'One moment…', reading: 'One moment, I am reading.', notext: 'I find no text. Hold it closer to the back camera, in good light.',
-        is: 'This is {x}.', think: 'I think this is {x}.', nothing: 'I see nothing I know. Hold it in front of the back camera.',
-        person: 'I see a person.', followOn: 'My eyes follow what is nearest.', followOff: 'I look around again.',
-        showOn: 'I am showing the picture to the computer.', showOff: 'I stopped showing.', showNo: 'Showing is not allowed. Ask your assistant.',
-        noCam: 'The camera does not open.', back: 'Here I am again!', now: 'It is {t}.', today: 'Today is {d}.',
-        quarter: ['', 'a quarter past {h}', 'half past {h}', 'a quarter to {n}'], oclock: '{h} o’clock' },
-  fr: { wait: 'Un instant…', reading: 'Un instant, je lis.', notext: 'Je ne trouve pas de texte. Approche-le de la caméra arrière, avec de la lumière.',
-        is: 'C’est {x}.', think: 'Je crois que c’est {x}.', nothing: 'Je ne reconnais rien. Tiens-le devant la caméra arrière.',
-        person: 'Je vois une personne.', followOn: 'Mes yeux suivent ce qui est le plus près.', followOff: 'Je regarde de nouveau autour de moi.',
-        showOn: 'Je montre l’image à l’ordinateur.', showOff: 'J’ai arrêté de montrer.', showNo: 'Montrer n’est pas permis. Demande à la personne qui t’assiste.',
-        noCam: 'La caméra ne s’ouvre pas.', back: 'Me revoilà !', now: 'Il est {t}.', today: 'Nous sommes {d}.',
-        quarter: ['', '{h} heure(s) et quart', '{h} heure(s) et demie', '{n} heure(s) moins le quart'], oclock: '{h} heure(s)' },
-  de: { wait: 'Moment…', reading: 'Moment, ich lese.', notext: 'Ich finde keinen Text. Halte ihn näher an die hintere Kamera, bei gutem Licht.',
-        is: 'Das ist {x}.', think: 'Ich glaube, das ist {x}.', nothing: 'Ich erkenne nichts. Halte es vor die hintere Kamera.',
-        person: 'Ich sehe einen Menschen.', followOn: 'Meine Augen folgen dem, was am nächsten ist.', followOff: 'Ich schaue mich wieder um.',
-        showOn: 'Ich zeige das Bild dem Computer.', showOff: 'Ich zeige nicht mehr.', showNo: 'Zeigen ist nicht erlaubt. Frag deine Assistenz.',
-        noCam: 'Die Kamera geht nicht auf.', back: 'Hier bin ich wieder!', now: 'Es ist {t}.', today: 'Heute ist {d}.',
-        quarter: ['', 'Viertel nach {h}', 'halb {n}', 'Viertel vor {n}'], oclock: '{h} Uhr' }
-};
+var OMI_TEXT = TEXTS.omi;  // the words (texts.js, shared with the Webots twin)
 // the presentation (the setup page's "Introduce"): what each step says, in the order of the tiles
-var TOUR_TEXT = {
-  en: { hello: 'Hello Omi! I am Omi Assist, your personal helper. I live in this phone. Let me show you what I can do.',
-        menu: 'When I can help you, just tap my eyes. Then these big tiles come. Each one tells you its name.',
-        time: 'Time: I tell you what time it is, and what day it is today.',
-        front: 'Front camera: you see yourself, as in a mirror.',
-        back: 'Back camera: you see what is behind the phone. One tap is enough to switch.',
-        magnify: 'The magnifier makes small print big. Plus and minus zoom, the lamp helps in the dark, and the hand holds the picture still.',
-        read: 'Read aloud: hold a letter in front of the back camera, and I read it to you. One tap, and I stop.',
-        what: 'What is this? Hold something up, and I tell you what it is, a cup for example.',
-        follow: 'Follow: my eyes always look at what is nearest to me. At you, for example.',
-        show: 'Show: you can show something to your assistant at the computer. Only while you press it, and then you see a red dot at the top.',
-        remind: 'And your assistant can give me reminders. Then a card like this one comes. Tap Done, or Later, and I remind you again in ten minutes.',
-        card: 'For example: take the tablets',
-        face: 'And with Face you always come back to me.',
-        bye: 'That is all. I am glad to help you!' },
-  fr: { hello: 'Bonjour Omi ! Je suis Omi Assist, ton assistant personnel. J’habite dans ce téléphone. Je te montre ce que je sais faire.',
-        menu: 'Si je peux t’aider, touche simplement mes yeux. Ces grandes tuiles arrivent alors. Chacune te dit son nom.',
-        time: 'L’heure : je te dis quelle heure il est, et quel jour nous sommes.',
-        front: 'Caméra avant : tu te vois toi-même, comme dans un miroir.',
-        back: 'Caméra arrière : tu vois ce qui est derrière le téléphone. Un toucher suffit pour changer.',
-        magnify: 'La loupe rend les petites lettres grandes. Plus et moins agrandissent, la lampe aide dans le noir, et la main fige l’image.',
-        read: 'Lire : tiens une lettre devant la caméra arrière, et je te la lis. Un toucher, et je m’arrête.',
-        what: 'Qu’est-ce que c’est ? Montre-moi quelque chose, et je te dis ce que c’est, une tasse par exemple.',
-        follow: 'Suivre : mes yeux regardent toujours ce qui est le plus près de moi. Toi, par exemple.',
-        show: 'Montrer : tu peux montrer quelque chose à la personne qui t’assiste, à l’ordinateur. Seulement pendant que tu appuies, et tu vois alors un point rouge en haut.',
-        remind: 'Et la personne qui t’assiste peut me donner des rappels. Une carte comme celle-ci arrive alors. Touche Fait, ou Plus tard, et je te le rappelle dans dix minutes.',
-        card: 'Par exemple : prendre les comprimés',
-        face: 'Et avec Visage, tu reviens toujours vers moi.',
-        bye: 'C’est tout. Je suis content de t’aider !' },
-  de: { hello: 'Hallo Omi! Ich bin Omi Assist, dein persönlicher Helfer. Ich wohne in diesem Handy. Ich zeige dir kurz, was ich kann.',
-        menu: 'Wenn ich dir helfen kann, tippe einfach auf meine Augen. Dann kommen diese großen Kacheln. Jede sagt dir ihren Namen.',
-        time: 'Uhrzeit: ich sage dir, wie spät es ist, und welcher Tag heute ist.',
-        front: 'Vordere Kamera: du siehst dich selbst, wie in einem Spiegel.',
-        back: 'Hintere Kamera: du siehst, was hinter dem Handy ist. Ein Tipp genügt zum Wechseln.',
-        magnify: 'Die Lupe macht kleine Schrift groß. Plus und Minus vergrößern, die Lampe hilft im Dunkeln, und die Hand hält das Bild fest.',
-        read: 'Vorlesen: halte mir einen Brief vor die hintere Kamera, und ich lese ihn dir vor. Ein Tipp, und ich höre auf.',
-        what: 'Was ist das? Halte mir etwas hin, und ich sage dir, was es ist, zum Beispiel eine Tasse.',
-        follow: 'Folgen: meine Augen schauen immer auf das, was mir am nächsten ist. Auf dich zum Beispiel.',
-        show: 'Zeigen: so kannst du deiner Assistenz am Computer etwas zeigen. Nur solange du es drückst, und dann siehst du oben einen roten Punkt.',
-        remind: 'Und deine Assistenz kann mir Erinnerungen geben. Dann kommt so eine Karte. Tippe auf Erledigt, oder auf Später, dann erinnere ich dich in zehn Minuten noch einmal.',
-        card: 'Zum Beispiel: Tabletten nehmen',
-        face: 'Und mit Gesicht kommst du immer zurück zu mir.',
-        bye: 'Das war es. Ich freue mich, dir zu helfen!' }
-};
+var TOUR_TEXT = TEXTS.tour;
 // its steps: the tile it points at, the mode it then shows for a moment, the time said, the sample card
 var TOUR = [{ k: 'hello', face: 'happy' }, { k: 'menu', menu: true }, { k: 'time', tile: 'time', time: true },
             { k: 'front', tile: 'front', mode: 'camera' }, { k: 'back', tile: 'back', mode: 'camera_back' },
-            { k: 'magnify', tile: 'magnify', mode: 'magnify' }, { k: 'read', tile: 'read' }, { k: 'what', tile: 'what' },
-            { k: 'follow', tile: 'follow' }, { k: 'show', tile: 'show' }, { k: 'remind', card: true },
+            { k: 'magnify', tile: 'magnify', mode: 'magnify' }, { k: 'read', tile: 'read' },
+            { k: 'sensors', tile: 'sensors', mode: 'sensors' }, { k: 'follow', tile: 'follow' },
+            { k: 'show', mode: 'camera', allowed: true }, { k: 'remind', card: true },
             { k: 'face', tile: 'face' }, { k: 'bye', face: 'love' }];
 // what "what is this?" says, for each of the model's labels (contract OBJECTS): [English, French, German], with the article
-var WHAT = {
-  person: ['a person', 'une personne', 'ein Mensch'], bicycle: ['a bicycle', 'un vélo', 'ein Fahrrad'], car: ['a car', 'une voiture', 'ein Auto'],
-  motorcycle: ['a motorbike', 'une moto', 'ein Motorrad'], airplane: ['an aeroplane', 'un avion', 'ein Flugzeug'], bus: ['a bus', 'un bus', 'ein Bus'],
-  train: ['a train', 'un train', 'ein Zug'], truck: ['a lorry', 'un camion', 'ein Lastwagen'], boat: ['a boat', 'un bateau', 'ein Boot'],
-  'traffic light': ['a traffic light', 'un feu de circulation', 'eine Ampel'], 'fire hydrant': ['a fire hydrant', 'une bouche d’incendie', 'ein Hydrant'],
-  'stop sign': ['a stop sign', 'un panneau stop', 'ein Stoppschild'], 'parking meter': ['a parking meter', 'un parcmètre', 'eine Parkuhr'],
-  bench: ['a bench', 'un banc', 'eine Bank'], bird: ['a bird', 'un oiseau', 'ein Vogel'], cat: ['a cat', 'un chat', 'eine Katze'],
-  dog: ['a dog', 'un chien', 'ein Hund'], horse: ['a horse', 'un cheval', 'ein Pferd'], sheep: ['a sheep', 'un mouton', 'ein Schaf'],
-  cow: ['a cow', 'une vache', 'eine Kuh'], elephant: ['an elephant', 'un éléphant', 'ein Elefant'], bear: ['a bear', 'un ours', 'ein Bär'],
-  zebra: ['a zebra', 'un zèbre', 'ein Zebra'], giraffe: ['a giraffe', 'une girafe', 'eine Giraffe'], backpack: ['a backpack', 'un sac à dos', 'ein Rucksack'],
-  umbrella: ['an umbrella', 'un parapluie', 'ein Regenschirm'], handbag: ['a handbag', 'un sac à main', 'eine Handtasche'],
-  tie: ['a tie', 'une cravate', 'eine Krawatte'], suitcase: ['a suitcase', 'une valise', 'ein Koffer'], frisbee: ['a frisbee', 'un frisbee', 'eine Frisbeescheibe'],
-  skis: ['skis', 'des skis', 'Skier'], snowboard: ['a snowboard', 'un snowboard', 'ein Snowboard'], 'sports ball': ['a ball', 'un ballon', 'ein Ball'],
-  kite: ['a kite', 'un cerf-volant', 'ein Drachen'], 'baseball bat': ['a baseball bat', 'une batte de baseball', 'ein Baseballschläger'],
-  'baseball glove': ['a baseball glove', 'un gant de baseball', 'ein Baseballhandschuh'], skateboard: ['a skateboard', 'un skateboard', 'ein Skateboard'],
-  surfboard: ['a surfboard', 'une planche de surf', 'ein Surfbrett'], 'tennis racket': ['a tennis racket', 'une raquette de tennis', 'ein Tennisschläger'],
-  bottle: ['a bottle', 'une bouteille', 'eine Flasche'], 'wine glass': ['a wine glass', 'un verre à vin', 'ein Weinglas'], cup: ['a cup', 'une tasse', 'eine Tasse'],
-  fork: ['a fork', 'une fourchette', 'eine Gabel'], knife: ['a knife', 'un couteau', 'ein Messer'], spoon: ['a spoon', 'une cuillère', 'ein Löffel'],
-  bowl: ['a bowl', 'un bol', 'eine Schüssel'], banana: ['a banana', 'une banane', 'eine Banane'], apple: ['an apple', 'une pomme', 'ein Apfel'],
-  sandwich: ['a sandwich', 'un sandwich', 'ein Sandwich'], orange: ['an orange', 'une orange', 'eine Orange'], broccoli: ['broccoli', 'du brocoli', 'Brokkoli'],
-  carrot: ['a carrot', 'une carotte', 'eine Karotte'], 'hot dog': ['a hot dog', 'un hot-dog', 'ein Hotdog'], pizza: ['a pizza', 'une pizza', 'eine Pizza'],
-  donut: ['a doughnut', 'un beignet', 'ein Donut'], cake: ['a cake', 'un gâteau', 'ein Kuchen'], chair: ['a chair', 'une chaise', 'ein Stuhl'],
-  couch: ['a sofa', 'un canapé', 'ein Sofa'], 'potted plant': ['a pot plant', 'une plante en pot', 'eine Topfpflanze'], bed: ['a bed', 'un lit', 'ein Bett'],
-  'dining table': ['a table', 'une table', 'ein Tisch'], toilet: ['a toilet', 'des toilettes', 'eine Toilette'], tv: ['a television', 'une télévision', 'ein Fernseher'],
-  laptop: ['a laptop', 'un ordinateur portable', 'ein Laptop'], mouse: ['a computer mouse', 'une souris', 'eine Computermaus'],
-  remote: ['a remote control', 'une télécommande', 'eine Fernbedienung'], keyboard: ['a keyboard', 'un clavier', 'eine Tastatur'],
-  'cell phone': ['a mobile phone', 'un téléphone portable', 'ein Handy'], microwave: ['a microwave', 'un micro-ondes', 'eine Mikrowelle'],
-  oven: ['an oven', 'un four', 'ein Backofen'], toaster: ['a toaster', 'un grille-pain', 'ein Toaster'], sink: ['a sink', 'un évier', 'ein Waschbecken'],
-  refrigerator: ['a fridge', 'un réfrigérateur', 'ein Kühlschrank'], book: ['a book', 'un livre', 'ein Buch'], clock: ['a clock', 'une horloge', 'eine Uhr'],
-  vase: ['a vase', 'un vase', 'eine Vase'], scissors: ['scissors', 'des ciseaux', 'eine Schere'], 'teddy bear': ['a teddy bear', 'un ours en peluche', 'ein Teddybär'],
-  'hair drier': ['a hair dryer', 'un sèche-cheveux', 'ein Föhn'], toothbrush: ['a toothbrush', 'une brosse à dents', 'eine Zahnbürste']
-};
+var WHAT = TEXTS.what;
 var omi = { busy: '', tess: {}, toastOff: 0, reading: 0, showAllowed: false, showing: false, showTimer: 0, showOff: 0,
             zoom: 1, cssZoom: false, held: false, torch: false, full: false, still: document.createElement('video'),
             canvas: document.createElement('canvas'), tour: 0, touring: false };
@@ -122,12 +30,19 @@ function ot(l, k) { return (OMI_TEXT[l] || OMI_TEXT.en)[k]; }
 function li(l) { return { en: 0, fr: 1, de: 2 }[l] || 0; }
 var toastEl = document.getElementById('toast'), showEl = document.getElementById('showing'), magEl = document.getElementById('mag');
 
-function toast(text, ms) {  // said and also written, big, for a moment
+function toast(text, ms, key, arg) {  // said and also written, big, for a moment; key: what the screen report says of it
   clearTimeout(omi.toastOff);
   toastEl.textContent = text; toastEl.style.display = text ? 'block' : 'none';
+  omi.toastKey = text ? (key === undefined ? textKey(text) : key) : ''; omi.toastArg = arg || '';
   if (text) omi.toastOff = setTimeout(function () { toastEl.style.display = 'none'; }, ms || 6000);
 }
-function tell(text, l, ms, done) { toast(text, ms); speak(text, l || lang, false, done); }
+function tell(text, l, ms, done, key, arg) { toast(text, ms, key, arg); speak(text, l || lang, false, done); }
+function textKey(text) {  // a fixed text's key in texts.js, or '' (a text that is not one of them is never reported)
+  var k, l;
+  for (l in OMI_TEXT) for (k in OMI_TEXT[l]) if (OMI_TEXT[l][k] === text) return k;
+  for (l in TOUR_TEXT) for (k in TOUR_TEXT[l]) if (TOUR_TEXT[l][k] === text) return 'tour.' + k;
+  return '';
+}
 
 // ---- what the tiles do (face.js pick()), and what ROS asks (read, what, show) -----------------------------------
 function omiTile(id, was) {
@@ -156,13 +71,14 @@ function omiAsk(m) {
   else if (m.t === 'show') {
     omi.showAllowed = !!m.allowed;
     if (omi.showing && (!m.allowed || !m.on)) stopShow(false);
+    camBar(split() ? panel.mode : '');   // its Zeigen button comes or goes
   }
 }
 
 // ---- the presentation: Omi Assist says what it can, pointing at each tile and showing it; a tap ends it ------------------
-function tourSay(text, l, done) {  // said and written; on to the next when said, or after a while if the voice is stuck
+function tourSay(text, l, done, key) {  // said and written; on to the next when said, or after a while if the voice is stuck
   var once = function () { if (once) { once = null; done(); } };
-  tell(text, l, 30000, once);
+  tell(text, l, 30000, once, key);
   setTimeout(function () { if (once) once(); }, 2500 + text.length * 110);
 }
 function tourMenu(tile) {  // the tiles open, and stay, the one spoken of in yellow
@@ -189,13 +105,14 @@ function tour(l) {
     if (run !== omi.tour) return;
     var s = TOUR[i], wait = function (ms) { setTimeout(function () { step(i + 1); }, ms); };
     if (!s) { tourStop(); setTimeout(function () { if (expression === 'love') setExpression('neutral'); }, 1500); return; }  // the end: as a tap
+    if (s.allowed && !omi.showAllowed) return step(i + 1);   // Zeigen only where the assistant allowed it
     if (s.face) setExpression(s.face);
     if (s.menu || s.tile) tourMenu(s.tile); else { hideMenu(); toastEl.classList.remove('above'); }
     if (s.card) noteCard({ id: 'tour', text: t.card, buttons: [{ id: 'done', label: noteWord('done', l) }, { id: 'later', label: noteWord('later', l) }] });
     tourSay(t[s.k], l, function () {
       if (run !== omi.tour) return;
       if (s.card) { noteCard({ id: 'tour', text: '' }); return wait(500); }
-      if (s.time) return tourSay(timePhrase(new Date(), l), l, function () { wait(600); });
+      if (s.time) return tourSay(timePhrase(new Date(), l), l, function () { wait(600); }, 'time');
       if (!s.mode) return wait(600);
       hideMenu(); toastEl.classList.remove('above'); setPanel({ mode: s.mode }, true);   // what that tile shows, for a moment
       setTimeout(function () { if (run === omi.tour) { setPanel({ mode: 'mouth' }, true); wait(400); } }, 3500);
@@ -219,14 +136,14 @@ function timePhrase(d, l) {
   var day = d.toLocaleDateString(LANG_TAG[l] || 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
   return ot(l, 'now').replace('{t}', timeWords(d, l)) + ' ' + ot(l, 'today').replace('{d}', day);
 }
-function sayTime(l) { tell(timePhrase(new Date(), l), l, 8000); }
+function sayTime(l) { tell(timePhrase(new Date(), l), l, 8000, null, 'time'); }
 
 // ---- the eyes follow the nearest thing (see.js), or look around ------------------------------------------------------
 function followToggle() {
   var on = !vision.follow;
-  if (on && !finders().length) seeAt({ camera: 'front', find: ['faces', 'hands'], follow: true });  // nothing looks yet: the quick finders
+  if (on && !finders().length) seeAt({ camera: 'front', find: ['faces'], follow: true });  // nothing looks yet: faces, the lightest finder
   else { vision.follow = on; seeing.follow = { cur: null, cand: null, candAt: 0 }; seeReport({}); }
-  if (!on && finders().length && vision.find.join() === 'faces,hands') seeAt({ camera: 'front', find: [] });  // what the tile started
+  if (!on && finders().length && vision.find.join() === 'faces') seeAt({ camera: 'front', find: [] });  // what the tile started
   buildMenu();
   tell(ot(lang, on ? 'followOn' : 'followOff'), lang, 4000);
 }
@@ -292,7 +209,7 @@ function readAloud(l) {
     (function next(i) {
       if (run !== omi.reading) return;
       if (i >= ss.length) { document.removeEventListener('pointerdown', stopReading, true); toast(''); return; }
-      tell(ss[i], l, 60000, function () { next(i + 1); });
+      tell(ss[i], l, 60000, function () { next(i + 1); }, 'reading');  // the screen report: "reading", never the text
     })(0);
   }).catch(function (e) {
     omi.busy = '';
@@ -328,7 +245,8 @@ function whatIsIt(l) {
     var label = c ? c.categoryName : null, score = c ? Math.round(c.score * 100) / 100 : 0;
     omi.busy = '';
     send({ t: 'what', ok: true, label: label, score: score, ms: Math.round(performance.now() - t0) });
-    tell(whatPhrase(label, score, l), l, 8000);
+    tell(whatPhrase(label, score, l), l, 8000, null, !label ? 'nothing' : label === 'person' ? 'person' : score < 0.6 ? 'think' : 'is',
+         label && label !== 'person' ? label : '');
   }).catch(function (e) {
     omi.busy = '';
     send({ t: 'what', ok: false, label: null, score: 0, ms: Math.round(performance.now() - t0) });
@@ -336,14 +254,22 @@ function whatIsIt(l) {
   });
 }
 
-// ---- the magnifier: the back camera in the panel; zoom (the camera's own, else a scale), the torch, hold ---------------
-var MAG = [['minus', '−'], ['plus', '+'], ['torch', '💡'], ['hold', '✋']];
-MAG.forEach(function (b) {
+// ---- the camera views' buttons: the magnifier's zoom, torch and hold; "what is this?" on the back camera; Zeigen on
+// every camera view, when the assistant allowed it. The magnifier: the back camera in the panel; zoom (the camera's
+// own, else a scale), the torch, hold
+var CAM_BUTTONS = [['minus', '−', ['magnify']], ['plus', '+', ['magnify']], ['torch', '💡', ['magnify']], ['hold', '✋', ['magnify']],
+                   ['what', '❓', ['camera_back']], ['show', '📡', ['camera', 'camera_back', 'magnify']]];
+CAM_BUTTONS.forEach(function (b) {
   var el = document.createElement('button');
-  el.textContent = b[1]; el.dataset.id = b[0];
-  el.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); magnify(b[0]); if (navigator.vibrate) navigator.vibrate(20); });
+  el.textContent = b[1]; el.dataset.id = b[0]; el.dataset.modes = b[2].join(' ');
+  el.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); camButton(b[0]); if (navigator.vibrate) navigator.vibrate(20); });
   magEl.appendChild(el);
 });
+function camButton(id) {
+  if (id === 'what') whatIsIt(lang);
+  else if (id === 'show') { if (omi.showing) stopShow(true); else startShow(); }
+  else magnify(id);
+}
 function magTrack() { return cam && camFacing === 'environment' ? cam.getVideoTracks()[0] : null; }
 function magnify(what) {
   var k = magTrack(), c = k && k.getCapabilities ? k.getCapabilities() : {};
@@ -361,11 +287,23 @@ function magnify(what) {
     omi.held = !omi.held;
     if (omi.held) pcam.pause(); else pcam.play().catch(function () {});
   }
-  magnifyShow(true);
+  camBar(split() ? panel.mode : '');
 }
-function magnifyShow(on) {
-  magEl.style.display = on ? 'flex' : 'none';
-  if (!on) {
+function camBar(mode) {  // face.js showPanel(): the buttons of this camera view, or none
+  var any = false;
+  [].forEach.call(magEl.children, function (b) {
+    var on = b.dataset.modes.split(' ').indexOf(mode) >= 0 && (b.dataset.id !== 'show' || omi.showAllowed);
+    b.style.display = on ? '' : 'none'; any = any || on;
+    if (b.dataset.id === 'show' || b.dataset.id === 'what') {   // these two say their word too
+      b.textContent = (b.dataset.id === 'show' ? '📡 ' : '❓ ') + mt(b.dataset.id); b.classList.add('word');
+    }
+  });
+  magEl.style.display = any ? 'flex' : 'none';
+  [].forEach.call(magEl.children, function (b) {
+    b.classList.toggle('on', (b.dataset.id === 'torch' && omi.torch) || (b.dataset.id === 'hold' && omi.held)
+                             || (b.dataset.id === 'show' && omi.showing));
+  });
+  if (mode !== 'magnify') {
     if (omi.held) { omi.held = false; pcam.play().catch(function () {}); }
     if (omi.torch) { omi.torch = false; var k = magTrack(); if (k) k.applyConstraints({ advanced: [{ torch: false }] }).catch(function () {}); }
     omi.zoom = 1; omi.cssZoom = false;
@@ -373,16 +311,13 @@ function magnifyShow(on) {
     return;
   }
   pcam.style.transform = omi.cssZoom && omi.zoom > 1 ? 'scale(' + omi.zoom.toFixed(2) + ')' : 'none';
-  [].forEach.call(magEl.children, function (b) {
-    b.classList.toggle('on', (b.dataset.id === 'torch' && omi.torch) || (b.dataset.id === 'hold' && omi.held));
-  });
 }
 
 // ---- showing the picture to the PC: only when allowed, only while on, with the red badge ------------------------------
 function showBadge() {
   showEl.textContent = '● ' + mt('showing');
   showEl.style.display = omi.showing ? 'block' : 'none';
-  buildMenu();
+  buildMenu(); camBar(split() ? panel.mode : '');
 }
 function startShow() {
   if (!omi.showAllowed) { tell(ot(lang, 'showNo'), lang, 6000); return; }
@@ -406,3 +341,26 @@ function stopShow(tellBridge) {
   tell(ot(lang, 'showOff'), lang, 3000);
 }
 showEl.addEventListener('pointerdown', function (e) { e.preventDefault(); e.stopPropagation(); stopShow(true); });  // a tap on the badge stops
+
+// ---- the screen report (contract 0.6): what this screen shows, as keys and ids, for the bridge's mirrors (the Webots
+// twin draws the same). Sent when it changes, and every 5 s; never a picture, never a sentence read aloud
+function screenState() {
+  var shown = function (el) { return el.style.display && el.style.display !== 'none'; };
+  var hi = menuEl.querySelector('button.tour'), tiles = [].map.call(menuEl.children, function (b) { return b.dataset.mode; });
+  return { t: 'screen', lang: lang, mode: panel.mode, expression: expression, style: panel.style || 'chips', menu: shown(menuEl),
+           tiles: tiles, hi: hi ? hi.dataset.mode : '', toast: shown(toastEl) ? omi.toastKey || '' : '',
+           arg: shown(toastEl) ? omi.toastArg || '' : '', note: shown(cardEl) ? cardId : '', badge: omi.showing, allowed: omi.showAllowed, speaking: speaking,
+           sensors: panel.mode === 'sensors' ? sensorNumbers() : {} };
+}
+function sensorNumbers() {  // what the sensors panel shows, for the twin: numbers only, never the location
+  var r1 = function (x) { return Math.round(x * 10) / 10; };
+  return { battery: battery ? battery.level : null, charging: !!(battery && battery.charging),
+           heading: lastHeading >= 0 ? Math.round(lastHeading) : null, acc: acc ? acc.map(r1) : null };
+}
+(function () {
+  var last = '', at = 0;
+  setInterval(function () {
+    var s = JSON.stringify(screenState()), now = Date.now();
+    if (s !== last || now - at > 5000) { last = s; at = now; send(JSON.parse(s)); }
+  }, 250);
+})();

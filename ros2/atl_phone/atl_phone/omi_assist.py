@@ -26,7 +26,7 @@ from . import omi
 GREET_AFTER = 300.0     # s without a face: the next face is greeted
 CHECK_EVERY = 5.0       # s between two looks at the reminders
 PANEL = {"mode": "mouth", "style": "tiles", "menu": c.OMI_MENU}
-SEE = {"camera": "front", "find": ["faces", "hands"], "follow": True}
+SEE = {"camera": "front", "find": ["faces"], "follow": True}   # faces only: hands too kept the phone at a load of 40
 
 
 class OmiAssist(Node):

@@ -4,25 +4,34 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Atelier-5
-# The phone as a payload, for atl-ide's library: copy this file into a workspace's mydocs/library/. The phone is
-# its own controller (its page talks to the bridge, contract atl-phone/0.4); its Webots twin is webots/protos/AtlPhone.proto
-# with the controller atl_phone_twin, and it stands on the holder (AtlPhoneHolder.proto) on a Thymio's top.
+# The phone as a payload, for atl-ide's library: copy this file into a workspace's mydocs/library/ (with omi_robot.ttl,
+# the whole Omi Assist robot). The phone is its own controller (its page talks to the bridge, contract atl-phone/0.6);
+# its Webots twin is webots/protos/AtlPhone.proto with the controller atl_phone_twin. It stands in the phone clamp
+# (AtlPhoneClamp.proto, on Omi Assist's stack) or on the placeholder block (AtlPhoneHolder.proto, the busy table).
 
-atl:model_phoneA50 a atl:Payload ; atl:nameCode "PH5" ;
+atl:model_phone a atl:Payload ; atl:nameCode "PH5" ;
     atl:hasController atl:controller_phone ;
-    schema:name "Phone (Galaxy A50)" ; atl:maker "Atelier-5" ;
-    atl:contract "atl-phone/0.4" ;
+    schema:name "Phone (an old Android phone: P20 lite ANE-LX1, Galaxy A50)" ; atl:maker "Atelier-5" ;
+    atl:contract "atl-phone/0.6" ;
     atl:webotsProto "webots/protos/AtlPhone.proto"^^xsd:anyURI ;
     schema:description "An old phone as the robot's face, eyes and ears: eyes on its screen, a panel below (a mouth, buttons, the sensors), speech, vibration, its motion sensors, and vision on the phone (faces, markers, colours, objects, hands): only numbers leave it. Its twin in Webots speaks the same protocol, so a program runs on both."@en ,
         "Un vieux téléphone comme visage, yeux et oreilles du robot : des yeux sur son écran, un panneau dessous (une bouche, des boutons, les capteurs), la parole, la vibration, ses capteurs de mouvement, et la vision sur le téléphone (visages, marqueurs, couleurs, objets, mains) : seuls des nombres en sortent. Son jumeau dans Webots parle le même protocole : un programme tourne sur les deux."@fr ,
         "Ein altes Handy als Gesicht, Augen und Ohren des Roboters: Augen auf dem Bildschirm, darunter ein Feld (ein Mund, Tasten, die Sensoren), Sprache, Vibration, seine Bewegungssensoren und Sehen auf dem Handy (Gesichter, Marker, Farben, Gegenstände, Hände): nur Zahlen verlassen es. Sein Zwilling in Webots spricht dasselbe Protokoll, so läuft ein Programm auf beiden."@de .
 
 atl:model_phoneHolder a atl:Holder ; atl:nameCode "PHH" ;
-    schema:name "Phone holder" ; atl:maker "Atelier-5" ;
+    schema:name "Phone holder (placeholder block)" ; atl:maker "Atelier-5" ;
     atl:webotsProto "webots/protos/AtlPhoneHolder.proto"^^xsd:anyURI ;
     schema:description "Stands a phone on a Thymio's top, upright (portrait) or across (landscape), leaning back a little. A placeholder block for now; a brick holder with the same fields can replace it."@en ,
         "Tient un téléphone sur le dessus d'un Thymio, debout (portrait) ou couché (paysage), un peu incliné en arrière. Un bloc provisoire pour l'instant ; un support en briques avec les mêmes champs pourra le remplacer."@fr ,
         "Hält ein Handy auf einem Thymio, hochkant (Hochformat) oder quer (Querformat), leicht nach hinten geneigt. Vorerst ein Platzhalter-Block; eine Halterung aus Steinen mit denselben Feldern kann ihn ersetzen."@de .
+
+atl:model_phoneClamp a atl:Holder ; atl:nameCode "PHC" ;
+    schema:name "Phone clamp" ; atl:maker "Atelier-5" ;
+    atl:webotsProto "webots/protos/AtlPhoneClamp.proto"^^xsd:anyURI ;
+    atl:mass 0.06 ; atl:estimated true ;
+    schema:description "A commercial spring side clamp, generic until the real one is measured: a base with a ball joint, a cradle leaning back 15 degrees, a lip under the phone and two spring arms gripping its sides (55 to 90 mm), below its buttons. Embedded in Omi Assist's brick riser."@en ,
+        "Un support du commerce à pinces latérales à ressort, générique jusqu'à ce que le vrai soit mesuré : un pied avec une rotule, un berceau incliné de 15 degrés, un rebord sous le téléphone et deux bras à ressort qui tiennent ses côtés (55 à 90 mm), sous ses boutons. Encastré dans la rehausse en briques d'Omi Assist."@fr ,
+        "Eine handelsübliche Halterung mit seitlichen Federklammern, allgemein, bis die echte vermessen ist: ein Fuß mit Kugelgelenk, eine Schale 15 Grad nach hinten geneigt, eine Kante unter dem Handy und zwei Federarme, die seine Seiten greifen (55 bis 90 mm), unter seinen Tasten. Steckt im Aufsatz aus Steinen von Omi Assist."@de .
 
 atl:controller_phone a atl:Controller ;
     schema:name "Phone (face page)" ; atl:maker "Atelier-5" ;
