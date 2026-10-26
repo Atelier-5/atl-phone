@@ -91,7 +91,7 @@ TALK_STATES = ("", "listening", "wait", "result", "nothing")   # what the transl
 # says its own), "is"/"think" come with an OBJECTS label; while reading aloud, only "reading": the text stays on the phone
 SCREEN_TOASTS = ("wait", "reading", "notext", "is", "think", "nothing", "person", "followOn", "followOff", "showOn",
                  "showOff", "showNo", "noCam", "back", "time", "talkNo", "talkModels", "talkNothing", "talkMic")
-TOUR_STEPS = ("hello", "menu", "time", "front", "back", "magnify", "read", "sensors", "follow", "show", "remind", "card",
+TOUR_STEPS = ("hello", "menu", "time", "front", "back", "magnify", "read", "sensors", "follow", "show", "translate", "guest", "remind", "card",
               "face", "bye")
 PROPS = ("cup", "letter", "hand", "visitor", "away")   # what the Webots twin flies in for a demo (mirror socket only)
 DEFAULT_PANEL = {"mode": "mouth", "buttons": [{"id": "a", "label": "A", "color": [0.25, 0.85, 1.0]},

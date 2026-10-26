@@ -18,7 +18,8 @@ var TOUR = [{ k: 'hello', face: 'happy' }, { k: 'menu', menu: true }, { k: 'time
             { k: 'front', tile: 'front', mode: 'camera' }, { k: 'back', tile: 'back', mode: 'camera_back' },
             { k: 'magnify', tile: 'magnify', mode: 'magnify' }, { k: 'read', tile: 'read' },
             { k: 'sensors', tile: 'sensors', mode: 'sensors' }, { k: 'follow', tile: 'follow' },
-            { k: 'show', mode: 'camera', allowed: true }, { k: 'remind', card: true },
+            { k: 'show', mode: 'camera', allowed: true }, { k: 'translate', tile: 'translate', mode: 'translate', talk: true },
+            { k: 'remind', card: true },
             { k: 'face', tile: 'face' }, { k: 'bye', face: 'love' }];
 // what "what is this?" says, for each of the model's labels (contract OBJECTS): [English, French, German], with the article
 var WHAT = TEXTS.what;
@@ -106,13 +107,16 @@ function tour(l) {
     var s = TOUR[i], wait = function (ms) { setTimeout(function () { step(i + 1); }, ms); };
     if (!s) { tourStop(); setTimeout(function () { if (expression === 'love') setExpression('neutral'); }, 1500); return; }  // the end: as a tap
     if (s.allowed && !omi.showAllowed) return step(i + 1);   // Zeigen only where the assistant allowed it
+    if (s.talk && !(typeof talk === 'object' && talk.allowed)) return step(i + 1);   // Übersetzen too (it does not listen now)
     if (s.face) setExpression(s.face);
     if (s.menu || s.tile) tourMenu(s.tile); else { hideMenu(); toastEl.classList.remove('above'); }
     if (s.card) noteCard({ id: 'tour', text: t.card, buttons: [{ id: 'done', label: noteWord('done', l) }, { id: 'later', label: noteWord('later', l) }] });
-    tourSay(t[s.k], l, function () {
+    var told = false;
+    tourSay(t[s.k], l, function said() {
       if (run !== omi.tour) return;
       if (s.card) { noteCard({ id: 'tour', text: '' }); return wait(500); }
       if (s.time) return tourSay(timePhrase(new Date(), l), l, function () { wait(600); }, 'time');
+      if (s.talk && talk.guest && !told) { told = true; return tourSay(t.guest, l, said); }   // a guest link: its QR code comes next
       if (!s.mode) return wait(600);
       hideMenu(); toastEl.classList.remove('above'); setPanel({ mode: s.mode }, true);   // what that tile shows, for a moment
       setTimeout(function () { if (run === omi.tour) { setPanel({ mode: 'mouth' }, true); wait(400); } }, 3500);

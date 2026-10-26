@@ -659,7 +659,7 @@ def main() -> int:
                    ready == 2 and joined == "📱 ein zweites Handy ist dabei", (ready, joined))
                 xy = guest.js("(function () { var b = document.querySelector('#talk .half[data-l=de]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
                 guest.js("window.__said = []; (function () { var sp = speak; speak = function (t, l) { window.__said.push(t); return sp(t, l); }; })()")
-                page.js("window.__said = []")
+                page.js("window.__said = []; talkSet('')")   # the robot's own last result away: the guest's must not land here
                 guest.call("Input.dispatchMouseEvent", type="mousePressed", x=int(xy[0]), y=int(xy[1]), button="left", clickCount=1)
                 guest.wait_for("talk.stream && talk.seq > 2")
                 time.sleep(4.0 if args.speech else 1.0)
@@ -680,6 +680,18 @@ def main() -> int:
                 guest.close()
             back = page.wait_for("!talk.guestOn && document.querySelector('#guest canvas').style.display === 'block' && 'qr'")
             ok("Übersetzen: the guest gone, the robot's phone shows the QR code again", back == "qr", back)
+        # the presentation's Übersetzen step (alone, with its end: the whole tour takes two minutes)
+        page.js("setPanel({ mode: 'mouth' }, true); window.__tour = TOUR;"
+                " TOUR = TOUR.filter(function (s) { return s.k === 'translate' || s.k === 'bye'; }); tour('de')")
+        said = screen_until(lambda x: x.get("toast") == "tour.translate", 30)
+        tile = page.js("(document.querySelector('#menu button.tour') || {}).dataset.mode")
+        told = screen_until(lambda x: x.get("toast") == "tour.guest", 60) if g.get("url") else {"toast": "tour.guest"}
+        shown = page.wait_for("panel.mode === 'translate' && (!talk.guest || document.querySelector('#guest canvas').style.display === 'block') && 'shown'", 30)
+        ended = page.wait_for("!omi.touring && 'ended'", 60)
+        page.js("TOUR = window.__tour")
+        ok("Omi's presentation: Übersetzen when allowed: its tile in yellow, its words, the guest link's sentence, then the halves and the QR code",
+           said.get("toast") == "tour.translate" and tile == "translate" and said.get("hi") == "translate" and told.get("toast") == "tour.guest"
+           and shown == "shown" and ended == "ended", (said, tile, told, shown, ended))
         act({"allow_translate": False})
         gone = page.wait_for("!talk.allowed && (showMenu(), !document.querySelector('#menu button[data-mode=translate]')) && 'gone'")
         ok("Übersetzen: not allowed any more, its tile goes", gone == "gone", gone)

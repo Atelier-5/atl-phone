@@ -52,9 +52,10 @@ them. Android: Settings › Text-to-speech output › the engine's settings.
 | 8 | Sensoren: hier siehst du, wie voll mein Akku ist, wohin ich schaue, wie ich stehe, und wo wir sind. | Sensoren in yellow, then the sensors for 3.5 s (the battery, the tilt, the compass, the location) | — (the location stays on the phone) |
 | 9 | Folgen: meine Augen schauen immer auf das, was mir am nächsten ist. Auf dich zum Beispiel. | Folgen in yellow; the eyes keep following | — |
 | 10 | Und in den Kamerabildern kannst du mit Zeigen deiner Assistenz am Computer das Bild zeigen. Nur solange es an ist, und dann siehst du oben einen roten Punkt. | only when Zeigen is allowed: the front camera for 3.5 s, with its 📡 Zeigen button (nothing is shown) | — |
-| 11 | Und deine Assistenz kann mir Erinnerungen geben. Dann kommt so eine Karte. Tippe auf Erledigt, oder auf Später, dann erinnere ich dich in zehn Minuten noch einmal. | a sample card "Zum Beispiel: Tabletten nehmen", with Erledigt and Später | a tap on it only reaches `note/answer` as "tour", which Omi Assist ignores |
-| 12 | Und mit Gesicht kommst du immer zurück zu mir. | Gesicht in yellow (the last tile, always there) | — |
-| 13 | Das war es. Ich freue mich, dir zu helfen! | happy eyes; the face alone again | — |
+| 11 | Übersetzen: halte die Hälfte Deutsch gedrückt und sprich, dann sage ich es auf Französisch. Wer Französisch spricht, hält Français. Ich höre nur zu, solange du drückst, und dann steht oben HÖRT ZU. *(with the guest page: "Und ein zweites Handy macht mit dem Code mit, der jetzt an der Stelle meiner Augen kommt.")* | only when Übersetzen is allowed: Übersetzen in yellow, then its two halves for 3.5 s, with the guest page's QR code where the eyes are (the microphone stays closed) | — (no sound) |
+| 12 | Und deine Assistenz kann mir Erinnerungen geben. Dann kommt so eine Karte. Tippe auf Erledigt, oder auf Später, dann erinnere ich dich in zehn Minuten noch einmal. | a sample card "Zum Beispiel: Tabletten nehmen", with Erledigt and Später | a tap on it only reaches `note/answer` as "tour", which Omi Assist ignores |
+| 13 | Und mit Gesicht kommst du immer zurück zu mir. | Gesicht in yellow (the last tile, always there) | — |
+| 14 | Das war es. Ich freue mich, dir zu helfen! | happy eyes; the face alone again | — |
 
 The same steps exist in English and French (`tour` in `web/texts.js`). With `--omi --lang fr` the presentation is
 in French.
@@ -73,6 +74,7 @@ in French.
 | Was ist das? (the ❓ button in the back camera) | the picture and the object finder (MediaPipe), the voice | `what/result`: the label (e.g. `cup`) and the time | one word |
 | Folgen | the face finder and the eyes (4 looks a second, 1 while nobody is there) | the see report: where the target is (x, y, kind) | positions only |
 | Erinnerungen | the card and its buttons | Omi Assist keeps them (`omi/reminders.json`), says when one is due, logs her answer (`omi/answers.jsonl`) | her answer (Erledigt / Später) |
+| Übersetzen (only when allowed) | the two halves, the microphone only while a half is held (● HÖRT ZU), the words shown and said; a second phone joins with the QR code | hears and translates offline (Vosk, Opus-MT), drops the sound; `translate/result`: which way, words, time | the sound while held, to the robot's computer only; the words go back to the phones, never further |
 | Zeigen (opt-in: the 📡 button in each camera view) | the red badge; small pictures, only while she shows | the bridge keeps the last for 3 s and hands it to the setup page (`/api/show.jpg`) and the Webots twin, on its own computer only; no topic, no disk | the picture: the one exception (docs/consent-show.md) |
 | Hallo, when she comes back | — | Omi Assist sees that a face is there (`faces`: a position, no picture) and says hello after 5 minutes away | — |
 

@@ -234,7 +234,7 @@ def texts() -> dict:
 def test_the_tour_says_every_step_in_every_language():
     js = (Path(__file__).resolve().parents[1] / "web" / "omi.js").read_text()
     steps = re.findall(r"\{ k: '(\w+)'", js[js.index("var TOUR ="):])
-    assert set(steps + ["card"]) == set(c.TOUR_STEPS)
+    assert set(steps + ["card", "guest"]) == set(c.TOUR_STEPS)   # the sample card, and the guest link when there is one
     for lang in ("en", "fr", "de"):
         assert set(texts()["tour"][lang]) == set(c.TOUR_STEPS), lang
 
