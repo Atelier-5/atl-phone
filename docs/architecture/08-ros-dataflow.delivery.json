@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "1256262e-4780-4595-aec8-8e803ebf9623",
+  "receiptId": "af6ad247-b878-4257-9d2c-673343700391",
   "status": "current",
   "command": "deliver",
   "type": "dataflow",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/08-ros-dataflow.dataflow.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/08-ros-dataflow.html",
   "specification": {
-    "sha256": "b9778c83c16c1bbb0ecf1d743a3d97fa4fbb8d688cbce5ea0f639676c3330f6f",
+    "sha256": "47beb331d2825fefd2efbeaed49ac655bce7931f96931815d8cedd88824a8296",
     "bytes": 9772
   },
   "artifact": {
-    "sha256": "b4f7bde0250d40604dcbb89713aaed71939fa86f57daef822ef0abf64a4ef53f",
+    "sha256": "fbe1d3912e7534c8065c160602e3f0ddf7a3eb287766a967636cb773796d0e1d",
     "bytes": 829161
   }
 }

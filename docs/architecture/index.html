@@ -53,7 +53,7 @@
     twin plug into the bridge, where each part runs in the lab and on the robot with its Pi, and which recognition
     runs on the phone and which on the Pi, and how Übersetzen translates German and French between two phones at the table. The bridge serves this pack at <code>/docs/</code>; the setup page's How it
     works view links it.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>7e7272f</code>; the build checked each citation
+  <p class="lead">Every box cites the lines it comes from, at commit <code>056fab4</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -123,7 +123,7 @@
       phone (<code>on_text</code> did not know which link a message came from), so a late hello could overwrite the new
       phone's model. Now <code>deliver()</code> passes a frame on only while its link is current, under the same lock as
       the takeover. A test reproduces the race.</td>
-      <td><code>wsserver.py</code> 222–241, 377–380 · <a href="05-takeover-race.html">05</a></td>
+      <td><code>wsserver.py</code> 241–260, 396–399 · <a href="05-takeover-race.html">05</a></td>
       <td><span class="tag ok">fixed in 6b29b5a</span></td></tr>
     <tr><td>Output tests (face, gaze, colour, say, torch, vibrate) answered 204 even with no phone, because <code>out()</code>
       ignores the result of <code>server.send</code>. It misled the first real-phone test (a Galaxy A50): the phone was on
@@ -155,7 +155,7 @@
       authority once; the bridge offers <code>/ca.crt</code> and each phone installs it once. The authority's key is not
       mounted into the container. A phone that has the authority installed trusts anything this PC's key signs, so the
       setup page says how to remove it when a phone leaves the class.</td>
-      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 107–116, <code>wsserver.py</code> 275–286 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 107–116, <code>wsserver.py</code> 294–305 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">added in d2b04ac</span></td></tr>
     <tr><td>Telling faces apart ("familiar") is a signature kept in the phone's page only. A program can ask for it but
       not allow it: the facilitator does (<code>familiar:=true</code> or the setup page), and until then the bridge sets
@@ -204,12 +204,12 @@
       loopback only, whatever the key: from a PC on the robot's Wi-Fi the setup page loads and then sees no bridge.
       Today: an SSH tunnel to the Pi makes the PC loopback. Fix: correct the ontology's wording, or add a key-gated
       admin route if a tunnel is too much for the people using it. <em>Read, not reproduced</em> (no Pi yet).</td>
-      <td><code>omi_robot.ttl</code> 122, <code>wsserver.py</code> 324–333 · <a href="12-autonomous.html">12</a></td>
+      <td><code>omi_robot.ttl</code> 122, <code>wsserver.py</code> 343–352 · <a href="12-autonomous.html">12</a></td>
       <td><span class="tag warn">open · minor</span></td></tr>
     <tr><td>A frame she shows (Zeigen) goes to loopback mirrors and the setup page only. With the bridge on the robot's
       Pi, a PC over Wi-Fi gets no pictures, neither on its setup page nor in its Webots twin, unless it comes through an
       SSH tunnel, which makes it loopback.</td>
-      <td><code>wsserver.py</code> 206–212, 324–333 · <a href="10-twin-in-step.html">10</a></td>
+      <td><code>wsserver.py</code> 225–231, 343–352 · <a href="10-twin-in-step.html">10</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>The screen report and the sensor numbers carry ids, text keys and clamped numbers only:
       <code>screen_report()</code> drops an unknown key, a toast's argument must be a known object, and there is no field
@@ -221,29 +221,30 @@
       never offers or closes the bridge's own tab (tested against a fake adb and a fake phone Chrome).</td>
       <td><code>phone_health.py</code> 5–7, 145–159 · <a href="09-phone-integration.html">09</a></td>
       <td><span class="tag ok">by design</span></td></tr>
-    <tr><td>The https ports stall while one TCP connection stays silent: the listening socket is wrapped in TLS, so the
-      handshake runs in <code>accept()</code> on the server's only accepting thread, without a timeout. Anyone on the
+    <tr><td>The https ports stalled while one TCP connection stayed silent: the listening socket was wrapped in TLS, so the
+      handshake ran in <code>accept()</code> on the server's only accepting thread, without a timeout. Anyone on the
       Wi-Fi who opens the guest port (8783) and sends nothing keeps every other phone from reaching it until that
       connection closes; the same holds for the bridge's own port when it runs with <code>--cert</code>. Tested: with
       one idle connection open, an https GET waited 4 s and failed on both ports, and succeeded at once when it closed.
-      Fix: wrap with <code>do_handshake_on_connect=False</code> and do the handshake in the request's own thread, with a
-      timeout.</td>
-      <td><code>wsserver.py</code> 168–171, 435–438 · <a href="14-translate.html">14</a></td>
-      <td><span class="tag warn">open</span></td></tr>
+      Now the socket is wrapped with <code>do_handshake_on_connect=False</code> and each request's own thread does the
+      handshake, with a 10 s limit; a test opens a silent and a plain-http connection on both ports and still gets a
+      page (it fails on the old code).</td>
+      <td><code>wsserver.py</code> 49–68, 188–190, 453–454 · <a href="14-translate.html">14</a></td>
+      <td><span class="tag ok">fixed in 056fab4</span></td></tr>
     <tr><td>Übersetzen's words, the guest link and its code go to the phones only: <code>send_phone()</code> has no
       mirror copy, and ROS, the setup page and the log get counts. The contract check speaks German to the bridge and
       sees no word on a mirror, ROS or the setup page.</td>
-      <td><code>bridge_node.py</code> 240–249, 269–273, <code>wsserver.py</code> 195–198 · <a href="14-translate.html">14</a></td>
+      <td><code>bridge_node.py</code> 240–249, 269–273, <code>wsserver.py</code> 214–217 · <a href="14-translate.html">14</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>A phone's page opens the microphone only on a secure page, so the guest phone on Wi-Fi uses its own https
       port with the robot's certificate (Chrome warns once unless <code>/ca.crt</code> is installed); the robot's phone
       may send sound only over USB or https.</td>
-      <td><code>bridge_node.py</code> 206–207, <code>wsserver.py</code> 421–438 · <a href="14-translate.html">14</a></td>
+      <td><code>bridge_node.py</code> 206–207, <code>wsserver.py</code> 440–454 · <a href="14-translate.html">14</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>Suspected: when a new guest takes over, the old link's close could cancel the new guest's hold. It does not:
       the handler calls <code>on_close</code> only while its link is still the current one, and a takeover replaced it
       first. <em>Read, not reproduced.</em></td>
-      <td><code>wsserver.py</code> 522–526, 541–548 · <a href="14-translate.html">14</a></td>
+      <td><code>wsserver.py</code> 538–542, 557–564 · <a href="14-translate.html">14</a></td>
       <td><span class="tag ok">checked · no issue</span></td></tr>
   </table>
   </div>
@@ -256,7 +257,7 @@ python3 build.py            # every diagram; python3 build.py 8- for one
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 7e7272f</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 056fab4</footer>
 </main>
 </body>
 </html>

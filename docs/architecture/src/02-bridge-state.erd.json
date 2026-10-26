@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     }
   },
   "layout": {
@@ -60,8 +60,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 143,
-          "end_line": 241
+          "line": 165,
+          "end_line": 260
         }
       ]
     },
@@ -94,8 +94,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 112,
-          "end_line": 140
+          "line": 134,
+          "end_line": 162
         }
       ]
     },
@@ -283,8 +283,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 357,
-          "end_line": 360
+          "line": 376,
+          "end_line": 379
         }
       ]
     },
@@ -624,8 +624,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 421,
-          "end_line": 465
+          "line": 440,
+          "end_line": 481
         }
       ]
     }
@@ -716,7 +716,7 @@
         "Every value is checked and clamped by protocol.parse before it lands here.",
         "seen.camera also holds error and torch; codes keeps the last 5 read. Each sense records its time in at.",
         "Look adds two tables: what programs asked for (look, look/familiar) next to the facilitator's allowed, and the latest faces, each only x, y, size and a number (protocol.py 172–186).",
-        "Since 0.5–0.6 the bridge also keeps what a phone that comes needs again (panel, see, an unanswered note), the phone's screen report for the mirrors, the show state with the last frame, and the programs' last states; opened() and closed() reset show and screen (bridge_node.py 304–317). A shown frame goes from Bridge.show to the loopback mirrors only (wsserver.py 206–212). Bridge.screen is the current phone's last report, and is cleared when it goes.",
+        "Since 0.5–0.6 the bridge also keeps what a phone that comes needs again (panel, see, an unanswered note), the phone's screen report for the mirrors, the show state with the last frame, and the programs' last states; opened() and closed() reset show and screen (bridge_node.py 304–317). A shown frame goes from Bridge.show to the loopback mirrors only (wsserver.py 225–231). Bridge.screen is the current phone's last report, and is cleared when it goes.",
         "Übersetzen (0.7) keeps no words: Translate holds whether it is allowed, the guest code and the last counts; each Session holds the utterance being heard, whose sound is dropped when its text is made (translate.py 216–254). The guest code is new each time Übersetzen is allowed (bridge_node.py 233–238)."
       ]
     },

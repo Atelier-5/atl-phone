@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     }
   },
   "mainPath": [
@@ -47,8 +47,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 303,
-          "end_line": 322
+          "line": 322,
+          "end_line": 341
         }
       ]
     },
@@ -61,8 +61,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 371,
-          "end_line": 375
+          "line": 390,
+          "end_line": 394
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
@@ -100,8 +100,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 305,
-          "end_line": 314
+          "line": 324,
+          "end_line": 333
         }
       ]
     },
@@ -132,8 +132,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 222,
-          "end_line": 226
+          "line": 241,
+          "end_line": 245
         },
         {
           "path": "ros2/atl_phone/web/face.js",
@@ -234,7 +234,7 @@
       "dot": "cyan",
       "title": "One phone per bridge",
       "items": [
-        "take_over() swaps in the new Link, then closes the old one with code 4000 (wsserver.py 222–226).",
+        "take_over() swaps in the new Link, then closes the old one with code 4000 (wsserver.py 241–245).",
         "A page closed with 4000 does not reconnect, so two phones never fight over the bridge (face.js 456)."
       ]
     },

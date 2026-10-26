@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     },
     "legend": {
       "entries": {
@@ -52,7 +52,7 @@
     },
     {
       "id": "gate", "type": "security", "label": "/api", "sublabel": "loopback only", "pos": [520, 400], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 324, "end_line": 333 }]
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 343, "end_line": 352 }]
     },
     {
       "id": "tunnel", "type": "external", "label": "SSH tunnel", "sublabel": "-L 8782:localhost:8782", "pos": [280, 560], "size": [150, 64],
@@ -97,7 +97,7 @@
       "dot": "rose",
       "title": "Reaching it from a PC",
       "items": [
-        "/api and a keyless /ws/mirror answer loopback only (wsserver.py 303–311, 324–333). A PC or tablet on the Wi-Fi opens an SSH tunnel to the Pi and then uses http://localhost:8782/setup.html: to the bridge it is loopback, so the setup page, the Webots mirror and a shown picture (Zeigen) work as in the lab (README.md 58–61).",
+        "/api and a keyless /ws/mirror answer loopback only (wsserver.py 322–330, 343–352). A PC or tablet on the Wi-Fi opens an SSH tunnel to the Pi and then uses http://localhost:8782/setup.html: to the bridge it is loopback, so the setup page, the Webots mirror and a shown picture (Zeigen) work as in the lab (README.md 58–61).",
         "The phone stays on USB, so its page is still localhost: no certificate is needed on the robot."
       ]
     },

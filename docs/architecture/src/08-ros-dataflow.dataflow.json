@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     },
     "legend": {
       "entries": {
@@ -133,8 +133,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 228,
-          "end_line": 234
+          "line": 247,
+          "end_line": 253
         }
       ]
     },
@@ -369,7 +369,7 @@
       "dot": "emerald",
       "title": "Facts: out, from the phone to ROS",
       "items": [
-        "The page sends JSON over its one WebSocket; deliver() hands it on only while that link is the current phone (wsserver.py 228–234).",
+        "The page sends JSON over its one WebSocket; deliver() hands it on only while that link is the current phone (wsserver.py 247–253).",
         "parse() keeps the known fields of each message type and clamps every number (protocol.py 129–262); anything else is dropped with a warning.",
         "text() publishes standard types where they exist (Imu, Float32, BatteryState) and JSON in a String otherwise; IMU at most 60 Hz, faces 10 Hz, vision MAX_SEE_RATE (bridge_node.py 343–398).",
         "A face's familiar number goes out only while familiar is asked and allowed; otherwise the bridge sets it to null (bridge_node.py 388)."
@@ -380,7 +380,7 @@
       "title": "Facts: in, from ROS to the phone",
       "items": [
         "One subscription per in-topic; each goes through out() and a protocol maker that checks and clamps it before it is sent (bridge_node.py 94–107, 147–153).",
-        "server.send() gives the phone the message and every mirror a copy (wsserver.py 189–193): diagram 09.",
+        "server.send() gives the phone the message and every mirror a copy (wsserver.py 208–212): diagram 09.",
         "Programs: omi_assist (tiles, the follower, reminders), guardian_node (the Desk Guardian, which also drives the Thymio: cmd_vel out, prox/ground in) and any program; they use only these topics (omi_assist.py 40–48, guardian_node.py 59–73). The setup page's tests publish on the same topics (bridge_node.py 115–119)."
       ]
     },

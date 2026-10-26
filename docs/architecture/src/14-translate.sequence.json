@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     },
     "legend": {
       "entries": {
@@ -90,8 +90,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 195,
-          "end_line": 204
+          "line": 214,
+          "end_line": 223
         }
       ]
     },
@@ -149,13 +149,13 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 421,
-          "end_line": 465
+          "line": 440,
+          "end_line": 481
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 495,
-          "end_line": 530
+          "line": 511,
+          "end_line": 546
         }
       ]
     }
@@ -285,15 +285,15 @@
       "title": "Two gates for the sound",
       "items": [
         "The facilitator allows Übersetzen (translate:=true, or the setup page's card); off, both workers drop what they were hearing (bridge_node.py 209–218).",
-        "The robot's phone may send sound only over this computer's own link (USB, adb reverse) or https (phone_local, wsserver.py 199–204; refused at bridge_node.py 431–436).",
-        "The guest phone needs the code from the QR code, new each time Übersetzen is allowed or the setup page asks; a new code drops the guest (bridge_node.py 233–238, wsserver.py 506–510)."
+        "The robot's phone may send sound only over this computer's own link (USB, adb reverse) or https (phone_local, wsserver.py 218–223; refused at bridge_node.py 431–436).",
+        "The guest phone needs the code from the QR code, new each time Übersetzen is allowed or the setup page asks; a new code drops the guest (bridge_node.py 233–238, wsserver.py 522–526)."
       ]
     },
     {
       "dot": "cyan",
       "title": "Where the words go",
       "items": [
-        "To the phones only: talk_send() writes with send_phone() and to the guest, never to a mirror, ROS, a file or the log (bridge_node.py 240–249, wsserver.py 195–198).",
+        "To the phones only: talk_send() writes with send_phone() and to the guest, never to a mirror, ROS, a file or the log (bridge_node.py 240–249, wsserver.py 214–217).",
         "An error (nothing heard, no models) goes to the one who spoke only.",
         "The phone that listens says the translation; alone, the robot's phone says it itself (talk.js 127–132)."
       ]

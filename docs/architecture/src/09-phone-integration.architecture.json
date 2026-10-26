@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     },
     "legend": {
       "entries": {
@@ -95,13 +95,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 303,
-          "end_line": 322
+          "line": 322,
+          "end_line": 341
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 222,
-          "end_line": 234
+          "line": 241,
+          "end_line": 253
         }
       ]
     },
@@ -183,8 +183,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 344,
-          "end_line": 369
+          "line": 363,
+          "end_line": 388
         }
       ]
     },
@@ -204,8 +204,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 189,
-          "end_line": 212
+          "line": 208,
+          "end_line": 231
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
@@ -468,9 +468,9 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "/ws and /ws/mirror refuse a foreign Origin and a wrong key (hmac); /ws/mirror without a key answers this computer only (wsserver.py 303–311).",
-        "/api/* answers loopback only (wsserver.py 324–333): the setup page, its props and its phone card work from the bridge's computer.",
-        "A shown frame goes to loopback mirrors only (wsserver.py 206–212), so with the bridge on the Pi a PC over Wi-Fi gets no pictures."
+        "/ws and /ws/mirror refuse a foreign Origin and a wrong key (hmac); /ws/mirror without a key answers this computer only (wsserver.py 322–330).",
+        "/api/* answers loopback only (wsserver.py 343–352): the setup page, its props and its phone card work from the bridge's computer.",
+        "A shown frame goes to loopback mirrors only (wsserver.py 225–231), so with the bridge on the Pi a PC over Wi-Fi gets no pictures."
       ]
     }
   ]

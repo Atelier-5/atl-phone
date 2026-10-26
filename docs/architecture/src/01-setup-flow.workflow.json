@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+      "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     },
     "legend": {
       "entries": {
@@ -212,8 +212,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 303,
-          "end_line": 322
+          "line": 322,
+          "end_line": 341
         }
       ]
     },
@@ -367,8 +367,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 324,
-          "end_line": 333
+          "line": 343,
+          "end_line": 352
         }
       ]
     },
@@ -516,7 +516,7 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 324–333).",
+        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 343–352).",
         "A phone over plain http says secure: false in hello; the setup page then shows camera, motion, compass and battery as blocked, not failed."
       ]
     },
