@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3-colcon-
 WORKDIR /ws
 COPY ros2/ src/
 RUN . /opt/ros/kilted/setup.sh && colcon build --merge-install && rm -rf build log
+COPY docs/architecture/*.html docs/architecture/
 COPY docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["ros2", "launch", "atl_phone", "phone.launch.py"]

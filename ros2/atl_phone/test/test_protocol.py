@@ -125,6 +125,18 @@ def test_every_expression_is_on_the_page():
         assert f"  {e}: " in page, e
 
 
+def test_web_fingerprint():
+    assert p.web("0123456789abcdef") == {"t": "web", "id": "0123456789abcdef"}
+    for bad in ("", "0123", "0123456789ABCDEF", "<script>abcdefgh", None):
+        with pytest.raises(ValueError):
+            p.web(bad)
+
+
+def test_the_face_reloads_for_new_pages():
+    page = (Path(__file__).resolve().parent.parent / "web" / "face.js").read_text()
+    assert "m.t === 'web'" in page and "location.replace" in page
+
+
 def test_open_page():
     assert p.open_page("check.html") == {"t": "open", "page": "check.html"}
     with pytest.raises(ValueError):

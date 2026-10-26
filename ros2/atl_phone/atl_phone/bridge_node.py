@@ -31,7 +31,7 @@ from . import omi
 from . import phone_health
 from . import protocol as p
 from .registry import Registry
-from .wsserver import PhoneServer, lan_address
+from .wsserver import PhoneServer, lan_address, web_id
 
 
 class Bridge(Node):
@@ -58,6 +58,8 @@ class Bridge(Node):
         self.last_vision = {}                         # kind -> when it was last published (MAX_SEE_RATE)
         self.guardian = {}                            # the Desk Guardian's last state (guardian_node), for the setup page
         web = self.declare_parameter("web", get_package_share_directory("atl_phone") + "/web").value
+        docs = self.declare_parameter("docs", "/ws/docs/architecture").value   # the architecture pack (the image has it)
+        self.web_id = web_id(web)                     # the pages' fingerprint: a page from an older bridge reloads
         self.t = c.topics(self.robot)
         self.frame_id = f"{self.robot}/phone"
         self.phone = {}
@@ -111,7 +113,7 @@ class Bridge(Node):
                        "read": String, "what": String}.items()}
 
         self.server = PhoneServer(web, port, bind, key, on_open=self.opened, on_text=self.text, on_close=self.closed,
-                                  cert=cert, cert_key=cert_key, api=self, ca=ca, on_mirror=self.mirrored).start()
+                                  cert=cert, cert_key=cert_key, api=self, ca=ca, on_mirror=self.mirrored, docs=docs).start()
         self.status()
         q = f"?key={key}" if key else ""
         self.get_logger().info(f"{c.CONTRACT} for /{self.robot}: {self.server.scheme}://<this PC>:{self.server.port}/{q}"
@@ -232,6 +234,7 @@ class Bridge(Node):
             self.get_logger().info(f"phone says hello: {self.phone['model']}")
             self.status()
             self.server.send_mirrors(json.dumps(self.phone_line()))
+            self.out(p.web, self.web_id)   # first: a page an older bridge served reloads, and says hello again
             if self.look["on"]:  # a phone that comes (back) looks on, as asked
                 self.out(p.look, True, self.familiar())
             if self.panel:
@@ -351,7 +354,7 @@ class Bridge(Node):
                 "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar,
                 "panel": self.panel, "see": self.see, "guardian": self.guardian, "note": self.note, "omi": self.omi,
                 "show": {"allowed": self.allow_show, "on": self.showing, "fresh": self.show_frame() is not None},
-                "mirrors": self.server.mirror_count, "screen": self.screen}
+                "mirrors": self.server.mirror_count, "screen": self.screen, "web": self.web_id, "docs": bool(self.server.docs)}
 
     def act(self, body: dict):
         """A test from the setup page. Outputs go through ROS, on the contract's own topics, so the whole chain is tested."""

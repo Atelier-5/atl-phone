@@ -374,6 +374,13 @@ def main() -> int:
         act({"topic": "see", "value": {"find": []}})
         off = page.wait_for("cam === null")
         ok("see nothing: the camera closes", bool(off))
+        first = page.js("window.oldPage = true; pages")
+        page.js("handle({t: 'web', id: pages})")
+        same = page.js("window.oldPage === true && location.search")
+        page.js("handle({t: 'web', id: '0000000000000000'})")   # as a bridge restarted with new pages
+        back = page.wait_for("!window.oldPage && pages && ws && ws.readyState === 1 && location.search", tries=60)
+        ok("the face reloads itself for a bridge with new pages, started without a tap; the same pages keep it",
+           bool(first) and first == state().get("web") and same == "?autostart=1" and back == "?autostart=1", (first, same, back))
     finally:
         page.close()
         shutil.rmtree(vtmp, ignore_errors=True)
@@ -580,9 +587,26 @@ def main() -> int:
         page.wait_for("typeof go === 'function' && S !== null")
         views = page.js("[].map.call(document.querySelectorAll('#views button'), function (b) { return b.getAttribute('data-v'); }).join()")
         page.js("showView('guard')")
-        ok("setup page: a menu at the top: Connect and Test, Desk Guard, Omi Assist", views == "setup,guard,omi"
+        ok("setup page: a menu at the top: Connect and Test, Desk Guard, Omi Assist, How it works", views == "setup,guard,omi,how"
            and page.js("document.getElementById('v-guard').className === 'on' && document.querySelector('.wrap').classList.contains('solo')"
                        " && getComputedStyle(document.querySelector('.wrap nav')).display === 'none'"), views)
+        page.js("showView('how')")
+        how = page.js("var h = document.getElementById('how'); document.getElementById('v-how').className === 'on' && "
+                      "[h.querySelectorAll('h3').length, h.querySelectorAll('.how-cfg').length, h.querySelector('a.how-docs').getAttribute('href')].join()")
+        page.js("document.querySelector('.lang button[data-l=de]').click()")
+        de = page.js("document.querySelector('#v-how h2').textContent + '|' + document.querySelector('#how h3').textContent")
+        docs = urllib.request.urlopen(f"http://localhost:{args.port}/docs/", timeout=5).read().decode()
+        ok("setup page, How it works: what it does, USB or Wi-Fi, the lab and the Pi, recognition, a link to the docs (served by the bridge)",
+           how == "4,2,/docs/" and de == "So funktioniert es|Was er kann" and "atl-phone" in docs, (how, de))
+        if args.shots:
+            for w, h in ((1100, 2600), (390, 6200)):
+                for scheme in ("light", "dark"):
+                    page.size(w, h)
+                    page.call("Emulation.setEmulatedMedia", features=[{"name": "prefers-color-scheme", "value": scheme}])
+                    time.sleep(0.5)
+                    page.shot(args.shots / f"setup-how-{w}-{scheme}.png")
+        page.js("document.querySelector('.lang button[data-l=en]').click()")
+        page.js("showView('guard')")
         off = page.wait_for("live.guard && live.guard.textContent === t('g_off') && live.guard.textContent")
         act({"guardian": True, "drive": False})
         on = page.wait_for("guardianOn() && live.guard.textContent")

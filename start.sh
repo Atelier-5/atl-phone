@@ -56,7 +56,8 @@ if [ -n "$MAKE_CERT" ]; then
 fi
 
 # build when the sources changed: their hash is the image's label
-SRC=$(find ros2 docker -type f -not -path '*/__pycache__/*' -not -path '*/test/*' -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)
+SRC=$( { find ros2 docker -type f -not -path '*/__pycache__/*' -not -path '*/test/*' -print0
+         find docs/architecture -maxdepth 1 -type f -name '*.html' -print0; } | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)
 HAVE=$(docker image inspect --format '{{index .Config.Labels "atl.src"}}' "$IMAGE" 2>/dev/null || true)
 if [ "$REBUILD" = 1 ] || [ "$HAVE" != "$SRC" ]; then
   echo "building $IMAGE…"

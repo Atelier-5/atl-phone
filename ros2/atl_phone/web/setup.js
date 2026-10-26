@@ -200,6 +200,7 @@ Object.assign(T.en, {
   ph_close_q: 'Close {n} tabs on the phone?', ph_closed: 'closed:', ph_none: 'no other tab',
   v_setup: 'Connect and Test', v_setup_d: 'Connect a phone, check it, test each part', v_guard: 'Desk Guard', v_guard_d: 'It watches the desk, greets its owner',
   v_omi: 'Omi Assist', v_omi_d: 'A helper on a stand: big spoken tiles, reminders',
+  v_how: 'How it works', v_how_d: 'What it does, USB or Wi-Fi, where each part runs',
   omi_lead: 'The phone on a stand as a helper. A tap on its eyes opens big tiles that say their name: the time, the front and back camera, the magnifier, reading aloud, the sensors, eyes that follow. The back camera asks “what is this?”; each camera view can show its picture. Her assistant’s reminders come at their time, as a big card she answers.',
   no_phone_here: 'No phone connected: open the face on the phone (Connect and Test, step 2).', omi: 'Omi Assist',
   omi_none: 'Omi Assist does not answer: start the bridge with ./start.sh --omi', omi_on: 'running', omi_off: 'stopped', omi_face: 'Face upright on the phone', omi_tour: 'Introduce Omi Assist',
@@ -226,6 +227,7 @@ Object.assign(T.fr, {
   ph_close_q: 'Fermer {n} onglets sur le téléphone ?', ph_closed: 'fermés :', ph_none: 'aucun autre onglet',
   v_setup: 'Connecter et tester', v_setup_d: 'Connecter un téléphone, le vérifier, tester chaque partie', v_guard: 'Gardien du bureau', v_guard_d: 'Il surveille le bureau, salue son propriétaire',
   v_omi: 'Omi Assist', v_omi_d: 'Un assistant sur un support : de grandes tuiles qui parlent, des rappels',
+  v_how: 'Comment ça marche', v_how_d: 'Ce qu’il fait, USB ou Wi-Fi, où tourne chaque partie',
   omi_lead: 'Le téléphone sur un support, comme assistant. Un toucher sur ses yeux ouvre de grandes tuiles qui disent leur nom : l’heure, la caméra avant et arrière, la loupe, lire à voix haute, les capteurs, des yeux qui suivent. La caméra arrière demande « qu’est-ce que c’est ? » ; chaque vue de caméra peut montrer son image. Les rappels de la personne qui l’assiste arrivent à leur heure, sur une grande carte à laquelle elle répond.',
   no_phone_here: 'Aucun téléphone connecté : ouvrez le visage sur le téléphone (Connecter et tester, étape 2).', omi: 'Omi Assist',
   omi_none: 'Omi Assist ne répond pas : lancez le pont avec ./start.sh --omi', omi_on: 'en marche', omi_off: 'arrêté', omi_face: 'Visage debout sur le téléphone', omi_tour: 'Présenter Omi Assist',
@@ -252,6 +254,7 @@ Object.assign(T.de, {
   ph_close_q: '{n} Tabs auf dem Handy schließen?', ph_closed: 'geschlossen:', ph_none: 'kein anderer Tab',
   v_setup: 'Verbinden und testen', v_setup_d: 'Ein Handy verbinden, prüfen, jeden Teil testen', v_guard: 'Schreibtischwächter', v_guard_d: 'Er bewacht den Schreibtisch, begrüßt seinen Besitzer',
   v_omi: 'Omi Assist', v_omi_d: 'Ein Helfer auf einem Ständer: große sprechende Kacheln, Erinnerungen',
+  v_how: 'So funktioniert es', v_how_d: 'Was er kann, USB oder WLAN, wo jeder Teil läuft',
   omi_lead: 'Das Handy auf einem Ständer als Helfer. Ein Tipp auf die Augen öffnet große Kacheln, die ihren Namen sagen: die Uhrzeit, die vordere und hintere Kamera, die Lupe, Vorlesen, die Sensoren, Augen, die folgen. Die hintere Kamera fragt „Was ist das?“; jede Kameraansicht kann ihr Bild zeigen. Die Erinnerungen der Assistenz kommen zu ihrer Zeit, als große Karte, die sie beantwortet.',
   no_phone_here: 'Kein Handy verbunden: das Gesicht auf dem Handy öffnen (Verbinden und testen, Schritt 2).', omi: 'Omi Assist',
   omi_none: 'Omi Assist antwortet nicht: die Brücke mit ./start.sh --omi starten', omi_on: 'läuft', omi_off: 'gestoppt', omi_face: 'Gesicht aufrecht auf dem Handy', omi_tour: 'Omi Assist vorstellen',
@@ -281,10 +284,11 @@ function el(tag, attrs, kids) {
 }
 
 var STEPS = ['bridge', 'connect', 'check', 'test', 'play', 'summary'];
-var VIEWS = ['setup', 'guard', 'omi'], view = 'setup';  // what to do, picked at the top (and kept in the address: #omi)
+var VIEWS = ['setup', 'guard', 'omi', 'how'], view = 'setup';  // what to do, picked at the top (and kept in the address: #omi)
 try { view = VIEWS.indexOf(location.hash.slice(1)) >= 0 ? location.hash.slice(1) : localStorage.getItem('atl-view') || 'setup'; } catch (e) {}
 if (VIEWS.indexOf(view) < 0) view = 'setup';
 var step = 0, S = null, bridgeUp = null, lastModel = '', lastId = '';
+var pages = null;          // the bridge's pages' fingerprint, as first got: another one means it restarted with new pages
 var answers = {};          // outputs: true / false, as the person says
 var touched = {};          // touches seen: tap-left, tap-centre, tap-right, long, swipe
 var imuRate = 0, lastImu = { n: 0, at: 0 }, tilt = {}, turned = false;  // tilted to another side, or turned
@@ -305,6 +309,8 @@ function act(body) {
 function poll() {
   fetch('/api/state').then(function (r) { return r.json(); }).then(function (s) {
     S = s; bridgeUp = true;
+    if (s.web && pages && s.web !== pages) location.reload();  // this page's code is older than the bridge's
+    pages = s.web || pages;
     if (s.phone && s.phone.model) { lastModel = s.phone.model; lastId = s.phone.id || ''; }  // still known once it is gone
     update();
   }).catch(function () { bridgeUp = false; update(); }).then(function () { setTimeout(poll, 250); });
@@ -347,7 +353,7 @@ function showView(v) {
   try { localStorage.setItem('atl-view', v); history.replaceState(null, '', v === 'setup' ? location.pathname : '#' + v); } catch (e) {}
   [].forEach.call($('views').children, function (b) { b.className = b.getAttribute('data-v') === v ? 'on' : ''; });
   document.querySelector('.wrap').className = 'wrap' + (v === 'setup' ? '' : ' solo');
-  $('v-guard').className = v === 'guard' ? 'on' : ''; $('v-omi').className = v === 'omi' ? 'on' : '';
+  $('v-guard').className = v === 'guard' ? 'on' : ''; $('v-omi').className = v === 'omi' ? 'on' : ''; $('v-how').className = v === 'how' ? 'on' : '';
   if (was === 'setup' && v !== 'setup' && visionTest) { visionTest = false; act({ topic: 'see', value: { camera: 'front', find: [] } }); }
   go(step);
 }
@@ -868,6 +874,7 @@ function translate() {
   [].forEach.call(document.querySelectorAll('[data-t]'), function (e) { e.textContent = t(e.getAttribute('data-t')); });
   [].forEach.call(document.querySelectorAll('.lang button'), function (b) { b.className = b.getAttribute('data-l') === lang ? 'on' : ''; });
   document.title = t('title');
+  $('how').innerHTML = howHtml(lang);
   buildOutputs(); buildInputs(); buildPlay(); showView(view);
   if (S) update();
 }

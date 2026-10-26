@@ -72,6 +72,13 @@ class Check:
         detail = json.loads(s.data) if s else {}
         self.ok("status: connected, with the phone's model and contract", bool(s) and detail.get("model") == "MOCK-PHONE"
                 and detail.get("contract") == c.CONTRACT, json.dumps(detail)[:120])
+        try:
+            w = phone.expect("web")   # the first thing the bridge sends after hello
+        except TimeoutError:
+            w = None
+        self.ok("web: the pages' fingerprint on hello, so a page from an older bridge reloads",
+                bool(w) and len(w.get("id", "")) == 16 and w["id"] == json.load(urllib.request.urlopen(
+                    url.replace("ws://", "http://").split("/ws")[0] + "/api/state", timeout=5)).get("web"), w)
 
         for _ in range(5):
             phone.send(t="imu", acc=[0.1, 0.2, 9.81], gyro=[0.0, 0.0, 0.5])

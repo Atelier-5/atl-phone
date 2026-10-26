@@ -469,11 +469,19 @@ function handle(m) {
   else if (m.t === 'see') seeAt(m);
   else if (m.t === 'note') noteCard(m);
   else if (['read', 'what', 'show', 'tour'].indexOf(m.t) >= 0 && typeof omiAsk === 'function') omiAsk(m);  // omi.js
+  else if (m.t === 'web' && /^[0-9a-f]{16}$/.test(m.id)) newPages(m.id);
   else if (m.t === 'open' && ['face.html', 'check.html'].indexOf(m.page) >= 0) {
     var q = Object.assign({}, Q);
     if (['landscape', 'portrait', 'auto'].indexOf(m.layout) >= 0) q.layout = m.layout;
-    location.href = m.page + '?' + Object.keys(q).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(q[k]); }).join('&');
+    location.href = m.page + query(q);
   }
+}
+function query(q) { return '?' + Object.keys(q).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(q[k]); }).join('&'); }
+var pages = null;  // the fingerprint of the bridge's pages, as first got: another one means it restarted with new pages
+function newPages(id) {
+  if (pages === null || pages === id) { pages = id; return; }
+  // this page's code is older than the bridge's: load the new one, started at once (what needs a tap waits for the next touch)
+  location.replace(location.pathname + query(Object.assign({}, Q, { autostart: '1' })));
 }
 
 // ---- voice -----------------------------------------------------------------------------------------
@@ -633,14 +641,19 @@ function keepAwake() { if (navigator.wakeLock && document.visibilityState === 'v
 document.addEventListener('visibilitychange', keepAwake);
 function start() {
   document.getElementById('start').style.display = 'none';
+  tapped();
+  keepAwake();
+  // started without a tap (autostart, or reloaded for a new bridge): full screen and the voice come with her first touch
+  if (navigator.userActivation && !navigator.userActivation.isActive) document.addEventListener('pointerdown', tapped, { once: true });
+  connect();
+}
+function tapped() {  // what the browser allows only during a tap
   var el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen;
-  var p = fs ? fs.call(el) : null;
+  var p = fs && !(document.fullscreenElement || document.webkitFullscreenElement) ? fs.call(el) : null;
   var turn = { landscape: 'landscape', portrait: 'portrait' }[LAYOUT];  // auto: as the phone is held
   if (p && p.then) p.then(function () { if (turn && screen.orientation && screen.orientation.lock) return screen.orientation.lock(turn); }).catch(function () {});
-  keepAwake();
   if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(function () {});
   if ('speechSynthesis' in window) warmVoice();
-  connect();
 }
 
 resize();

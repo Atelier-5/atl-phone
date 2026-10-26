@@ -60,6 +60,7 @@ G = 9.81
 TWIN_ID = "7717717717717717"            # the page's per-browser id: a fixed one for the twin
 SEE_EVERY = 0.1                          # s: vision at 10 Hz, like the page
 IMU_EVERY = 1 / 30
+REJOIN = 2.0                             # s (wall clock): between two tries to reach the mirror socket again
 EYE = {"w": 0.8, "h": 1.0, "top": 0.0, "bottom": 0.0, "dy": 0.0, "heart": 0}
 EXPRESSIONS = {"neutral": {}, "happy": {"bottom": 0.6, "h": 0.9}, "sad": {"top": 0.4, "dy": 0.12, "h": 0.85},
                "angry": {"top": 0.4, "h": 0.85}, "surprised": {"w": 0.95, "h": 1.2}, "sleepy": {"top": 0.62, "dy": 0.1},
@@ -183,7 +184,7 @@ class Twin:
         self.model = model
         self.mirroring = not bridge                     # the real phone is in charge: follow its screen, send nothing
         self.phone = MockPhone(bridge) if bridge else None
-        self.mirror = None
+        self.mirror, self.mirror_url, self.next_rejoin = None, mirror, 0.0
         if mirror:
             try:
                 self.mirror = MockPhone(mirror)
@@ -798,6 +799,22 @@ class Twin:
         except queue.Empty:
             pass
 
+    def rejoin(self):
+        """The mirror is gone (the bridge restarted): try again every REJOIN s, as the phone's page does. Meanwhile the
+        screen shows the phone away; the bridge sends what the phone has now as soon as the twin is back."""
+        if self.mirror and self.mirror.closed.is_set():
+            print("the bridge closed the mirror; trying again", flush=True)
+            self.mirror = None
+            self.real, self.shown, self.note = {"connected": False, "model": ""}, None, None
+        if time.monotonic() < self.next_rejoin:
+            return
+        self.next_rejoin = time.monotonic() + REJOIN
+        try:
+            self.mirror = MockPhone(self.mirror_url, timeout=0.5)
+            print("mirror back", flush=True)
+        except OSError:
+            pass
+
     def run(self):
         step = int(self.robot.getBasicTimeStep())
         while self.robot.step(step) != -1:
@@ -808,9 +825,8 @@ class Twin:
             if self.phone and self.phone.closed.is_set():
                 print("the bridge closed the link (another phone?); the twin stops", flush=True)
                 return
-            if self.mirroring and self.mirror.closed.is_set():
-                print("the bridge closed the mirror; the twin stops", flush=True)
-                return
+            if self.mirror_url and (not self.mirror or self.mirror.closed.is_set()):
+                self.rejoin()
             if self.t >= self.next_imu:
                 self.next_imu = self.t + IMU_EVERY
                 if self.phone:

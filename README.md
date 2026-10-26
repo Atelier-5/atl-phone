@@ -16,8 +16,10 @@ OS (stock Android, LineageOS, …). The ROS 2 node `atl_phone/bridge` serves the
 ```
 
 The **setup page** (`http://localhost:8782/setup.html`, on this PC only), in EN/FR/DE, starts with what to do:
-**Connect and Test**, **Desk Guard** ([the Desk Guardian](#the-desk-guardian)) or **Omi Assist** ([the helper on a
-stand](#omi-assist)). Connect and Test guides through it:
+**Connect and Test**, **Desk Guard** ([the Desk Guardian](#the-desk-guardian)), **Omi Assist** ([the helper on a
+stand](#omi-assist)) or **How it works** (what the robot does, the phone on USB or Wi-Fi, where each part runs in the lab
+and on the robot with its Pi, which recognition runs on the phone and which on the Pi, and a link to the architecture
+docs, which the bridge serves at `/docs/`). Connect and Test guides through it:
 the bridge → connecting the phone (USB, or Wi-Fi with a QR code) → the phone check → testing each output
 (face, gaze, colour, voice, vibration, torch, camera: you say what you saw) and each sense (touch, motion, compass,
 battery, reading a code, look, vision: they tick by themselves) → scenarios (try the portrait panel)
@@ -42,8 +44,8 @@ docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thy
     [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=fr] [familiar:=true] [guardian:=true] \
     [omi:=true] [omi_folder:=/omi] [show:=true] [reports:=/reports]
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
-docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 54 checks
-python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C]   # the pages in headless Chrome: 56 checks
+docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 55 checks
+python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C]   # the pages in headless Chrome: 58 checks
     # (--fake-adb: a fake adb and phone Chrome on the ports the bridge got as ADB_SERVER_PORT, ATL_CDP_PORT; never the real phone)
 ./test.sh                                                        # protocol, WebSocket, check server, guardian, reminders: no ROS, no phone
 ./scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]      # what weighs on the phone (adb); changes only what you confirm
@@ -53,6 +55,10 @@ python3 scripts/browser_check.py --container <container> [--face <picture>] [--f
 bridge the phone's `localhost`, which counts as secure, and the cable charges the phone: the way to set up at the desk.
 Over **Wi-Fi** the bridge needs HTTPS (`cert`, `cert_key`, `ca`): `./start.sh --make-cert`, with the authority installed once on each phone.
 On the phone, tap ▶: full screen, landscape, the screen stays on (`face.html?layout=portrait`: upright, with the panel). A `key` pairs the bridge with its phones (`/?key=...`).
+A bridge that restarts with new pages makes the phone load them: on each hello it sends their fingerprint, and a page
+an older bridge served reloads itself, started without a tap (full screen and the voice come back with the next touch).
+The setup page does the same. On the robot with its Pi (autonomous), the phone stays on USB, now the Pi's, and a PC
+opens the setup page through an SSH tunnel (`ssh -L 8782:localhost:8782 pi@<robot>`), since it answers its own computer only.
 
 ## The contract: `atl-phone/0.6` (`atl_phone/contract.py`)
 
@@ -219,7 +225,7 @@ Verbindung zum Thymio aus; Handy und Thymio hängen an seinem USB; ein PC öffne
   numbers, the camera views' buttons, "…" while the phone is away). In the camera views it shows the real phone's
   picture only while she shows it (Zeigen), else a camera symbol; as the phone, its own Webots camera. `--snap FILE`
   saves its screen as a PNG every second. The twin sends nothing then; the words come from the same `web/texts.js`
-  as the phone's.
+  as the phone's. When the bridge restarts, the twin shows the phone away and joins the mirror again by itself.
 
 ```bash
 python3 scripts/phone_twin_world.py ~/atl/atl-ide/mydocs/twin --scene omi     # webots/worlds/table_omi.wbt (+ .json)

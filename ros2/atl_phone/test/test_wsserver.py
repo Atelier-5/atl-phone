@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from atl_phone.mock_phone import MockPhone
-from atl_phone.wsserver import PhoneServer, accept_key
+from atl_phone.wsserver import PhoneServer, accept_key, web_id
 
 WEB = Path(__file__).resolve().parent.parent / "web"
 
@@ -245,3 +245,39 @@ def test_setup_api_is_for_this_pc_only():
         assert urllib.request.urlopen(req, timeout=5).status == 204  # a phone on Wi-Fi may send its check
     finally:
         s.stop()
+
+
+def test_the_pages_fingerprint_changes_with_a_page(tmp_path):
+    (tmp_path / "vendor").mkdir()
+    (tmp_path / "face.js").write_text("var a = 1;")
+    (tmp_path / "vendor" / "big.wasm").write_bytes(b"x" * 100)
+    first = web_id(tmp_path)
+    assert first == web_id(tmp_path) and len(first) == 16
+    (tmp_path / "face.js").write_text("var a = 2;")
+    second = web_id(tmp_path)
+    assert second != first
+    (tmp_path / "vendor" / "big.wasm").write_bytes(b"y" * 100)   # vendor/: names and sizes only
+    assert web_id(tmp_path) == second
+    (tmp_path / "vendor" / "big.wasm").write_bytes(b"y" * 101)
+    assert web_id(tmp_path) != second
+
+
+def test_the_docs_are_served_beside_the_pages(tmp_path):
+    (tmp_path / "index.html").write_text("<title>pack</title>")
+    s = PhoneServer(WEB, 0, "127.0.0.1", docs=tmp_path).start()
+    try:
+        base = f"http://127.0.0.1:{s.port}"
+        assert b"pack" in urllib.request.urlopen(base + "/docs/").read()
+        assert b"pack" in urllib.request.urlopen(base + "/docs").read()        # redirected to /docs/
+        assert b"pack" in urllib.request.urlopen(base + "/docs/index.html").read()
+        assert b"<canvas" in urllib.request.urlopen(base + "/face.html").read()  # the pages stay where they were
+        with pytest.raises(urllib.error.HTTPError):
+            urllib.request.urlopen(base + "/docs/../../etc/passwd")                 # stays in the docs folder
+    finally:
+        s.stop()
+
+
+def test_no_docs_folder_no_docs(server):
+    with pytest.raises(urllib.error.HTTPError) as e:
+        urllib.request.urlopen(f"http://127.0.0.1:{server.port}/docs/")
+    assert e.value.code == 404

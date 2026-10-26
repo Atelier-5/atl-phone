@@ -10,6 +10,7 @@ POST /report -> a phone check's report (check.html), from any phone; kept in the
 POST /api/summary -> the setup page's summary, into the registry: this PC only
 GET /api/show.jpg -> the picture the person shows right now (Omi Assist, opt-in): this PC only, kept in memory only
 GET /ca.crt  -> this PC's certificate authority, for a phone to install once (when the bridge has one)
+GET /docs/   -> the architecture pack (docs/architecture: its landing page and diagrams), when the bridge has it
 GET /api/state, POST /api/act -> the setup page's view of the phone and its tests: this PC only (loopback;
                 a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
 
@@ -28,6 +29,7 @@ import ssl
 import struct
 import threading
 from functools import partial
+from pathlib import Path
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
@@ -80,6 +82,18 @@ def read_frame(rfile, limit: int = MAX_FRAME) -> tuple:
     return opcode, data
 
 
+def web_id(web_dir) -> str:
+    """A fingerprint of the pages this bridge serves: a page loaded from an older bridge sees it change, and reloads.
+    The files' bytes, except vendor/ (fixed versions, some 30 MB), where the names and sizes are enough."""
+    h = hashlib.sha256()
+    root = Path(web_dir)
+    for f in sorted(p for p in root.rglob("*") if p.is_file()):
+        rel = f.relative_to(root).as_posix()
+        h.update(rel.encode() + b"\0")
+        h.update(str(f.stat().st_size).encode() if rel.startswith("vendor/") else f.read_bytes())
+    return h.hexdigest()[:16]
+
+
 def lan_address() -> str:
     """This PC's address on the local network (the phones' Wi-Fi), or 127.0.0.1."""
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -126,12 +140,14 @@ class PhoneServer:
     on_open(link), on_text(text), on_close(link)."""
 
     def __init__(self, web_dir, port, bind="0.0.0.0", key="", on_open=None, on_text=None, on_close=None,
-                 cert=None, cert_key=None, api=None, ca=None, on_mirror=None):
+                 cert=None, cert_key=None, api=None, ca=None, on_mirror=None, docs=None):
         """api, for the setup page: state() -> dict, act(dict) -> None (ValueError refuses it), report(dict) and
         summary(dict) -> None or what to answer (where it was kept).
         ca: the authority that signed cert, offered at /ca.crt (public: it is what a phone needs to trust the bridge).
-        on_mirror(link): a mirror came; what it should know already (the panel, the last screen) goes to link."""
+        on_mirror(link): a mirror came; what it should know already (the panel, the last screen) goes to link.
+        docs: the architecture pack's folder, served at /docs/ (static pages, as web_dir)."""
         self.key = key
+        self.docs = str(docs) if docs and Path(docs).is_dir() else None
         self.ca = ca
         self.api = api
         self.on_open = on_open or (lambda link: None)
@@ -222,6 +238,16 @@ def make_handler(server: PhoneServer):
             # vendor/ holds fixed versions (some 30 MB): a phone keeps them a day; the rest is never cached
             self.send_header("Cache-Control", "max-age=86400" if self.path.startswith("/vendor/") else "no-store")
             super().end_headers()
+
+        def translate_path(self, path):
+            p = urlsplit(path).path
+            if server.docs and (p == "/docs" or p.startswith("/docs/")):   # the pack, from its own folder
+                web, self.directory = self.directory, server.docs
+                try:
+                    return super().translate_path(path[len("/docs"):])
+                finally:
+                    self.directory = web
+            return super().translate_path(path)
 
         def do_GET(self):
             url = urlsplit(self.path)

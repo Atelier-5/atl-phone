@@ -6,7 +6,10 @@ Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "came
                        | "see" | "markers" | "blobs" | "objects" | "hands" | "menu" | "answer" | "read" | "what" | "show"
                        | "frame" | "screen", ...}
 Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera" | "look" | "forget" | "panel"
-                       | "see" | "note" | "read" | "what" | "show" | "tour", ...}
+                       | "see" | "note" | "read" | "what" | "show" | "tour" | "web", ...}
+
+"web" is the fingerprint of the pages the bridge serves, sent on each hello: a page that an older bridge served (the
+bridge restarted with new pages) sees it change and reloads, so the phone never runs old code against a new bridge.
 
 "show" and "frame" are the one exception to pictures staying on the phone, for Omi Assist: only while the person presses
 "show" on the phone, and only when the facilitator allowed it, the phone sends small JPEG frames; the bridge hands them
@@ -445,6 +448,13 @@ def ask(kind: str, data: str = "", default_lang: str = "en") -> dict:
 def tour(lang: str) -> dict:
     """Omi Assist's presentation: the phone says what it can, tile by tile (the setup page's "Introduce")."""
     return {"t": "tour", "lang": _one_of(lang, c.LANGS)}
+
+
+def web(fingerprint: str) -> dict:
+    """The pages' fingerprint (wsserver.web_id): the page reloads when it differs from the one it first got."""
+    if not isinstance(fingerprint, str) or not re.fullmatch(r"[0-9a-f]{16}", fingerprint):
+        raise ValueError("web: not a fingerprint")
+    return {"t": "web", "id": fingerprint}
 
 
 def show(allowed: bool, on: bool = False) -> dict:

@@ -3,7 +3,8 @@
 <!-- Copyright (C) 2026 Atelier-5 -->
 <!-- Phone setup, on the PC: what to do is picked at the top. Connect and Test: connect a phone, check it, test every
      output and sense, sum it up. Desk Guard: the Desk Guardian. Omi Assist: the helper on a stand, its reminders,
-     and the picture she shows (only when allowed).
+     and the picture she shows (only when allowed). How it works: what it does, USB or Wi-Fi, where each part runs, and
+     the architecture docs (how.js; /docs/).
      Served by the bridge (http://localhost:8782/setup.html); it reads /api/state and its tests go through ROS (/api/act). -->
 <html lang="en">
 <head>
@@ -110,6 +111,23 @@
   .days button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 1px 5px; font-size: 12px; cursor: pointer; }
   .days button.on { background: var(--accent); border-color: var(--accent); color: var(--bg); }
   img.show { width: 100%; max-width: 320px; border-radius: 8px; border: 3px solid var(--no); display: none; }
+  /* How it works */
+  .how-docs { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border: 1.5px solid var(--accent); border-radius: 12px;
+              color: var(--fg); text-decoration: none; margin: 4px 0 8px; }
+  .how-docs b { color: var(--accent); }
+  .how-docs span, .how-box span { color: var(--muted); font-size: 13px; }
+  .how-feats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .how-feats p { margin: 4px 0 0; font-size: 14px; }
+  .how-cfgs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .how-feats, .how-cfgs { grid-template-columns: 1fr; } }
+  .how-cfg { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .how-cfg .hint { margin: 2px 0 8px; display: block; }
+  .how-box { display: flex; flex-direction: column; gap: 2px; background: var(--chip); border-radius: 8px; padding: 8px 10px; margin: 6px 0; }
+  .how-t { font-size: 14px; margin: 6px 0; }
+  .how-t tr > th:first-child { width: 22%; color: var(--fg); font-weight: 600; }
+  @media (max-width: 560px) { .how-t, .how-t tbody, .how-t tr, .how-t th, .how-t td { display: block; width: auto !important; }
+                              .how-t tr:first-child { display: none; } .how-t td { border: 0; padding: 2px 8px; }
+                              .how-t td::before { content: attr(data-c) ": "; color: var(--muted); font-size: 12px; } .how-t td:empty { display: none; } }
   .badge { display: inline-block; background: var(--no); color: #fff; border-radius: 6px; padding: 1px 8px; font-weight: 700; }
 </style>
 </head>
@@ -123,6 +141,7 @@
   <button data-v="setup"><b data-t="v_setup">Connect and Test</b><span data-t="v_setup_d"></span></button>
   <button data-v="guard"><b data-t="v_guard">Desk Guard</b><span data-t="v_guard_d"></span></button>
   <button data-v="omi"><b data-t="v_omi">Omi Assist</b><span data-t="v_omi_d"></span></button>
+  <button data-v="how"><b data-t="v_how">How it works</b><span data-t="v_how_d"></span></button>
 </div>
 <div class="wrap">
   <nav><ol id="stepper"></ol></nav>
@@ -139,6 +158,11 @@
       <p class="lead" data-t="omi_lead"></p>
       <div class="status" id="omi-phone"></div>
       <div class="tests" id="omi-cards"></div>
+    </section>
+    <!-- How it works -->
+    <section id="v-how">
+      <h2 data-t="v_how">How it works</h2>
+      <div id="how"></div>
     </section>
     <!-- 1 -->
     <section id="s-bridge">
@@ -222,6 +246,7 @@
   </main>
 </div>
 <script src="vendor/qrcode.js"></script>
+<script src="how.js"></script>
 <script src="setup.js"></script>
 </body>
 </html>
