@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
+      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
     },
     "legend": {
       "entries": {
@@ -66,13 +66,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 128,
-          "end_line": 137
+          "line": 130,
+          "end_line": 139
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 284,
-          "end_line": 310
+          "line": 287,
+          "end_line": 313
         }
       ]
     },

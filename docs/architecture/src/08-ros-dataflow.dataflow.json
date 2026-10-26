@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
+      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
     },
     "legend": {
       "entries": {
@@ -53,8 +53,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 591,
-          "end_line": 628
+          "line": 599,
+          "end_line": 636
         }
       ]
     },
@@ -114,7 +114,7 @@
         {
           "path": "ros2/atl_phone/web/face.js",
           "line": 444,
-          "end_line": 477
+          "end_line": 485
         }
       ]
     },
@@ -128,13 +128,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 118,
-          "end_line": 237
+          "line": 121,
+          "end_line": 240
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 196,
-          "end_line": 202
+          "line": 212,
+          "end_line": 218
         }
       ]
     },
@@ -148,13 +148,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 287,
-          "end_line": 452
+          "line": 290,
+          "end_line": 462
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 120,
-          "end_line": 126
+          "line": 122,
+          "end_line": 128
         }
       ]
     },
@@ -168,8 +168,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 222,
-          "end_line": 339
+          "line": 224,
+          "end_line": 342
         }
       ]
     },
@@ -183,13 +183,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 63,
-          "end_line": 65
+          "line": 65,
+          "end_line": 67
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 343,
-          "end_line": 354
+          "line": 346,
+          "end_line": 357
         }
       ]
     },
@@ -203,8 +203,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 86,
-          "end_line": 99
+          "line": 88,
+          "end_line": 101
         }
       ]
     },
@@ -223,8 +223,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 72,
-          "end_line": 85
+          "line": 74,
+          "end_line": 87
         }
       ]
     },
@@ -278,8 +278,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 107,
-          "end_line": 111
+          "line": 109,
+          "end_line": 113
         }
       ]
     }
@@ -369,28 +369,28 @@
       "dot": "emerald",
       "title": "Facts: out, from the phone to ROS",
       "items": [
-        "The page sends JSON over its one WebSocket; deliver() hands it on only while that link is the current phone (wsserver.py 196–202).",
-        "parse() keeps the known fields of each message type and clamps every number (protocol.py 118–237); anything else is dropped with a warning.",
-        "text() publishes standard types where they exist (Imu, Float32, BatteryState) and JSON in a String otherwise; IMU at most 60 Hz, faces 10 Hz, vision MAX_SEE_RATE (bridge_node.py 244–299).",
-        "A face's familiar number goes out only while familiar is asked and allowed; otherwise the bridge sets it to null (bridge_node.py 289)."
+        "The page sends JSON over its one WebSocket; deliver() hands it on only while that link is the current phone (wsserver.py 212–218).",
+        "parse() keeps the known fields of each message type and clamps every number (protocol.py 121–240); anything else is dropped with a warning.",
+        "text() publishes standard types where they exist (Imu, Float32, BatteryState) and JSON in a String otherwise; IMU at most 60 Hz, faces 10 Hz, vision MAX_SEE_RATE (bridge_node.py 247–302).",
+        "A face's familiar number goes out only while familiar is asked and allowed; otherwise the bridge sets it to null (bridge_node.py 292)."
       ]
     },
     {
       "dot": "cyan",
       "title": "Facts: in, from ROS to the phone",
       "items": [
-        "One subscription per in-topic; each goes through out() and a protocol maker that checks and clamps it before it is sent (bridge_node.py 86–99, 120–126).",
-        "server.send() gives the phone the message and every mirror a copy (wsserver.py 168–172): diagram 09.",
-        "Programs: omi_assist (tiles, the follower, reminders), guardian_node (the Desk Guardian, which also drives the Thymio: cmd_vel out, prox/ground in) and any program; they use only these topics (omi_assist.py 40–48, guardian_node.py 59–73). The setup page's tests publish on the same topics (bridge_node.py 107–111)."
+        "One subscription per in-topic; each goes through out() and a protocol maker that checks and clamps it before it is sent (bridge_node.py 88–101, 122–128).",
+        "server.send() gives the phone the message and every mirror a copy (wsserver.py 184–188): diagram 09.",
+        "Programs: omi_assist (tiles, the follower, reminders), guardian_node (the Desk Guardian, which also drives the Thymio: cmd_vel out, prox/ground in) and any program; they use only these topics (omi_assist.py 40–48, guardian_node.py 59–73). The setup page's tests publish on the same topics (bridge_node.py 109–113)."
       ]
     },
     {
       "dot": "rose",
       "title": "Held back from ROS",
       "items": [
-        "Pictures: no topic carries a frame. A frame the person shows (Zeigen) goes to the setup page and to loopback mirrors only, and only while showing is allowed (bridge_node.py 335–339).",
-        "The screen report goes to the mirrors, not to ROS (bridge_node.py 332–334). The text read aloud stays on the phone: read/result carries counts (contract.py 43).",
-        "The location stays on the phone's screen: sensor_report() has no field for it (protocol.py 256–277)."
+        "Pictures: no topic carries a frame. A frame the person shows (Zeigen) goes to the setup page and to loopback mirrors only, and only while showing is allowed (bridge_node.py 338–342).",
+        "The screen report goes to the mirrors, not to ROS (bridge_node.py 335–337). The text read aloud stays on the phone: read/result carries counts (contract.py 43).",
+        "The location stays on the phone's screen: sensor_report() has no field for it (protocol.py 259–280)."
       ]
     }
   ]

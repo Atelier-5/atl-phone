@@ -1,5 +1,5 @@
 {
-  "revision": "4220c013ec23b07b8272572fef203adcb53360ca",
+  "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9",
   "diagrams": {
     "01-setup-flow.workflow.json": {
       "output": "01-setup-flow.html",
@@ -102,6 +102,39 @@
     },
     "10-twin-in-step.sequence.json": {
       "output": "10-twin-in-step.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "11-lab.architecture.json": {
+      "output": "11-lab.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "12-autonomous.architecture.json": {
+      "output": "12-autonomous.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "13-recognition.architecture.json": {
+      "output": "13-recognition.html",
       "status": "pass",
       "gates": {
         "validate": "pass",

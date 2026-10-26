@@ -1,6 +1,6 @@
 # The phone bridge's architecture pack
 
-Open `index.html`: the ten diagrams, what each one answers, and the review findings.
+Open `index.html` (or `/docs/` on a running bridge): the thirteen diagrams, what each one answers, and the review findings.
 
 | | Diagram | Type |
 |---|---|---|
@@ -14,6 +14,9 @@ Open `index.html`: the ten diagrams, what each one answers, and the review findi
 | 08 | What flows between the phone and ROS 2 | data flow |
 | 09 | The real phone and its Webots twin, wired to the bridge | architecture |
 | 10 | A tap on the phone, drawn by its Webots twin | sequence |
+| 11 | The lab, now: everything on the PC, the phone on its USB | architecture |
+| 12 | Autonomous (designed): the Pi on the robot runs the brain | architecture |
+| 13 | Recognition: the phone sees, the Pi decides on numbers | architecture |
 
 - `src/*.json`: the Archify sources. Each box cites repository lines at the commit in `meta.repository`.
 - `*.html`: the rendered diagrams, standalone (open them from disk). `*.delivery.json`: their provenance.

@@ -9,83 +9,441 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
+      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
     },
     "legend": {
       "entries": {
-        "frontend": { "label": "Page in a browser" },
-        "backend": { "label": "atl-phone code" },
-        "security": { "label": "Gate (who may connect)" },
-        "messagebus": { "label": "ROS 2 topics" },
-        "external": { "label": "Host tool or other repo" }
+        "frontend": {
+          "label": "Page in a browser"
+        },
+        "backend": {
+          "label": "atl-phone code"
+        },
+        "security": {
+          "label": "Gate (who may connect)"
+        },
+        "messagebus": {
+          "label": "ROS 2 topics"
+        },
+        "external": {
+          "label": "Host tool or other repo"
+        }
       }
     }
   },
   "components": [
     {
-      "id": "page", "type": "frontend", "label": "face.html", "sublabel": "Chrome on the phone", "pos": [40, 200], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 444, "end_line": 457 }, { "path": "ros2/atl_phone/web/omi.js", "line": 347, "end_line": 366 }]
+      "id": "page",
+      "type": "frontend",
+      "label": "face.html",
+      "sublabel": "Chrome on the phone",
+      "pos": [
+        40,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 444,
+          "end_line": 457
+        },
+        {
+          "path": "ros2/atl_phone/web/omi.js",
+          "line": 347,
+          "end_line": 366
+        }
+      ]
     },
     {
-      "id": "adb", "type": "external", "label": "adb server", "sublabel": "host :5037, USB", "pos": [270, 200], "size": [150, 64],
-      "sources": [{ "path": "scripts/usb.sh", "line": 9, "end_line": 16 }]
+      "id": "adb",
+      "type": "external",
+      "label": "adb server",
+      "sublabel": "host :5037, USB",
+      "pos": [
+        270,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "scripts/usb.sh",
+          "line": 9,
+          "end_line": 16
+        }
+      ]
     },
     {
-      "id": "ws", "type": "security", "label": "/ws", "sublabel": "Origin, key, one phone", "pos": [500, 200], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 261, "end_line": 280 }, { "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 190, "end_line": 202 }]
+      "id": "ws",
+      "type": "security",
+      "label": "/ws",
+      "sublabel": "Origin, key, one phone",
+      "pos": [
+        500,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 287,
+          "end_line": 306
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 206,
+          "end_line": 218
+        }
+      ]
     },
     {
-      "id": "bridge", "type": "backend", "label": "bridge_node", "sublabel": "rclpy, PhoneServer", "pos": [730, 200], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 113, "end_line": 126 }, { "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 198, "end_line": 207 }]
+      "id": "bridge",
+      "type": "backend",
+      "label": "bridge_node",
+      "sublabel": "rclpy, PhoneServer",
+      "pos": [
+        730,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 115,
+          "end_line": 128
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 200,
+          "end_line": 209
+        }
+      ]
     },
     {
-      "id": "health", "type": "backend", "label": "phone_health", "sublabel": "look, kill, tabs", "pos": [730, 60], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/phone_health.py", "line": 21, "end_line": 23 }, { "path": "ros2/atl_phone/atl_phone/phone_health.py", "line": 49, "end_line": 88 }, { "path": "ros2/atl_phone/atl_phone/phone_health.py", "line": 145, "end_line": 159 }]
+      "id": "health",
+      "type": "backend",
+      "label": "phone_health",
+      "sublabel": "look, kill, tabs",
+      "pos": [
+        730,
+        60
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/phone_health.py",
+          "line": 21,
+          "end_line": 23
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/phone_health.py",
+          "line": 49,
+          "end_line": 88
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/phone_health.py",
+          "line": 145,
+          "end_line": 159
+        }
+      ]
     },
     {
-      "id": "setup", "type": "frontend", "label": "setup.html", "sublabel": "browser, this PC", "pos": [960, 200], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/setup.js", "line": 642, "end_line": 675 }, { "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 302, "end_line": 327 }]
+      "id": "setup",
+      "type": "frontend",
+      "label": "setup.html",
+      "sublabel": "browser, this PC",
+      "pos": [
+        960,
+        200
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/setup.js",
+          "line": 648,
+          "end_line": 681
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 328,
+          "end_line": 353
+        }
+      ]
     },
     {
-      "id": "mirror", "type": "security", "label": "/ws/mirror", "sublabel": "listens; loopback or key", "pos": [500, 340], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 168, "end_line": 180 }, { "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 332, "end_line": 339 }]
+      "id": "mirror",
+      "type": "security",
+      "label": "/ws/mirror",
+      "sublabel": "listens; loopback or key",
+      "pos": [
+        500,
+        340
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 184,
+          "end_line": 196
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 335,
+          "end_line": 342
+        }
+      ]
     },
     {
-      "id": "topics", "type": "messagebus", "label": "ROS 2 topics", "sublabel": "/thymio_1/…, DDS UDP", "pos": [730, 340], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 72, "end_line": 99 }, { "path": "start.sh", "line": 93, "end_line": 96 }]
+      "id": "topics",
+      "type": "messagebus",
+      "label": "ROS 2 topics",
+      "sublabel": "/thymio_1/…, DDS UDP",
+      "pos": [
+        730,
+        340
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 74,
+          "end_line": 101
+        },
+        {
+          "path": "start.sh",
+          "line": 94,
+          "end_line": 97
+        }
+      ]
     },
     {
-      "id": "twin", "type": "backend", "label": "atl_phone_twin", "sublabel": "--bridge | --mirror", "pos": [500, 500], "size": [150, 64],
-      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 161, "end_line": 215 }, { "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 389, "end_line": 436 }, { "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 834, "end_line": 856 }]
+      "id": "twin",
+      "type": "backend",
+      "label": "atl_phone_twin",
+      "sublabel": "--bridge | --mirror",
+      "pos": [
+        500,
+        500
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
+          "line": 162,
+          "end_line": 216
+        },
+        {
+          "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
+          "line": 390,
+          "end_line": 437
+        },
+        {
+          "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
+          "line": 850,
+          "end_line": 872
+        }
+      ]
     },
     {
-      "id": "thymiotwin", "type": "external", "label": "Thymio twin", "sublabel": "atl-bot-thymio", "pos": [730, 500], "size": [150, 64],
-      "sources": [{ "path": "README.md", "line": 225, "end_line": 231 }, { "path": "README.md", "line": 274, "end_line": 275 }]
+      "id": "thymiotwin",
+      "type": "external",
+      "label": "Thymio twin",
+      "sublabel": "atl-bot-thymio",
+      "pos": [
+        730,
+        500
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "README.md",
+          "line": 231,
+          "end_line": 237
+        },
+        {
+          "path": "README.md",
+          "line": 280,
+          "end_line": 281
+        }
+      ]
     },
     {
-      "id": "webots", "type": "external", "label": "Webots R2025a", "sublabel": "host :1240, the world", "pos": [500, 640], "size": [150, 64],
-      "sources": [{ "path": "scripts/phone_twin_world.py", "line": 150, "end_line": 170 }, { "path": "webots/protos/AtlOmiStack.proto", "line": 5, "end_line": 11 }, { "path": "webots/protos/AtlPhone.proto", "line": 4, "end_line": 8 }]
+      "id": "webots",
+      "type": "external",
+      "label": "Webots R2025a",
+      "sublabel": "host :1240, the world",
+      "pos": [
+        500,
+        640
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "scripts/phone_twin_world.py",
+          "line": 150,
+          "end_line": 170
+        },
+        {
+          "path": "webots/protos/AtlOmiStack.proto",
+          "line": 5,
+          "end_line": 11
+        },
+        {
+          "path": "webots/protos/AtlPhone.proto",
+          "line": 4,
+          "end_line": 8
+        }
+      ]
     }
   ],
   "boundaries": [
-    { "kind": "region", "label": "The phone", "wraps": ["page"] },
-    { "kind": "security-group", "label": "atl-phone container (--net=host)", "wraps": ["ws", "bridge", "health", "mirror", "topics"] },
-    { "kind": "region", "label": "Webots, twins in Docker", "wraps": ["twin", "thymiotwin", "webots"] }
+    {
+      "kind": "region",
+      "label": "The phone",
+      "wraps": [
+        "page"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "atl-phone container (--net=host)",
+      "wraps": [
+        "ws",
+        "bridge",
+        "health",
+        "mirror",
+        "topics"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Webots, twins in Docker",
+      "wraps": [
+        "twin",
+        "thymiotwin",
+        "webots"
+      ]
+    }
   ],
   "connections": [
-    { "id": "usb", "from": "page", "to": "adb", "label": "USB", "variant": "emphasis" },
-    { "id": "reverse", "from": "adb", "to": "ws", "label": "reverse :8782", "variant": "emphasis" },
-    { "id": "checked", "from": "ws", "to": "bridge", "label": "JSON", "variant": "emphasis" },
-    { "id": "api", "from": "setup", "to": "bridge", "label": "/api/act", "variant": "security" },
-    { "id": "health-call", "from": "bridge", "to": "health", "label": "phone" },
-    { "id": "health-adb", "from": "health", "to": "adb", "label": "adb protocol", "variant": "dashed" },
-    { "id": "ros", "from": "bridge", "to": "topics", "label": "pub / sub", "variant": "emphasis" },
-    { "id": "copy", "from": "bridge", "to": "mirror", "label": "copies" },
-    { "id": "follow", "from": "mirror", "to": "twin", "label": "screen, props" },
-    { "id": "as-phone", "from": "twin", "to": "ws", "label": "as the phone", "variant": "dashed" },
-    { "id": "extern", "from": "twin", "to": "webots", "label": "extern" },
-    { "id": "thymio-extern", "from": "thymiotwin", "to": "webots", "label": "extern" },
-    { "id": "thymio-ros", "from": "topics", "to": "thymiotwin", "label": "cmd_vel, prox" }
+    {
+      "id": "usb",
+      "from": "page",
+      "to": "adb",
+      "label": "USB",
+      "variant": "emphasis"
+    },
+    {
+      "id": "reverse",
+      "from": "adb",
+      "to": "ws",
+      "label": "reverse :8782",
+      "variant": "emphasis"
+    },
+    {
+      "id": "checked",
+      "from": "ws",
+      "to": "bridge",
+      "label": "JSON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "api",
+      "from": "setup",
+      "to": "bridge",
+      "label": "/api/act",
+      "variant": "security"
+    },
+    {
+      "id": "health-call",
+      "from": "bridge",
+      "to": "health",
+      "label": "phone"
+    },
+    {
+      "id": "health-adb",
+      "from": "health",
+      "to": "adb",
+      "label": "adb protocol",
+      "variant": "dashed"
+    },
+    {
+      "id": "ros",
+      "from": "bridge",
+      "to": "topics",
+      "label": "pub / sub",
+      "variant": "emphasis"
+    },
+    {
+      "id": "copy",
+      "from": "bridge",
+      "to": "mirror",
+      "label": "copies"
+    },
+    {
+      "id": "follow",
+      "from": "mirror",
+      "to": "twin",
+      "label": "screen, props"
+    },
+    {
+      "id": "as-phone",
+      "from": "twin",
+      "to": "ws",
+      "label": "as the phone",
+      "variant": "dashed"
+    },
+    {
+      "id": "extern",
+      "from": "twin",
+      "to": "webots",
+      "label": "extern"
+    },
+    {
+      "id": "thymio-extern",
+      "from": "thymiotwin",
+      "to": "webots",
+      "label": "extern"
+    },
+    {
+      "id": "thymio-ros",
+      "from": "topics",
+      "to": "thymiotwin",
+      "label": "cmd_vel, prox"
+    }
   ],
   "cards": [
     {
@@ -101,8 +459,8 @@
       "dot": "violet",
       "title": "The Webots twin",
       "items": [
-        "--bridge: the twin is the phone. It connects to /ws like the page; the bridge cannot tell them apart, so ROS sees the same topics. It still opens /ws/mirror for the props (atl_phone_twin.py 843–847).",
-        "--mirror: the real phone is in charge. The twin draws what the bridge sends the phone and the phone's screen report, and sends nothing but hello (atl_phone_twin.py 184–193, 389–406).",
+        "--bridge: the twin is the phone. It connects to /ws like the page; the bridge cannot tell them apart, so ROS sees the same topics. It still opens /ws/mirror for the props (atl_phone_twin.py 859–863).",
+        "--mirror: the real phone is in charge. The twin draws what the bridge sends the phone and the phone's screen report, and sends nothing but hello (atl_phone_twin.py 185–194, 390–407).",
         "Both run as extern controllers of the Webots on the host (tcp :1240/PH5v0001; the Thymio twin is atl-bot-thymio's). The robot's stack (Pi box, riser, clamp) is AtlOmiStack in the Thymio's bodySlot; the phone rides on it (AtlOmiStack.proto 5–11)."
       ]
     },
@@ -110,9 +468,9 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "/ws and /ws/mirror refuse a foreign Origin and a wrong key (hmac); /ws/mirror without a key answers this computer only (wsserver.py 261–269).",
-        "/api/* answers loopback only (wsserver.py 282–291): the setup page, its props and its phone card work from the bridge's computer.",
-        "A shown frame goes to loopback mirrors only (wsserver.py 174–180), so with the bridge on the Pi a PC over Wi-Fi gets no pictures."
+        "/ws and /ws/mirror refuse a foreign Origin and a wrong key (hmac); /ws/mirror without a key answers this computer only (wsserver.py 287–295).",
+        "/api/* answers loopback only (wsserver.py 308–317): the setup page, its props and its phone card work from the bridge's computer.",
+        "A shown frame goes to loopback mirrors only (wsserver.py 190–196), so with the bridge on the Pi a PC over Wi-Fi gets no pictures."
       ]
     }
   ]
