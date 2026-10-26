@@ -505,7 +505,7 @@ class Twin:
         if self.mirroring:
             sh = dict(self.shown or {"mode": "mouth", "expression": self.expression, "menu": False})
             if not self.real["connected"]:
-                sh.update(menu=False, toast="", note="", badge=False)
+                sh.update(menu=False, toast="", note="", badge=False, talk="")
             return sh
         key, arg, until = self.toast
         return {"mode": self.panel.get("mode", "mouth"), "expression": self.expression, "style": self.panel.get("style", "chips"),
@@ -603,6 +603,10 @@ class Twin:
             d.setColor(0xd0302a)
             d.fillRectangle(W // 2 - 50, 4, 100, 22)
             self.text("● " + (self.word("mode", "showing") or "SHOWING"), W // 2 - 44, 7, 14)
+        if st.get("talk") == "listening":   # Übersetzen listens: the phone's red badge, a line lower
+            d.setColor(0xd0302a)
+            d.fillRectangle(W // 2 - 50, 30, 100, 22)
+            self.text("● " + (self.word("mode", "listening") or "LISTENING"), W // 2 - 44, 33, 14)
         if self.mirroring and not self.real["connected"]:
             self.text("…", W - 24, 6, 16, 0x808080)   # no real phone to follow
         if self.t < self.buzz_until:
@@ -637,6 +641,18 @@ class Twin:
                 d.drawText(str(b.get("label", b["id"]))[:12], x + 10, y + int(bh / 2) - 4)
         elif mode == "sensors":
             self.draw_sensors(st.get("sensors") or {}, top)
+        elif mode == "translate":   # Übersetzen's two halves and its state: the words stay on the phone
+            talk, held = st.get("talk") or "", st.get("talk_lang") or ""
+            hw = (W - 24) // 2
+            for i, (l, name, col) in enumerate((("de", "DE Deutsch", 0x3fd8ff), ("fr", "FR Français", 0xffcc33))):
+                x = 8 + i * (hw + 8)
+                d.setColor(0xd02020 if talk == "listening" and held == l else col)
+                for k in range(3):
+                    d.drawRectangle(x + k, top + 8 + k, hw - 2 * k, H - top - 16 - 2 * k)
+                self.text(name, x + 8, top + 16, 14, col)
+                mark = {"listening": "...", "wait": "…", "result": "✓", "nothing": "?"}.get(talk, "") if held == l or talk == "result" else ""
+                if mark:
+                    self.text(mark, x + hw // 2 - 8, top + (H - top) // 2, 22, 0xffffff)
         elif mode in PICTURE:
             if not self.draw_picture(mode, top, st):   # no picture to show: a camera symbol, as the picture stays on the phone
                 d.drawRectangle(8, top + 8, W - 16, H - top - 16)

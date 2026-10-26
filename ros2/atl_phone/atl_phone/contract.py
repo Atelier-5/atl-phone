@@ -8,10 +8,11 @@ that carries the phone, /<robot>/phone/..., so a robot with a phone keeps its
 own contract and gains these. Bump CONTRACT when a topic changes.
 """
 
-CONTRACT = "atl-phone/0.6"         # 0.2: the front camera (look), faces, codes; 0.3: the panel and its pad (portrait);
+CONTRACT = "atl-phone/0.7"         # 0.2: the front camera (look), faces, codes; 0.3: the panel and its pad (portrait);
                                    # 0.4: vision (see: markers, blobs, objects, hands), the panel's menu and its mode;
                                    # 0.5: tiles (the spoken menu) and their picks, notes, read, what, follow (Omi Assist);
-                                   # 0.6: the phone's screen report and the mirror socket (its Webots twin in step), props
+                                   # 0.6: the phone's screen report and the mirror socket (its Webots twin in step), props;
+                                   # 0.7: Übersetzen (German <-> French on the robot's computer), translate/result
 PORT = 8782                 # the bridge's page and WebSocket (atl-ide 8780, the Thymio gateway 8781)
 MIRROR = "/ws/mirror"       # the mirror socket: what the phone is sent and what its screen shows, for its Webots twin to
                             # draw the same (this PC, or the pairing key); it only listens. No picture, no text read.
@@ -42,6 +43,8 @@ def topics(robot: str) -> dict:
         "note_answer": f"{ns}/note/answer", # std_msgs/String JSON {"note", "id"}: the button pressed on a note card
         "read_result": f"{ns}/read/result", # std_msgs/String JSON {"ok", "lines", "chars", "ms", "error"?}: the phone read and spoke it; the text stays on the phone
         "what_result": f"{ns}/what/result", # std_msgs/String JSON {"ok", "label", "score", "ms"}: what the back camera saw nearest (OBJECTS), and said
+        "translate_result": f"{ns}/translate/result",  # std_msgs/String JSON {"ok", "from", "to", "words", "seconds"?, "ms"}: Übersetzen
+                                            #   heard and translated (counts only: the words stay between the phone and the bridge)
         # in: listened to by the phone
         "expression": f"{ns}/face/expression",  # std_msgs/String, one of EXPRESSIONS
         "gaze": f"{ns}/face/gaze",          # geometry_msgs/Point, x right, y up, each -1..1 (z unused)
@@ -72,19 +75,22 @@ MAX_VIBRATE = 2000          # ms
 MAX_IMU_RATE = 60.0         # Hz: faster messages from a phone are dropped
 MAX_FACES = 8               # faces per message, and faces told apart in a session
 MAX_FACES_RATE = 10.0       # Hz
-PANEL_MODES = ("mouth", "pad", "off", "camera", "camera_back", "sensors", "magnify")  # camera(_back), magnify: the picture, on the phone's screen only
+PANEL_MODES = ("mouth", "pad", "off", "camera", "camera_back", "sensors", "magnify", "translate")  # camera(_back), magnify: the picture, on the phone's screen only
 PANEL_STYLES = ("chips", "tiles")   # the menu a tap on the eyes opens: a strip of chips, or big tiles that say their name
 TILES = ("time", "magnify", "read", "what", "front", "back", "show", "follow")   # what a tile does, besides a mode
 MAX_MENU = 9                # entries of the menu
 MAX_NOTE_BUTTONS = 3
-OMI_MENU = ["time", "front", "back", "magnify", "read", "sensors", "follow"]   # Omi Assist's tiles ("what" and "show" are
+OMI_MENU = ["time", "front", "back", "magnify", "read", "sensors", "follow", "translate"]   # Omi Assist's tiles ("what" and "show" are
 # buttons in the camera views: the back camera asks what it sees, every camera view can show its picture when allowed)
 MAX_BUTTONS = 8
+TALK_LANGS = ("de", "fr")   # Übersetzen: German <-> French (translate: the panel's two halves; the phone shows the
+                            # mode only when the bridge allows it)
+TALK_STATES = ("", "listening", "wait", "result", "nothing")   # what the translate panel shows, for the screen report
 # the screen report (phone -> bridge -> mirrors): what the phone's screen says, as keys of texts.js, never free text.
 # OMI_TEXT's keys that are said as they are, and "tour.<step>" for the presentation; "time" is the clock (the mirror
 # says its own), "is"/"think" come with an OBJECTS label; while reading aloud, only "reading": the text stays on the phone
 SCREEN_TOASTS = ("wait", "reading", "notext", "is", "think", "nothing", "person", "followOn", "followOff", "showOn",
-                 "showOff", "showNo", "noCam", "back", "time")
+                 "showOff", "showNo", "noCam", "back", "time", "talkNo", "talkModels", "talkNothing", "talkMic")
 TOUR_STEPS = ("hello", "menu", "time", "front", "back", "magnify", "read", "sensors", "follow", "show", "remind", "card",
               "face", "bye")
 PROPS = ("cup", "letter", "hand", "visitor", "away")   # what the Webots twin flies in for a demo (mirror socket only)

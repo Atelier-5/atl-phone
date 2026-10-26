@@ -350,6 +350,7 @@ function screenState() {
   return { t: 'screen', lang: lang, mode: panel.mode, expression: expression, style: panel.style || 'chips', menu: shown(menuEl),
            tiles: tiles, hi: hi ? hi.dataset.mode : '', toast: shown(toastEl) ? omi.toastKey || '' : '',
            arg: shown(toastEl) ? omi.toastArg || '' : '', note: shown(cardEl) ? cardId : '', badge: omi.showing, allowed: omi.showAllowed, speaking: speaking,
+           talk: typeof talk === 'object' ? talk.state : '', talk_lang: typeof talk === 'object' ? talk.stateLang : '',
            sensors: panel.mode === 'sensors' ? sensorNumbers() : {} };
 }
 function sensorNumbers() {  // what the sensors panel shows, for the twin: numbers only, never the location

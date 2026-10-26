@@ -12,6 +12,7 @@ import json
 import os
 import queue
 import socket
+import ssl
 import threading
 import time
 from urllib.parse import urlsplit
@@ -26,6 +27,10 @@ class MockPhone:
     def __init__(self, url: str, timeout: float = 5.0):
         u = urlsplit(url)
         self.sock = socket.create_connection((u.hostname, u.port or 80), timeout=timeout)
+        if u.scheme == "wss":   # the guest port: the bridge's own certificate, not checked here (a test tool)
+            ctx = ssl.create_default_context()
+            ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE
+            self.sock = ctx.wrap_socket(self.sock, server_hostname=u.hostname)
         key = base64.b64encode(os.urandom(16)).decode()
         path = u.path + (f"?{u.query}" if u.query else "")
         host = f"{u.hostname}:{u.port or 80}"

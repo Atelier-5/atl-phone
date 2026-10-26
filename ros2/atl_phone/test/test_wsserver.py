@@ -281,3 +281,60 @@ def test_no_docs_folder_no_docs(server):
     with pytest.raises(urllib.error.HTTPError) as e:
         urllib.request.urlopen(f"http://127.0.0.1:{server.port}/docs/")
     assert e.value.code == 404
+
+
+@pytest.fixture
+def guest():
+    from atl_phone.wsserver import GuestServer
+    events, code = queue.Queue(), {"k": "g0od"}
+    s = GuestServer(WEB, 0, None, None, key=lambda: code["k"], on_open=lambda l: events.put("open"),
+                    on_text=lambda t: events.put(json.loads(t)), on_close=lambda l: events.put("close"), bind="127.0.0.1").start()
+    s.events, s.code = events, code
+    yield s
+    s.stop()
+
+
+def test_the_guest_port_serves_its_page_and_nothing_else(guest):
+    base = f"http://127.0.0.1:{guest.port}"
+    assert "guest.js" in urllib.request.urlopen(base + "/?k=g0od", timeout=5).read().decode()   # / -> talk.html
+    assert "TEXTS" in urllib.request.urlopen(base + "/texts.js", timeout=5).read().decode()
+    for path in ("/face.html", "/setup.html", "/api/state", "/ws", "/ws/mirror", "/vendor/qrcode.js", "/ca.crt", "/../web/face.js"):
+        with pytest.raises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(base + path, timeout=5)
+        assert e.value.code == 404, path
+    with pytest.raises(urllib.error.HTTPError):
+        urllib.request.urlopen(urllib.request.Request(base + "/api/act", data=b"{}"), timeout=5)
+
+
+def test_a_guest_needs_the_code_and_a_new_one_takes_over(guest):
+    with pytest.raises(ConnectionError, match="403"):
+        MockPhone(f"ws://127.0.0.1:{guest.port}/ws/talk?k=guess")
+    a = MockPhone(f"ws://127.0.0.1:{guest.port}/ws/talk?k=g0od")
+    assert guest.events.get(timeout=3) == "open" and guest.connected
+    a.send(t="audio", lang="fr", end=True)
+    assert guest.events.get(timeout=3) == {"t": "audio", "lang": "fr", "end": True}
+    assert guest.send(json.dumps({"t": "translated", "lang": "fr", "text": "Bonjour"}))
+    assert a.expect("translated")["text"] == "Bonjour"
+    b = MockPhone(f"ws://127.0.0.1:{guest.port}/ws/talk?k=g0od")
+    assert guest.events.get(timeout=3) == "open"
+    assert a.closed.wait(3)                        # the first guest is closed (4000), and no close event for it
+    guest.drop()                                   # a new code: the guest goes
+    assert guest.events.get(timeout=3) == "close" and b.closed.wait(3) and not guest.connected
+    guest.code["k"] = ""                           # Übersetzen not allowed: no code at all is good
+    with pytest.raises(ConnectionError, match="403"):
+        MockPhone(f"ws://127.0.0.1:{guest.port}/ws/talk?k=")
+
+
+def test_the_guest_port_speaks_https(tmp_path):
+    import ssl
+    import subprocess
+    from atl_phone.wsserver import GuestServer
+    subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(tmp_path / "k.pem"), "-out",
+                    str(tmp_path / "c.pem"), "-days", "1", "-subj", "/CN=localhost"], check=True, capture_output=True)
+    s = GuestServer(WEB, 0, str(tmp_path / "c.pem"), str(tmp_path / "k.pem"), key=lambda: "x", bind="127.0.0.1").start()
+    try:
+        ctx = ssl.create_default_context(cafile=str(tmp_path / "c.pem"))
+        ctx.check_hostname = False
+        assert "talk.js" in urllib.request.urlopen(f"https://127.0.0.1:{s.port}/talk.html", timeout=5, context=ctx).read().decode()
+    finally:
+        s.stop()

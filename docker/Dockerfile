@@ -9,8 +9,11 @@
 #   docker run -it ... atl-phone:kilted bash                                                   # a shell
 FROM ros:kilted-ros-base
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends python3-colcon-common-extensions \
+RUN apt-get update && apt-get install -y --no-install-recommends python3-colcon-common-extensions python3-pip \
     && rm -rf /var/lib/apt/lists/*
+# Übersetzen's engine (atl_phone/translate.py): offline speech to text and translation; the models are mounted at
+# /models (scripts/get_models.sh). Wheels exist for amd64 and arm64 (the Pi).
+RUN pip install --no-cache-dir --break-system-packages vosk==0.3.45 ctranslate2==4.8.4 sentencepiece==0.2.2
 WORKDIR /ws
 COPY ros2/ src/
 RUN . /opt/ros/kilted/setup.sh && colcon build --merge-install && rm -rf build log

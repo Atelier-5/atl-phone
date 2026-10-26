@@ -27,7 +27,7 @@ battery, reading a code, look, vision: they tick by themselves) → scenarios (t
 topics; the camera test goes to the phone directly and its picture stays on the phone's screen. A phone on plain
 http (Wi-Fi without `--cert`) shows its camera, motion, compass and battery as *blocked*: use USB, or HTTPS.
 
-`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY` · `./start.sh --guardian [--familiar]` · `./start.sh --omi [--show]` · `./start.sh logs` · `./start.sh stop`
+`./start.sh --robot thymio_1 --port 8782 --lang fr --key KEY` · `./start.sh --guardian [--familiar]` · `./start.sh --omi [--show] [--translate]` · `./start.sh logs` · `./start.sh stop`
 
 **Wi-Fi with camera and motion:** `./start.sh --make-cert`. It makes this PC's own certificate authority once
 (`certs/`, git-ignored; `scripts/make_cert.sh`) and the bridge's certificate for this PC's addresses, renewed when the
@@ -42,10 +42,11 @@ docker build -f docker/Dockerfile -t atl-phone:kilted .
 docker run --rm --net=host --user "$(id -u):$(id -g)" -e HOME=/tmp atl-phone:kilted   # the bridge, for thymio_1
 docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thymio_1 \
     [port:=8782] [key:=...] [cert:=c.pem cert_key:=k.pem [ca:=ca.crt]] [lang:=fr] [familiar:=true] [guardian:=true] \
-    [omi:=true] [omi_folder:=/omi] [show:=true] [reports:=/reports]
+    [omi:=true] [omi_folder:=/omi] [show:=true] [reports:=/reports] \
+    [translate:=true] [models:=/models] [guest_port:=8783 guest_cert:=c.pem guest_cert_key:=k.pem [guest_ca:=ca.crt]]
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
-docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 55 checks
-python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C]   # the pages in headless Chrome: 58 checks
+docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 65 checks, 66 with --wav (--wav: German speech for Übersetzen)
+python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C] [--speech <wav>]   # the pages in headless Chrome: 70 checks
     # (--fake-adb: a fake adb and phone Chrome on the ports the bridge got as ADB_SERVER_PORT, ATL_CDP_PORT; never the real phone)
 ./test.sh                                                        # protocol, WebSocket, check server, guardian, reminders: no ROS, no phone
 ./scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]      # what weighs on the phone (adb); changes only what you confirm
@@ -60,7 +61,7 @@ an older bridge served reloads itself, started without a tap (full screen and th
 The setup page does the same. On the robot with its Pi (autonomous), the phone stays on USB, now the Pi's, and a PC
 opens the setup page through an SSH tunnel (`ssh -L 8782:localhost:8782 pi@<robot>`), since it answers its own computer only.
 
-## The contract: `atl-phone/0.6` (`atl_phone/contract.py`)
+## The contract: `atl-phone/0.7` (`atl_phone/contract.py`)
 
 Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's own contract stays as it is.
 
@@ -83,6 +84,7 @@ Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's ow
 | `note/answer` | String JSON | out | `{"note", "id"}`: the button pressed on a note card |
 | `read/result` | String JSON | out | `{"ok", "lines", "chars", "ms"}`: the phone read the back camera's text aloud; the text itself stays on the phone |
 | `what/result` | String JSON | out | `{"ok", "label", "score", "ms"}`: what the back camera saw nearest (a COCO label, or `null`), said aloud on the phone |
+| `translate/result` | String JSON | out | `{"ok", "from", "to", "words", "seconds", "ms"}` (0.7): Übersetzen heard and translated what was said while a half was held; counts only, the words stay between the phone and the bridge |
 | `face/expression` | String | in | `neutral` `happy` `sad` `angry` `surprised` `sleepy` `curious` `wink` `scared` `love` |
 | `face/gaze` | Point | in | where the eyes look, x right and y up, each -1..1; left alone, they look around by themselves |
 | `face/color` | ColorRGBA | in | the eyes' colour |
@@ -93,7 +95,7 @@ Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's ow
 | `look/familiar` | Bool | in | also tell faces apart, this session only; only if the bridge allows it (`familiar:=true`, or the setup page) |
 | `look/forget` | Empty | in | forget every face seen so far |
 | `see` | String JSON | in | what one camera finds, on the phone: `{"camera": "front"\|"back", "find": ["faces", "markers", "blobs", "objects", "hands"], "blob": {"hue": 0–359, "tol"}, "marker_cm": 5, "fov_deg"}`; `"find": []` closes it; `"follow": true`: the eyes follow the nearest thing found; the face shows **● look** |
-| `panel` | String JSON | in | in portrait, the panel under the eyes: `{"mode": "mouth"\|"pad"\|"off"\|"camera"\|"camera_back"\|"sensors"\|"magnify", "buttons": [{"id", "label", "color": [r, g, b]}], "style": "chips"\|"tiles", "menu": [...], "lang": "en"\|"fr"\|"de"\|"auto"}`, at most 8 buttons, labels ≤ 12 characters; `menu`: what a tap on the eyes offers, in order, at most 9: modes, the phone's own tiles (`time` `magnify` `read` `what` `front` `back` `show` `follow`) or a program's `{"id", "label": text or {"en", "fr", "de"}, "icon"}`; `lang`: the face's words and voice from now on, whatever the phone's language (`auto`: the phone's own again; the page's `?lang=` wins); a phone that comes gets the last one |
+| `panel` | String JSON | in | in portrait, the panel under the eyes: `{"mode": "mouth"\|"pad"\|"off"\|"camera"\|"camera_back"\|"sensors"\|"magnify"\|"translate", "buttons": [{"id", "label", "color": [r, g, b]}], "style": "chips"\|"tiles", "menu": [...], "lang": "en"\|"fr"\|"de"\|"auto"}`, at most 8 buttons, labels ≤ 12 characters; `menu`: what a tap on the eyes offers, in order, at most 9: modes, the phone's own tiles (`time` `magnify` `read` `what` `front` `back` `show` `follow`) or a program's `{"id", "label": text or {"en", "fr", "de"}, "icon"}`; `lang`: the face's words and voice from now on, whatever the phone's language (`auto`: the phone's own again; the page's `?lang=` wins); a phone that comes gets the last one |
 | `note` | String JSON | in | a big card over the face: `{"id", "text", "buttons": [{"id", "label"}], "say"}`, at most 3 buttons and 200 characters; `{"text": ""}` takes it away |
 | `read` | String JSON | in | `{"lang"}` (or empty): read aloud what the back camera sees |
 | `what` | String JSON | in | `{"lang"}` (or empty): say what the back camera sees nearest |
@@ -299,6 +301,9 @@ beantwortet.
 
 ```bash
 ./start.sh --omi [--show]     # in German unless --lang says otherwise; then the setup page's Omi Assist (setup.html#omi)
+./scripts/get_models.sh       # once, for Übersetzen: the offline speech and translation models into models/ (about 310 MB)
+./start.sh --omi --translate  # Übersetzen allowed from the start (else the setup page's card allows it)
+                              # and the guest page on https port 8783 for a second phone (--no-guest: not)
 ```
 
 - **Tiles** (`face.js`): eight in three rows in the lower three quarters (seven, and **Gesicht** last, which goes back
@@ -322,6 +327,28 @@ beantwortet.
   (ten minutes later). The setup page edits them; they are kept in `omi/reminders.json` and the answers in
   `omi/answers.jsonl` (git-ignored). Stopped, it puts the chips back. Starting it stops the Desk Guardian, and the
   other way round: they share the face.
+- **Übersetzen** (0.7, `web/talk.js`, `atl_phone/translate.py`), for a family that speaks German and French: the tile
+  opens two halves, **🇩🇪 Deutsch** and **🇫🇷 Français**. Hold one and speak; let go, and the phone shows what it heard
+  small on that half, the translation big on the other, and says it in the other language's voice. The phone sends its
+  sound (16 kHz, 250 ms chunks) only while a half is held, with a red **● HÖRT ZU** badge; the bridge hears it with
+  [Vosk](https://alphacephei.com/vosk/) (small German and French models) and translates it with Opus-MT in
+  [CTranslate2](https://github.com/OpenNMT/CTranslate2), offline, on its own computer, and drops the sound. Vosk gives
+  no punctuation, so the words are cut into sentences at pauses before translating. The tile is there only when the
+  facilitator allowed it (`--translate`, or the setup page's **Übersetzen** card, which also shows whether the models are
+  there and how long the last one took, never its words). The models: `./scripts/get_models.sh` (the speech models
+  checked against their sha256, the translation models at a pinned revision, converted in a throwaway container;
+  `models/README.md` lists their licences, all Apache-2.0); `start.sh` mounts `models/` read-only. Measured on this PC
+  in the container: the text is ready 0.04 s after letting go (it is heard while she speaks), the translation 0.15–0.4 s
+  later; the four models take about 555 MB. See [Privacy](#privacy).
+- **A second phone** (`web/talk.html`, `web/guest.js`): in the Übersetzen mode the robot's phone shows a QR code where
+  the eyes are; a phone on the home Wi-Fi that scans it opens the guest page on the bridge's own https port (8783,
+  tests 8793, the certificate `start.sh` makes in `certs/`: Chrome warns the first time, the page says to tap Advanced,
+  then Proceed; `/ca.crt` is there to install). That port serves only the guest page and `/ws/talk?k=CODE`; the code
+  (in the QR code, compared with `hmac.compare_digest`) is new each time Übersetzen is allowed, or with the setup
+  page's **New guest code**, which drops the guest. One guest at a time: a new one takes over. Both phones show what
+  either says; the phone that listened says the translation aloud, the other only shows it. When the guest
+  is there, the QR code gives way to "📱 a second phone is with us"; when it goes, the QR code comes back. The link
+  and the words go to the two phones only, never to a mirror or ROS.
 - **Showing the picture** is the one exception to "pictures stay on the phone", and only when allowed: see
   [Privacy](#privacy).
 - **A lighter phone.** The face installs as its own app window (`manifest.webmanifest`, `sw.js`, which keeps
@@ -380,6 +407,13 @@ can help from the next room. Only when the facilitator allows it (`--show`, or t
 a second) go to the setup page (`/api/show.jpg`) and the Webots twin's mirror, both on the bridge's own computer only:
 the bridge keeps the last one three seconds in memory, writes nothing, and puts nothing on a ROS topic. (With the bridge
 on Omi's Raspberry Pi, a PC over Wi-Fi gets no pictures yet.) Agree on it with her first: [consent note](docs/consent-show.md).
+**Übersetzen (Omi Assist, opt-in)** is the one exception for sound: only when the facilitator allows it (`--translate`,
+or the setup page), only while a half is held (at most 30 s), with a red **● HÖRT ZU** badge, and only over a link that
+is this computer (USB) or https: the bridge refuses it otherwise. A second phone joins only with the code in the QR
+code on the robot's phone, over https, with the same rules. The sound goes to the bridge's own computer, is heard
+and translated there offline and dropped; the words go back to the phone alone, never to a mirror, a ROS topic, a
+file, the log or the setup page; ROS gets counts. Agree on it with the people at the table first:
+[consent note](docs/consent-translate.md).
 The browser's own speech recognition is not used: it sends voices to the cloud.
 
 License: GPL-3.0-or-later.

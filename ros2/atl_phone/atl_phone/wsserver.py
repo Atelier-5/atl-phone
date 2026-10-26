@@ -14,6 +14,9 @@ GET /docs/   -> the architecture pack (docs/architecture: its landing page and d
 GET /api/state, POST /api/act -> the setup page's view of the phone and its tests: this PC only (loopback;
                 a phone on USB is loopback too, through adb reverse, and it is the robot's own phone)
 
+GuestServer, on its own https port: Übersetzen's guest page (talk.html) for a second phone on the home Wi-Fi, and its
+WebSocket /ws/talk with the guest key (the robot's phone shows it as a QR code). Nothing else: no face, no API.
+
 One phone at a time: a new phone takes over and the old one is closed; a frame the old one had already sent is dropped.
 Mirrors: any number, beside the phone.
 A browser on another site is refused (Origin must match Host).
@@ -34,6 +37,8 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
 MIRROR = "/ws/mirror"   # contract.MIRROR (this module imports no ROS and nothing of the package)
+GUEST_WS = "/ws/talk"   # the guest phone's WebSocket (GuestServer)
+GUEST_FILES = ("talk.html", "guest.js", "talk.js", "texts.js")   # all a guest phone may load
 MAX_MIRRORS = 4
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -186,6 +191,17 @@ class PhoneServer:
         link = self.link
         self.send_mirrors(text)
         return bool(link and link.send(text))
+
+    def send_phone(self, text: str) -> bool:
+        """To the phone alone, no copy to the mirrors: Übersetzen's words (heard, translated)."""
+        link = self.link
+        return bool(link and link.send(text))
+
+    @property
+    def phone_local(self) -> bool:
+        """The phone's link is this computer (USB with adb reverse, or the Pi's own USB) or https: its sound may come."""
+        link = self.link
+        return bool(link and link.open) and (self.scheme == "https" or ipaddress.ip_address(link.peer).is_loopback)
 
     def send_mirrors(self, text: str, local_only: bool = False) -> int:
         """To the mirrors only (the screen report, a prop): how many got it. local_only: to the mirrors on this computer
@@ -398,5 +414,137 @@ def make_handler(server: PhoneServer):
                 pass
             finally:
                 link.close()
+
+    return Handler
+
+
+class GuestServer:
+    """Übersetzen's guest phone, on its own https port (a phone's microphone needs a secure page, and the guest is on
+    Wi-Fi): GUEST_FILES and the WebSocket GUEST_WS, with the guest key (key() gives it, "" while guests are not
+    allowed). One guest at a time: a new one takes over. The guest only talks: on_text gets what it sends."""
+
+    def __init__(self, web_dir, port, cert, cert_key, key, on_open=None, on_text=None, on_close=None, ca=None, bind="0.0.0.0"):
+        self.key = key
+        self.ca = ca
+        self.on_open = on_open or (lambda link: None)
+        self.on_text = on_text or (lambda text: None)
+        self.on_close = on_close or (lambda link: None)
+        self.link, self.lock = None, threading.Lock()
+        self.httpd = ThreadingHTTPServer((bind, port), partial(make_guest_handler(self), directory=str(web_dir)))
+        self.httpd.daemon_threads = True
+        if cert:   # always, from the bridge (a guest's microphone needs https); the tests go without
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            ctx.load_cert_chain(cert, cert_key)
+            self.httpd.socket = ctx.wrap_socket(self.httpd.socket, server_side=True)
+        self.port = self.httpd.server_port
+
+    def start(self):
+        threading.Thread(target=self.httpd.serve_forever, daemon=True, name="guest-server").start()
+        return self
+
+    def stop(self):
+        self.drop(1001)
+        self.httpd.shutdown()
+        self.httpd.server_close()
+
+    def drop(self, code=4002):
+        """The guest goes (a new guest key, guests no longer allowed)."""
+        with self.lock:
+            link, self.link = self.link, None
+        if link:
+            link.close(code)
+            self.on_close(link)
+
+    @property
+    def connected(self) -> bool:
+        return bool(self.link and self.link.open)
+
+    def send(self, text: str) -> bool:
+        link = self.link
+        return bool(link and link.send(text))
+
+
+def make_guest_handler(server: GuestServer):
+    class Handler(SimpleHTTPRequestHandler):
+        extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".js": "text/javascript"}
+
+        def log_message(self, *args):
+            pass
+
+        def end_headers(self):
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
+        def do_HEAD(self):
+            self.send_error(405)
+
+        def do_POST(self):
+            self.send_error(404)
+
+        def do_GET(self):
+            url = urlsplit(self.path)
+            if url.path == "/":
+                self.send_response(302)
+                self.send_header("Location", "/talk.html" + (f"?{url.query}" if url.query else ""))
+                self.end_headers()
+                return
+            if url.path == "/ca.crt" and server.ca:   # the authority, to trust this page once (no warning after)
+                with open(server.ca, "rb") as f:
+                    body = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/x-x509-ca-cert")
+                self.send_header("Content-Disposition", 'attachment; filename="atl-phone-ca.crt"')
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            if url.path.lstrip("/") in GUEST_FILES:
+                return super().do_GET()
+            if url.path != GUEST_WS:
+                return self.send_error(404)
+            origin = self.headers.get("Origin")
+            if origin and urlsplit(origin).netloc != self.headers.get("Host"):
+                return self.send_error(403, "foreign origin")
+            key, given = server.key(), parse_qs(url.query).get("k", [""])[0]
+            if not key or not hmac.compare_digest(given, key):
+                return self.send_error(403, "no guest now, or an old code")
+            ws_key = self.headers.get("Sec-WebSocket-Key")
+            if self.headers.get("Upgrade", "").lower() != "websocket" or not ws_key:
+                return self.send_error(400, "not a WebSocket")
+            self.send_response(101)
+            self.send_header("Upgrade", "websocket")
+            self.send_header("Connection", "Upgrade")
+            self.send_header("Sec-WebSocket-Accept", accept_key(ws_key))
+            super(SimpleHTTPRequestHandler, self).end_headers()
+            self.wfile.flush()
+            self.close_connection = True
+            self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            link = Link(self.wfile, self.client_address[0])
+            with server.lock:
+                old, server.link = server.link, link
+            if old:
+                old.close(4000)   # another guest took over
+            server.on_open(link)
+            try:
+                while link.open:
+                    opcode, data = read_frame(self.rfile)
+                    if opcode == 1:
+                        if server.link is link:
+                            server.on_text(data.decode("utf-8", "replace"))
+                    elif opcode == 9:
+                        with link.lock:
+                            self.wfile.write(frame(data, opcode=10))
+                    elif opcode == 8:
+                        break
+            except (OSError, ValueError):
+                pass
+            finally:
+                link.close()
+                with server.lock:
+                    mine = server.link is link
+                    if mine:
+                        server.link = None
+                if mine:
+                    server.on_close(link)
 
     return Handler

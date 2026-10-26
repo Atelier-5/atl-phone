@@ -4,9 +4,10 @@
 <!-- The robot's face: eyes on the whole screen, or in portrait (?layout=portrait|auto) eyes on top and a panel
      below (a mouth, a pad of buttons, a camera's picture, the sensors; a tap on the eyes opens the menu); the phone's
      senses, and what its camera finds (see.js), go to the bridge (contract atl-phone/0.5). The helpers (omi.js) run here:
-     the time, the magnifier, reading aloud, "what is this?", showing the picture to the PC (only when allowed).
+     the time, the magnifier, reading aloud, "what is this?", showing the picture to the PC (only when allowed);
+     Übersetzen (talk.js): German <-> French, the sound only while a half is held, when allowed.
      face.html?offline=1&expression=happy&still=1 draws one expression without a bridge (for pictures);
-     ?panel=mouth|pad|off|camera|camera_back|sensors|magnify starts with that panel; ?style=tiles the big spoken menu; ?autostart=1 skips the start tap; ?key=... when the bridge has a pairing key; ?lang=en|fr|de. -->
+     ?panel=mouth|pad|off|camera|camera_back|sensors|magnify|translate starts with that panel; ?style=tiles the big spoken menu; ?autostart=1 skips the start tap; ?key=... when the bridge has a pairing key; ?lang=en|fr|de. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -99,6 +100,26 @@
                 border: 3px solid #e0b341; background: rgba(0, 0, 0, 0.7); color: #fff; touch-action: none; }
   #mag button.on { background: #e0b341; color: #000; }
   #mag button.word { font-size: clamp(15px, 4.6vw, 22px); }   /* the camera views' "what is this?" and Zeigen */
+  /* Übersetzen (talk.js): two halves, hold one and speak; the microphone is open only while held, and the badge says so */
+  #talk { flex: 1; display: none; gap: 12px; }
+  #talk .half { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; border-radius: 18px;
+                border: 3px solid #3fd8ff; background: rgba(63, 216, 255, 0.1); color: #fff; touch-action: none;
+                user-select: none; -webkit-user-select: none; overflow: hidden; }
+  #talk .half[data-l="fr"] { border-color: #ffcc33; background: rgba(255, 204, 51, 0.1); }
+  #talk .half.on { background: #d02020; border-color: #fff; }
+  #talk b { font: 700 clamp(20px, 6.5vw, 32px) system-ui, sans-serif; }
+  #talk small { font: 500 clamp(14px, 4vw, 18px) system-ui, sans-serif; color: #bcd; }
+  #talk .heard { margin: 0; font: 500 clamp(14px, 4vw, 18px)/1.3 system-ui, sans-serif; color: #bcd; overflow-wrap: anywhere; }
+  #talk .said { margin: 0; flex: 1; overflow: auto; font: 700 clamp(20px, 6.5vw, 32px)/1.25 system-ui, sans-serif; overflow-wrap: anywhere; }
+  #listening { left: 50%; top: 36px; transform: translateX(-50%); width: auto; height: auto; border-radius: 8px; padding: 4px 12px;
+               background: #d02020; color: #fff; font: 700 18px system-ui, sans-serif; display: none; z-index: 5; }
+  /* Übersetzen's guest: the guest page's QR code where the eyes are, until a second phone joins; then a small note */
+  #guest { position: fixed; left: 0; right: 0; top: 0; height: 54vh; display: none; flex-direction: column; align-items: center;
+           justify-content: center; gap: 8px; background: #000; z-index: 1; pointer-events: none; }
+  #guest canvas { border-radius: 10px; max-width: calc(100vw - 40px); }
+  #guest span { color: #fff; font: 700 clamp(16px, 4.6vw, 22px) system-ui, sans-serif; text-align: center; padding: 0 12px; }
+  #guest.on { top: 64px; height: auto; left: 50%; right: auto; transform: translateX(-50%); background: none; }
+  #guest.on span { background: #1f7a3f; border-radius: 8px; padding: 4px 12px; font-size: 16px; }
   #panel.full { top: 0 !important; z-index: 2; }
   #panel { overflow: hidden; }  /* the magnifier's scale stays in the panel */
 </style>
@@ -108,11 +129,13 @@
 <div id="link" class="dot" title="bridge"></div>
 <div id="eye" class="dot">● cam</div>
 <video id="view" playsinline muted></video>
-<div id="panel"><div id="pad"></div><div id="sensors"></div><video id="pcam" playsinline muted></video><div id="mag"></div></div>
+<div id="panel"><div id="pad"></div><div id="sensors"></div><div id="talk"></div><video id="pcam" playsinline muted></video><div id="mag"></div></div>
 <div id="menu"></div>
 <div id="card"></div>
 <div id="toast"></div>
 <div id="showing" class="dot">● ZEIGEN</div>
+<div id="listening" class="dot">● HÖRT ZU</div>
+<div id="guest"><canvas></canvas><span></span></div>
 <div id="start">
   <button id="go">▶</button>
   <div id="hint"></div>
@@ -122,5 +145,7 @@
 <script src="face.js"></script>
 <script src="see.js"></script>
 <script src="omi.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="talk.js"></script>
 </body>
 </html>

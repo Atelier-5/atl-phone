@@ -2,7 +2,10 @@
 # Copyright (C) 2026 Atelier-5
 """contract_check — does a running bridge keep the contract (contract.py)? A mock phone plays the phone.
 
-    python3 -m atl_phone.contract_check [--robot thymio_1] [--port 8782] [--key ...]
+    python3 -m atl_phone.contract_check [--robot thymio_1] [--port 8782] [--key ...] [--wav speech.wav]
+
+--wav: a clip of German speech (16 kHz mono WAV) for Übersetzen, to be heard and translated; without it, a second of
+silence goes the same way and must come back as "nothing heard". Either way it needs the bridge's models.
 
 Prints one line per check (PASS/FAIL) and exits 1 if any failed. Also the setup page's API (on this PC). Run it with no real
 phone on the bridge: the mock phone takes over, and a real one would be closed.
@@ -13,6 +16,7 @@ import json
 import math
 import sys
 import time
+import wave
 import urllib.error
 import urllib.request
 
@@ -38,7 +42,7 @@ class Check:
                                 ("touch", String, 10), ("battery", BatteryState, latched), ("faces", String, 10), ("codes", String, 10), ("pad", String, 10),
                                 ("panel_mode", String, latched), ("markers", String, 10), ("blobs", String, 10),
                                 ("objects", String, 10), ("hands", String, 10), ("menu", String, 10), ("note_answer", String, 10),
-                                ("read_result", String, 10), ("what_result", String, 10)]:
+                                ("read_result", String, 10), ("what_result", String, 10), ("translate_result", String, 10)]:
             self.n.create_subscription(kind, self.t[name], lambda m, k=name: self.got.setdefault(k, []).append(m), qos)
         self.pub = {name: self.n.create_publisher(kind, self.t[name], 10) for name, kind in
                     [("expression", String), ("gaze", Point), ("color", ColorRGBA), ("say", String),
@@ -65,7 +69,7 @@ class Check:
     def status(self, connected: bool):
         return self.wait("status", lambda m: json.loads(m.data).get("connected") is connected)
 
-    def run(self, url: str) -> int:
+    def run(self, url: str, wav=None) -> int:
         phone = MockPhone(url)
         phone.hello()
         s = self.wait("status", lambda m: json.loads(m.data).get("model") == "MOCK-PHONE")  # (after hello: a status may come before it)
@@ -277,6 +281,7 @@ class Check:
         third.close()
         self.omi(url, api)
         self.mirror(url, api)
+        self.translate(url, api, wav)
 
         print(f"{'all passed' if not self.failed else f'{self.failed} failed'}")
         self.n.destroy_node()
@@ -461,14 +466,147 @@ class Check:
         twin.close()
 
 
+    def translate(self, url, api, wav):
+        """0.7, Übersetzen: the sound only when allowed; the words back to the phone alone; ROS gets counts only."""
+        from urllib.parse import urlsplit, urlunsplit
+        u = urlsplit(url)
+
+        def get(link, t, timeout=3.0):
+            try:
+                return link.expect(t, timeout)
+            except TimeoutError:
+                return None
+
+        if wav:
+            with wave.open(wav, "rb") as w:
+                if (w.getnchannels(), w.getsampwidth(), w.getframerate()) != (1, 2, 16000):
+                    raise SystemExit(f"{wav}: not 16 kHz mono PCM16")
+                pcm = w.readframes(w.getnframes())
+        else:
+            pcm = b"\0" * 32000   # a second of silence
+        chunks = [base64.b64encode(pcm[i:i + 8000]).decode() for i in range(0, len(pcm), 8000)]
+
+        twin = MockPhone(urlunsplit((u.scheme, u.netloc, c.MIRROR, u.query, "")))
+        phone = MockPhone(url)
+        phone.hello()
+        self.status(True)
+        api("/api/act", {"allow_translate": False})
+        get(phone, "translate", 1.0)
+        before = len(self.got.get("translate_result", []))
+        phone.send(t="audio", lang="de", seq=0, pcm=chunks[0])
+        refused = get(phone, "translate")
+        phone.send(t="audio", lang="de", end=True)
+        self.wait("translate_result", lambda m: False, timeout=0.5)
+        self.ok("0.7: Übersetzen's sound is refused unless allowed: the phone is told, nothing is heard",
+                refused == {"t": "translate", "allowed": False, "ready": False}
+                and len(self.got.get("translate_result", [])) == before and get(phone, "heard", 0.3) is None, refused)
+        st = json.load(api("/api/state")).get("translate", {})
+        api("/api/act", {"allow_translate": True})
+        allowed = get(phone, "translate")
+        self.ok("0.7: allowed from the setup page, the phone hears that it may talk, with the models ready",
+                bool(allowed) and (allowed["allowed"], allowed["ready"]) == (True, True) and st.get("ready") is True
+                and st.get("link_ok") is True, (allowed, st))
+        for i, b in enumerate(chunks):   # as the phone sends them while a half is held
+            phone.send(t="audio", lang="de", seq=i, pcm=b)
+        phone.send(t="audio", lang="de", end=True)
+        heard = get(phone, "heard", 30.0)   # the first one waits for the models to load
+        said = get(phone, "translated", 10.0) if heard and heard.get("text") else None
+        r = self.wait("translate_result", timeout=5.0)
+        counts = json.loads(r.data) if r else {}
+        if wav:
+            good = bool(heard) and len(heard["text"]) > 3 and bool(said) and said["lang"] == "fr" and len(said["text"]) > 3 \
+                and counts.get("ok") is True and counts.get("words", 0) > 0
+        else:
+            good = heard == {"t": "heard", "lang": "de", "text": "", "error": "nothing", "who": "robot"} and counts.get("ok") is False
+        self.ok("0.7: held and let go, the phone gets what was heard" + (" and its French" if wav else " (nothing, for silence)"),
+                good, (heard, said and said.get("text"), counts))
+        words = set(((heard or {}).get("text", "") + " " + ((said or {}).get("text", ""))).lower().split()) - {""}
+        mirrored = list(twin.got.queue)
+        st = json.load(api("/api/state"))
+        leaked = [m for m in mirrored if m.get("t") in ("heard", "translated", "audio")]
+        self.ok("0.7: the words reach neither the mirror nor ROS nor the setup page: counts only",
+                not leaked and set(counts) <= {"ok", "from", "to", "words", "seconds", "ms"}
+                and not any(w in json.dumps(st).lower() for w in words if len(w) > 3)
+                and st.get("translate", {}).get("last", {}).get("words") == counts.get("words"), (leaked, counts))
+        self.guest(api, phone, twin, chunks, wav)
+        api("/api/act", {"allow_translate": False})
+        off, end = None, time.monotonic() + 3.0
+        while time.monotonic() < end and not (off and off["allowed"] is False):   # (after the guest's: the last one says so)
+            off = get(phone, "translate", max(0.1, end - time.monotonic()))
+        self.ok("0.7: not allowed any more, the phone is told at once (and no guest link)",
+                bool(off) and off["allowed"] is False and not off.get("guest"), off)
+        phone.close()
+        twin.close()
+
+
+    def guest(self, api, phone, twin, chunks, wav):
+        """0.7, a guest phone on the Wi-Fi (talk.html, the guest port): the robot's phone gets its link for the QR code,
+        the mirror never; both phones see what either says; a new code sends the guest away."""
+        g = json.load(api("/api/state")).get("translate", {}).get("guest", {})
+        if not g.get("port"):
+            self.ok("0.7: the guest port (skipped: the bridge has none, guest_port:=)", True)
+            return
+
+        def get(link, t, timeout=3.0):
+            try:
+                return link.expect(t, timeout)
+            except TimeoutError:
+                return None
+
+        api("/api/act", {"guest_new": True})
+        st = get(phone, "translate")
+        link = (st or {}).get("guest", "")
+        from urllib.parse import parse_qs, urlsplit
+        k = parse_qs(urlsplit(link).query).get("k", [""])[0]
+        self.ok("0.7: the robot's phone gets the guest page's link with a fresh code, for its QR code",
+                link.startswith("https://") and f":{g['port']}/talk.html?k=" in link and len(k) >= 12 and st.get("guest_on") is False, st)
+        guest = MockPhone(f"wss://127.0.0.1:{g['port']}/ws/talk?k={k}")
+        joined = get(phone, "translate")
+        gs = get(guest, "translate")
+        self.ok("0.7: a guest phone joins with the code: the robot's phone hears it (its QR code goes), the guest may talk",
+                bool(joined) and joined.get("guest_on") is True and bool(gs) and gs.get("allowed") is True
+                and gs.get("ready") is True and "guest" not in {k2 for k2, v in gs.items() if v}, (joined, gs))
+        for i, b in enumerate(chunks):
+            guest.send(t="audio", lang="de", seq=i, pcm=b)
+        guest.send(t="audio", lang="de", end=True)
+        if wav:
+            on_guest, on_robot = get(guest, "translated", 30.0), get(phone, "translated", 5.0)
+            good = bool(on_guest) and on_guest == on_robot and on_guest.get("who") == "guest" and len(on_guest.get("text", "")) > 3
+        else:
+            on_guest, on_robot = get(guest, "heard", 30.0), get(phone, "heard", 1.0)
+            good = bool(on_guest) and on_guest.get("error") == "nothing" and on_robot is None   # an error: the speaker only
+        self.ok("0.7: what the guest says reaches both phones, marked as the guest's" + ("" if wav else " (silence: the guest alone hears nothing)"),
+                good, (on_guest, on_robot))
+        for i, b in enumerate(chunks[:4]):
+            phone.send(t="audio", lang="de", seq=i, pcm=b)
+        phone.send(t="audio", lang="de", end=True)
+        if wav:
+            back = get(guest, "translated", 15.0) or get(guest, "heard", 1.0)
+            self.ok("0.7: what the robot's phone hears reaches the guest too, marked as the robot's",
+                    bool(back) and back.get("who") == "robot", back)
+        mirrored = json.dumps(list(twin.got.queue))
+        self.ok("0.7: the mirror gets neither the guest's link and code nor any words",
+                k not in mirrored and "talk.html" not in mirrored and '"heard"' not in mirrored and '"translated"' not in mirrored, len(mirrored))
+        api("/api/act", {"guest_new": True})
+        gone = guest.closed.wait(3)
+        try:
+            MockPhone(f"wss://127.0.0.1:{g['port']}/ws/talk?k={k}")
+            old = "accepted"
+        except ConnectionError as e:
+            old = str(e)
+        self.ok("0.7: a new guest code sends the guest away; the old code is refused",
+                gone and "403" in old and json.load(api("/api/state"))["translate"]["guest"]["connected"] is False, (gone, old))
+
+
 def main():
     a = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     a.add_argument("--robot", default="thymio_1")
     a.add_argument("--port", type=int, default=c.PORT)
     a.add_argument("--key", default="")
+    a.add_argument("--wav", help="German speech, 16 kHz mono, for Übersetzen")
     args = a.parse_args()
     url = f"ws://127.0.0.1:{args.port}/ws" + (f"?key={args.key}" if args.key else "")
-    sys.exit(Check(args.robot).run(url))
+    sys.exit(Check(args.robot).run(url, args.wav))
 
 
 if __name__ == "__main__":

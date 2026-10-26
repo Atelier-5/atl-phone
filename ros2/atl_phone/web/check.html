@@ -59,34 +59,34 @@
 
 var T = {
   en: { title: 'Phone check', intro: "Can this phone become a robot's face, eyes and ears? Tap each Test button.",
-        all: 'Test everything', send: 'Send report to the PC', face: 'Robot face →', copy: 'Copy report', test: 'Test',
+        all: 'Test everything', send: 'Send report to the PC', face: 'Robot face →', copy: 'Copy report', test: 'Test', stop: 'Stop', level: 'level', wait_tests: 'Waiting for the running tests…',
         yes: 'yes', no: 'no', untested: '?', g_phone: 'This phone', g_face: 'Face', g_eyes: 'Eyes (camera)',
         g_ears: 'Ears and voice', g_body: 'Body (motion, light, touch)', g_link: 'Link to the robot',
         sent: 'Report saved on the PC', sending: 'Sending the report to the PC…', to_face: 'Opening the robot face…', stay: 'Stay here',
         not_kept: 'The PC got the report but keeps no registry (start the bridge with ./start.sh).', copied: 'Report copied.', failed: 'Could not send: ',
-        show_code: 'Show a QR code or barcode to the back camera (any package will do). None at hand? It goes on by itself in', clap: 'Speak or clap now…', move: 'Move the phone now…',
+        show_code: 'Show a QR code or barcode to the back camera (any package will do). None at hand? It goes on by itself in', clap: 'Speak or clap now, then tap Stop…', move: 'Move the phone now…',
         nfc: 'Hold an NFC tag to the phone…',
         v_good: 'Good robot face: everything for version 1 works.', v_ok: 'Usable, with gaps: ', v_bad: 'Too old for the web page: ',
         v_wait: 'Tap “Test everything” (allow camera, microphone and motion).',
         insecure: 'Not a secure page: camera and microphone are blocked. Use USB (localhost) or HTTPS.' },
   fr: { title: 'Test du téléphone', intro: 'Ce téléphone peut-il devenir le visage, les yeux et les oreilles d’un robot ? Touchez chaque bouton Tester.',
-        all: 'Tout tester', send: 'Envoyer le rapport au PC', face: 'Visage du robot →', copy: 'Copier le rapport', test: 'Tester',
+        all: 'Tout tester', send: 'Envoyer le rapport au PC', face: 'Visage du robot →', copy: 'Copier le rapport', test: 'Tester', stop: 'Arrêter', level: 'niveau', wait_tests: 'Attente des tests en cours…',
         yes: 'oui', no: 'non', untested: '?', g_phone: 'Ce téléphone', g_face: 'Visage', g_eyes: 'Yeux (caméra)',
         g_ears: 'Oreilles et voix', g_body: 'Corps (mouvement, lumière, toucher)', g_link: 'Lien avec le robot',
         sent: 'Rapport enregistré sur le PC', sending: 'Envoi du rapport au PC…', to_face: 'Ouverture du visage du robot…', stay: 'Rester ici',
         not_kept: 'Le PC a reçu le rapport mais ne tient pas de registre (lancez le pont avec ./start.sh).', copied: 'Rapport copié.', failed: 'Envoi impossible : ',
-        show_code: 'Montrez un QR code ou un code-barres à la caméra arrière (n’importe quel emballage). Aucun sous la main ? Le test continue tout seul dans', clap: 'Parlez ou tapez dans vos mains…', move: 'Bougez le téléphone…',
+        show_code: 'Montrez un QR code ou un code-barres à la caméra arrière (n’importe quel emballage). Aucun sous la main ? Le test continue tout seul dans', clap: 'Parlez ou tapez dans vos mains, puis touchez Arrêter…', move: 'Bougez le téléphone…',
         nfc: 'Approchez une puce NFC du téléphone…',
         v_good: 'Bon visage de robot : tout ce qu’il faut pour la version 1 fonctionne.', v_ok: 'Utilisable, avec des manques : ', v_bad: 'Trop ancien pour la page web : ',
         v_wait: 'Touchez « Tout tester » (autorisez caméra, micro et mouvement).',
         insecure: 'Page non sécurisée : caméra et micro bloqués. Passez par USB (localhost) ou HTTPS.' },
   de: { title: 'Handy-Check', intro: 'Kann dieses Handy Gesicht, Augen und Ohren eines Roboters werden? Tippe auf jeden Test-Knopf.',
-        all: 'Alles testen', send: 'Bericht an den PC senden', face: 'Robotergesicht →', copy: 'Bericht kopieren', test: 'Testen',
+        all: 'Alles testen', send: 'Bericht an den PC senden', face: 'Robotergesicht →', copy: 'Bericht kopieren', test: 'Testen', stop: 'Stopp', level: 'Pegel', wait_tests: 'Warte auf die laufenden Tests…',
         yes: 'ja', no: 'nein', untested: '?', g_phone: 'Dieses Handy', g_face: 'Gesicht', g_eyes: 'Augen (Kamera)',
         g_ears: 'Ohren und Stimme', g_body: 'Körper (Bewegung, Licht, Berührung)', g_link: 'Verbindung zum Roboter',
         sent: 'Bericht auf dem PC gespeichert', sending: 'Bericht wird an den PC gesendet…', to_face: 'Das Robotergesicht öffnet sich…', stay: 'Hier bleiben',
         not_kept: 'Der PC hat den Bericht, führt aber kein Verzeichnis (die Brücke mit ./start.sh starten).', copied: 'Bericht kopiert.', failed: 'Senden fehlgeschlagen: ',
-        show_code: 'Zeige der Rückkamera einen QR-Code oder Strichcode (jede Verpackung geht). Keiner da? Es geht von selbst weiter in', clap: 'Sprich oder klatsche jetzt…', move: 'Bewege das Handy jetzt…',
+        show_code: 'Zeige der Rückkamera einen QR-Code oder Strichcode (jede Verpackung geht). Keiner da? Es geht von selbst weiter in', clap: 'Sprich oder klatsche jetzt, dann tippe auf Stopp…', move: 'Bewege das Handy jetzt…',
         nfc: 'Halte einen NFC-Tag an das Handy…',
         v_good: 'Gutes Robotergesicht: alles für Version 1 funktioniert.', v_ok: 'Brauchbar, mit Lücken: ', v_bad: 'Zu alt für die Webseite: ',
         v_wait: 'Tippe auf „Alles testen“ (Kamera, Mikrofon und Bewegung erlauben).',
@@ -237,13 +237,22 @@ check('g_eyes', 'vision', 'Vision: markers, objects, hands (on the phone)', 'nic
 });
 
 // Ears and voice
+var mic = { on: false, stop: false };  // the microphone test runs until Stop
+function micNote(s) { var n = document.getElementById('note-mic'); if (n) n.textContent = s; }
 check('g_ears', 'mic', 'Microphone', 'core', function () { return { ok: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext, note: '' }; }, async function () {
   var s = await navigator.mediaDevices.getUserMedia({ audio: true }); var Ctx = window.AudioContext || window.webkitAudioContext;
   var ctx = new Ctx(); var an = ctx.createAnalyser(); ctx.createMediaStreamSource(s).connect(an);
-  var buf = new Float32Array(an.fftSize), peak = 0; say('clap');
-  for (var i = 0; i < 30; i++) { an.getFloatTimeDomainData(buf); for (var j = 0; j < buf.length; j++) peak = Math.max(peak, Math.abs(buf[j])); await wait(100); }
+  try { await Promise.race([ctx.resume(), wait(1000)]); } catch (e) {}  // a context made long after the last tap starts suspended: it hears only silence
+  var buf = new Float32Array(an.fftSize), peak = 0; say('clap'); mic.on = true; mic.stop = false; render();
+  for (var i = 0; i < 300 && !mic.stop; i++) {  // until Stop is tapped, at most 30 s; the level shows as it comes
+    an.getFloatTimeDomainData(buf); var level = 0;
+    for (var j = 0; j < buf.length; j++) level = Math.max(level, Math.abs(buf[j]));
+    peak = Math.max(peak, level); micNote(t('level') + ' ' + level.toFixed(2) + ' · peak ' + peak.toFixed(2));
+    await wait(100);
+  }
+  mic.on = false; var state = ctx.state;
   s.getTracks().forEach(function (k) { k.stop(); }); ctx.close();
-  return { ok: peak > 0.02, note: 'peak ' + peak.toFixed(2) + ' @ ' + ctx.sampleRate + ' Hz' };
+  return { ok: peak > 0.02, note: 'peak ' + peak.toFixed(2) + ' @ ' + ctx.sampleRate + ' Hz' + (state === 'running' ? '' : ' · sound ' + state + ': tap Test again') };
 });
 check('g_ears', 'tts', 'Speech (text to speech)', 'core', function () { return { ok: has(window, 'speechSynthesis'), note: '' }; }, async function () {
   var vs = speechSynthesis.getVoices();
@@ -257,7 +266,11 @@ check('g_ears', 'tts', 'Speech (text to speech)', 'core', function () { return {
     u.onstart = function () { ok(true); }; u.onerror = function () { ok(false); };
     speechSynthesis.cancel(); speechSynthesis.speak(u); setTimeout(function () { ok(false); }, 4000);
   });
-  return { ok: langs.length === 3 && started, note: 'voices: ' + (langs.join(', ') || 'none') + (started ? '' : ' · it did not start speaking') };
+  var names = ['de', 'fr'].map(function (l) {  // the voices' names only, for German and French
+    var n = vs.filter(function (v) { return v.lang.slice(0, 2) === l; }).map(function (v) { return v.name; });
+    return l + ': ' + (n.join(', ') || 'none');
+  });
+  return { ok: langs.length === 3 && started, note: 'voices: ' + (langs.join(', ') || 'none') + ' · ' + names.join(' · ') + (started ? '' : ' · it did not start speaking') };
 });
 check('g_ears', 'stt', 'Browser speech recognition', 'info', function () {
   var ok = has(window, 'SpeechRecognition') || has(window, 'webkitSpeechRecognition');
@@ -307,11 +320,16 @@ function render() {
     checks.filter(function (c) { return c.group === g; }).forEach(function (c) {
       var r = report.checks[c.id] || {}; var row = document.createElement('div'); row.className = 'row';
       var name = document.createElement('div'); name.className = 'name'; name.textContent = c.label;
-      var note = document.createElement('span'); note.className = 'note'; note.textContent = r.note || ''; name.appendChild(note);
+      var note = document.createElement('span'); note.className = 'note'; note.id = 'note-' + c.id; note.textContent = r.note || ''; name.appendChild(note);
       var st = document.createElement('div'); st.className = 'st ' + (r.ok === true ? 'yes' : r.ok === false ? 'no' : 'maybe');
       st.textContent = r.ok === true ? t('yes') : r.ok === false ? t('no') : t('untested');
       row.appendChild(name); row.appendChild(st);
-      if (c.test) { var b = document.createElement('button'); b.className = 'test'; b.textContent = t('test'); b.onclick = function () { run(c); }; row.appendChild(b); }
+      if (c.test) {
+        var b = document.createElement('button'); b.className = 'test';
+        if (c.id === 'mic' && mic.on) { b.textContent = t('stop'); b.onclick = function () { mic.stop = true; }; }
+        else { b.textContent = t('test'); b.disabled = running.has(c.id); b.onclick = function () { run(c); }; }
+        row.appendChild(b);
+      }
       list.appendChild(row);
     });
   });
@@ -337,16 +355,21 @@ function probeAll() {
   var uad = navigator.userAgentData;  // the real model (the user agent says "K"), on a secure page
   if (uad && uad.getHighEntropyValues) uad.getHighEntropyValues(['model']).then(function (v) { if (v.model) report.model = v.model; }).catch(function () {});
 }
-async function run(c) {
-  if (!c.test) return;
+var running = new Map();  // test id -> its promise: the report waits for them
+function run(c) {
+  if (!c.test || running.has(c.id)) return running.get(c.id);
+  var p = runOne(c).then(function () { running.delete(c.id); render(); });
+  running.set(c.id, p); render(); return p;
+}
+async function runOne(c) {
   try { var r = await c.test(); report.checks[c.id] = { ok: r.ok, note: r.note, need: c.need, tested: true }; }
   catch (e) { report.checks[c.id] = { ok: false, note: (e && e.name ? e.name + ': ' : '') + (e && e.message || e), need: c.need, tested: true }; }
-  say(''); render();
+  say('');
 }
 document.getElementById('all').onclick = async function () {  // every test, then the report to the PC, then the face
-  var b = this; b.disabled = true;
+  var b = this, send = document.getElementById('send'); b.disabled = true; send.disabled = true;  // the report waits for the whole run
   try { for (var i = 0; i < checks.length; i++) if (checks[i].test && checks[i].id !== 'nfc') await run(checks[i]); }
-  finally { stopCamera(); b.disabled = false; }
+  finally { stopCamera(); b.disabled = false; send.disabled = false; }
   sendReport();
 };
 function phoneId() {  // a random id kept in this browser: it ties this phone's check report to its face, and says nothing about the phone
@@ -368,8 +391,11 @@ function faceUrl() {  // the face, turned as the phone is held; the pairing key 
 function sendReport() {  // to the PC's registry (reports/<model>/), then on to the face in 3 s, unless asked to stay
   var b = document.getElementById('send'), msg = document.getElementById('msg');
   if (b.disabled) return;
-  b.disabled = true; msg.textContent = t('sending'); clearTimeout(faceTimer);
-  fetch('report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: text() })
+  b.disabled = true; clearTimeout(faceTimer);
+  if (running.size) { msg.textContent = t('wait_tests'); mic.stop = true; }  // a report sent too early lost the tests still running
+  Promise.all(Array.from(running.values())).then(function () {
+  msg.textContent = t('sending');
+  return fetch('report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: text() })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.status === 200 ? r.json() : {}; })
     .then(function (a) {
       msg.textContent = (a.saved ? t('sent') + ': ' + a.saved + '. ' : a.saved === null ? t('not_kept') + ' ' : t('sent') + '. ') + t('to_face') + ' ';
@@ -377,8 +403,8 @@ function sendReport() {  // to the PC's registry (reports/<model>/), then on to 
       stay.onclick = function () { clearTimeout(faceTimer); stay.remove(); };
       msg.appendChild(stay);
       faceTimer = setTimeout(function () { location.href = faceUrl(); }, 3000);
-    })
-    .catch(function (e) { msg.textContent = t('failed') + e.message; })
+    });
+  }).catch(function (e) { msg.textContent = t('failed') + e.message; })
     .then(function () { b.disabled = false; });
 }
 document.getElementById('send').onclick = sendReport;

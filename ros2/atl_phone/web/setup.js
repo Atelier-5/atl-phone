@@ -214,6 +214,12 @@ Object.assign(T.en, {
   show_card: 'Showing the picture', show_allow: 'Allow her to show the camera’s picture to this PC (only while she presses “Show”)',
   show_note: 'Only while she shows: a red badge on the phone, at most a minute, a tap stops it. The picture comes to this page only: it is not kept, nor sent on to ROS. Agree on it with her first (docs/consent-show.md).',
   show_live: 'showing now', show_wait: 'not showing', show_stop: 'Stop showing', show_off: 'not allowed',
+  tr_card: 'Translate (Übersetzen)', tr_allow: 'Allow talking with translation: German ↔ French (the phone’s microphone only while a half is held)',
+  tr_note: 'Hold a half of the Translate tile and speak: the phone sends the sound to this computer, which hears and translates it offline, says the translation on the phone and keeps nothing. A red badge on the phone while it listens. No word reaches ROS, the log or this page. Agree on it with the people at the table first (docs/consent-translate.md).',
+  tr_models: 'models:', tr_ready: 'ready', tr_missing: 'missing: ./scripts/get_models.sh, then restart the bridge', tr_link: 'the phone is on Wi-Fi without https: its sound is refused (use USB, or ./start.sh --make-cert)',
+  tr_last: 'last:', tr_words: 'words', tr_after: 'after letting go',
+  tr_guest: 'second phone:', tr_guest_on: 'joined', tr_guest_wait: 'not there (the robot’s phone shows its QR code in Translate)', tr_guest_none: 'no guest port (the models, or --no-guest)',
+  tr_guest_new: 'New guest code', tr_guest_new_d: 'The second phone that is there goes, and must scan the new QR code.',
   lighter: 'A lighter phone', install_hint: 'On the phone, in Chrome: ⋮ › Install app (or Add to Home screen). The face then opens as its own window, without the tabs and the address bar.',
   tidy_hint: 'Or in a terminal on this PC, the same:', more_views: 'Desk Guard and Omi Assist: at the top of this page.'
 });
@@ -241,6 +247,12 @@ Object.assign(T.fr, {
   show_card: 'Montrer l’image', show_allow: 'Lui permettre de montrer l’image de la caméra à ce PC (seulement quand elle appuie sur « Montrer »)',
   show_note: 'Seulement pendant qu’elle montre : un badge rouge sur le téléphone, une minute au plus, un toucher l’arrête. L’image vient sur cette page seulement : elle n’est ni gardée, ni envoyée à ROS. Mettez-vous d’accord avec elle d’abord (docs/consent-show.md).',
   show_live: 'elle montre', show_wait: 'rien de montré', show_stop: 'Arrêter de montrer', show_off: 'non permis',
+  tr_card: 'Traduire (Übersetzen)', tr_allow: 'Permettre de parler avec traduction : allemand ↔ français (le micro du téléphone seulement pendant qu’on appuie sur une moitié)',
+  tr_note: 'Appuyez sur une moitié de la tuile Traduire et parlez : le téléphone envoie le son à cet ordinateur, qui l’écoute et le traduit hors ligne, dit la traduction sur le téléphone et ne garde rien. Un badge rouge sur le téléphone pendant qu’il écoute. Aucun mot n’arrive à ROS, au journal ni à cette page. Mettez-vous d’accord avec les personnes à table d’abord (docs/consent-translate.md).',
+  tr_models: 'modèles :', tr_ready: 'prêts', tr_missing: 'manquants : ./scripts/get_models.sh, puis relancer le pont', tr_link: 'le téléphone est en Wi-Fi sans https : son son est refusé (USB, ou ./start.sh --make-cert)',
+  tr_last: 'dernier :', tr_words: 'mots', tr_after: 'après avoir relâché',
+  tr_guest: 'deuxième téléphone :', tr_guest_on: 'connecté', tr_guest_wait: 'pas là (le téléphone du robot montre son QR code dans Traduire)', tr_guest_none: 'pas de port invité (les modèles, ou --no-guest)',
+  tr_guest_new: 'Nouveau code invité', tr_guest_new_d: 'Le deuxième téléphone qui est là s’en va, et doit scanner le nouveau QR code.',
   lighter: 'Un téléphone plus léger', install_hint: 'Sur le téléphone, dans Chrome : ⋮ › Installer l’application (ou Ajouter à l’écran d’accueil). Le visage s’ouvre alors dans sa propre fenêtre, sans les onglets ni la barre d’adresse.',
   tidy_hint: 'Ou dans un terminal sur ce PC, la même chose :', more_views: 'Gardien du bureau et Omi Assist : en haut de cette page.'
 });
@@ -268,6 +280,12 @@ Object.assign(T.de, {
   show_card: 'Das Bild zeigen', show_allow: 'Ihr erlauben, das Kamerabild diesem PC zu zeigen (nur solange sie „Zeigen“ drückt)',
   show_note: 'Nur solange sie zeigt: ein rotes Abzeichen auf dem Handy, höchstens eine Minute, ein Tipp beendet es. Das Bild kommt nur auf diese Seite: es wird weder gespeichert noch an ROS weitergegeben. Vorher mit ihr absprechen (docs/consent-show.md).',
   show_live: 'sie zeigt gerade', show_wait: 'nichts gezeigt', show_stop: 'Zeigen beenden', show_off: 'nicht erlaubt',
+  tr_card: 'Übersetzen', tr_allow: 'Sprechen mit Übersetzung erlauben: Deutsch ↔ Französisch (das Mikrofon des Handys nur, solange eine Hälfte gedrückt ist)',
+  tr_note: 'Eine Hälfte der Kachel Übersetzen halten und sprechen: das Handy schickt den Ton an diesen Computer, der ihn offline hört und übersetzt, die Übersetzung auf dem Handy sagt und nichts behält. Ein rotes Abzeichen auf dem Handy, solange es zuhört. Kein Wort kommt zu ROS, ins Protokoll oder auf diese Seite. Vorher mit den Leuten am Tisch absprechen (docs/consent-translate.md).',
+  tr_models: 'Modelle:', tr_ready: 'bereit', tr_missing: 'fehlen: ./scripts/get_models.sh, dann die Brücke neu starten', tr_link: 'das Handy ist im WLAN ohne https: sein Ton wird abgelehnt (USB, oder ./start.sh --make-cert)',
+  tr_last: 'zuletzt:', tr_words: 'Wörter', tr_after: 'nach dem Loslassen',
+  tr_guest: 'zweites Handy:', tr_guest_on: 'dabei', tr_guest_wait: 'nicht da (das Handy des Roboters zeigt seinen QR-Code in Übersetzen)', tr_guest_none: 'kein Gast-Port (die Modelle, oder --no-guest)',
+  tr_guest_new: 'Neuer Gast-Code', tr_guest_new_d: 'Das zweite Handy, das da ist, geht und muss den neuen QR-Code scannen.',
   lighter: 'Ein leichteres Handy', install_hint: 'Auf dem Handy, in Chrome: ⋮ › App installieren (oder Zum Startbildschirm hinzufügen). Das Gesicht öffnet sich dann in einem eigenen Fenster, ohne Tabs und Adressleiste.',
   tidy_hint: 'Oder in einem Terminal auf diesem PC, dasselbe:', more_views: 'Schreibtischwächter und Omi Assist: oben auf dieser Seite.'
 });
@@ -635,6 +653,12 @@ function buildOmi() {
   live.showStop = el('button', { class: 'b ghost small', text: t('show_stop'), onclick: function () { act({ show: false }); } });
   o.appendChild(card('show_card', [el('label', { class: 'row' }, [live.allowShow, el('span', { text: t('show_allow') })]),
     el('div', { class: 'hint', text: t('show_note') }), el('div', { class: 'row', style: 'margin-top:8px' }, [live.showState, live.showStop]), live.showImg]));
+  live.allowTr = el('input', { type: 'checkbox', onchange: function () { act({ allow_translate: live.allowTr.checked }); } });
+  live.trState = el('div', { class: 'live' }); live.trGuest = el('div', { class: 'live' });
+  o.appendChild(card('tr_card', [el('label', { class: 'row' }, [live.allowTr, el('span', { text: t('tr_allow') })]),
+    el('div', { class: 'hint', text: t('tr_note') }), live.trState,
+    el('div', { class: 'row', style: 'margin-top:8px' }, [live.trGuest,
+      el('button', { class: 'b ghost small', text: t('tr_guest_new'), title: t('tr_guest_new_d'), onclick: function () { act({ guest_new: true }); } })])]));
   live.ph = el('div', { class: 'live' }); live.phTabs = el('div');
   o.appendChild(card('lighter', [el('div', { class: 'hint', text: t('install_hint') }), el('div', { class: 'row' }, [
     el('button', { class: 'b ghost small', text: '🔍 ' + t('ph_look'), onclick: function () { phone('look'); } }),
@@ -705,6 +729,14 @@ function updateOmi() {
     if (Date.now() - showAt > 450) { showAt = Date.now(); live.showImg.src = '/api/show.jpg?' + showAt; }
     live.showImg.style.display = 'block';
   } else if (live.showImg.style.display !== 'none') { live.showImg.style.display = 'none'; live.showImg.removeAttribute('src'); }
+  var tr = S.translate || {}, last = tr.last || {};   // Übersetzen: its state and the last one's counts, never its words
+  if (document.activeElement !== live.allowTr) live.allowTr.checked = !!tr.allowed;
+  live.trState.textContent = [t('tr_models') + ' ' + t(tr.ready ? 'tr_ready' : 'tr_missing'),
+    tr.allowed && S.connected && !tr.link_ok ? t('tr_link') : '',
+    last.at ? t('tr_last') + ' ' + last.from + ' → ' + last.to + ', ' + last.words + ' ' + t('tr_words') + ', ' + (last.ms / 1000).toFixed(1) + ' s ' + t('tr_after') : '']
+    .filter(Boolean).join(' · ');
+  var g = tr.guest || {};
+  live.trGuest.textContent = t('tr_guest') + ' ' + (!g.port ? t('tr_guest_none') : g.connected ? t('tr_guest_on') : t('tr_guest_wait'));
 }
 function setMark(m, v) {
   m.className = 'mark ' + (v === true ? 'yes' : v === false ? 'no' : v === 'na' ? '' : 'wait');

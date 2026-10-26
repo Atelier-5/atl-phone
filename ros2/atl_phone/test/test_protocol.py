@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Atelier-5
+import base64
 import json
 import re
 from pathlib import Path
@@ -253,8 +254,12 @@ def test_the_screen_report_carries_keys_never_free_text():
                             "badge": True, "speaking": True}))
     assert m == {"t": "screen", "lang": "de", "mode": "magnify", "expression": "love", "style": "tiles", "menu": True,
                  "tiles": ["time", "face"], "hi": "time", "toast": "is", "arg": "cup", "note": "pill", "badge": True,
-                 "allowed": False, "speaking": True, "sensors": {}}
+                 "allowed": False, "speaking": True, "talk": "", "talk_lang": "", "sensors": {}}
     assert p.parse(json.dumps({"t": "screen", "toast": "tour.bye"}))["toast"] == "tour.bye"
+    talk = p.parse(json.dumps({"t": "screen", "mode": "translate", "talk": "result", "talk_lang": "fr"}))
+    assert (talk["mode"], talk["talk"], talk["talk_lang"]) == ("translate", "result", "fr")
+    words = p.parse(json.dumps({"t": "screen", "talk": "Tu veux un morceau ?", "talk_lang": "Bonjour"}))
+    assert (words["talk"], words["talk_lang"]) == ("", "")  # Übersetzen's words never pass
     for toast, arg in (("Lieber Herr Muster, Ihre Rechnung", ""), ("tour.nope", ""), ("reading", "cup"), ("is", "Muster")):
         r = p.parse(json.dumps({"t": "screen", "toast": toast, "arg": arg}))
         assert r["arg"] == "" and r["toast"] in ("", "reading", "is"), toast
@@ -339,3 +344,18 @@ def test_the_phone_knows_every_tile_and_names_every_object():
     assert sorted(what) == sorted(c.OBJECTS)
     for label, row in what.items():
         assert len(row) == 3 and all(isinstance(w, str) and w for w in row), label
+
+
+def test_audio_chunks_are_checked():
+    pcm = base64.b64encode(b"\x01\x00" * 4000).decode()
+    m = p.parse(json.dumps({"t": "audio", "lang": "fr", "seq": 3, "pcm": pcm}))
+    assert m == {"t": "audio", "lang": "fr", "seq": 3, "pcm": b"\x01\x00" * 4000, "end": False}
+    assert p.parse(json.dumps({"t": "audio", "lang": "de", "end": True})) == {"t": "audio", "lang": "de", "end": True}
+    assert p.parse(json.dumps({"t": "audio", "lang": "de", "seq": 99999, "pcm": pcm}))["seq"] == p.MAX_SEQ
+    for bad in ({"lang": "en", "seq": 0, "pcm": pcm}, {"lang": "de", "seq": 0, "pcm": ""}, {"lang": "de", "seq": 0, "pcm": "%%%"},
+                {"lang": "de", "seq": 0, "pcm": base64.b64encode(b"abc").decode()}, {"lang": "de", "seq": "0", "pcm": pcm},
+                {"lang": "de", "seq": 0, "pcm": "A" * (p.MAX_AUDIO + 4)}):
+        with pytest.raises(ValueError):
+            p.parse(json.dumps(dict(bad, t="audio")))
+    assert p.talk(True, False) == {"t": "translate", "allowed": True, "ready": False}
+    assert p.talk(False, True) == {"t": "translate", "allowed": False, "ready": False}

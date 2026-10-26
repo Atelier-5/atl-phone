@@ -166,7 +166,7 @@ function frame(now) {  // the next frame first: one that throws must not leave t
 // this screen only; sensors: what the phone senses. A tap on the eyes opens the menu, a swipe left or right steps
 // through it; a program sets which modes it offers ("menu"), and learns what the person picked ("panel" back).
 var SPLIT = 0.54;  // of the height, for the eyes
-var MODES = ['mouth', 'pad', 'off', 'camera', 'camera_back', 'sensors', 'magnify'];
+var MODES = ['mouth', 'pad', 'off', 'camera', 'camera_back', 'sensors', 'magnify', 'translate'];  // translate: talk.js
 // the menu's style: chips (a strip, for the class) or tiles (big, each says its name, for someone who sees less well);
 // an entry is a mode, a tile (TILES: omi.js does it), or a program's own {id, label, icon}: every pick goes to ROS (menu)
 var TILES = ['time', 'magnify', 'read', 'what', 'front', 'back', 'show', 'follow'];
@@ -232,7 +232,9 @@ function pick(x, el) {  // a chip or a tile: the bridge hears of it; a tile says
   if (tiles && id !== 'follow' && id !== 'show') setTimeout(hideMenu, 400); else showMenu();
 }
 function buildMenu() {
-  var tiles = panel.style === 'tiles', list = tiles ? panel.menu.concat(['face']) : panel.menu;
+  var tiles = panel.style === 'tiles', list = (tiles ? panel.menu.concat(['face']) : panel.menu).filter(function (x) {
+    return x !== 'translate' || (typeof talk === 'object' && talk.allowed);   // Übersetzen: only when the bridge allows it
+  });
   var key = list.map(function (x) { return entryId(x) + ':' + entryLabel(x); }).join(',') + '|' + lang + '|' + panel.style;
   if (menuEl.dataset.key !== key) {
     menuEl.dataset.key = key; menuEl.textContent = '';
@@ -283,6 +285,7 @@ function showPanel() {
   pcam.style.display = picture ? 'block' : 'none';
   pcam.style.transform = mode === 'camera' ? 'scaleX(-1)' : 'none';  // the front camera as a mirror
   if (typeof camBar === 'function') camBar(mode);  // omi.js: the camera view's buttons (zoom, torch, hold; what is this?; Zeigen)
+  if (typeof talkPanel === 'function') talkPanel(mode);  // talk.js: Übersetzen's two halves
   geoWatch(mode === 'sensors');
   var cols = panel.buttons.length <= 4 ? 2 : panel.buttons.length <= 6 ? 3 : 4;
   padEl.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
@@ -469,6 +472,7 @@ function handle(m) {
   else if (m.t === 'see') seeAt(m);
   else if (m.t === 'note') noteCard(m);
   else if (['read', 'what', 'show', 'tour'].indexOf(m.t) >= 0 && typeof omiAsk === 'function') omiAsk(m);  // omi.js
+  else if (['translate', 'heard', 'translated'].indexOf(m.t) >= 0 && typeof talkMsg === 'function') talkMsg(m);  // talk.js
   else if (m.t === 'web' && /^[0-9a-f]{16}$/.test(m.id)) newPages(m.id);
   else if (m.t === 'open' && ['face.html', 'check.html'].indexOf(m.page) >= 0) {
     var q = Object.assign({}, Q);

@@ -4,9 +4,9 @@
 
 Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "camera" | "look" | "faces" | "code" | "pad" | "panel"
                        | "see" | "markers" | "blobs" | "objects" | "hands" | "menu" | "answer" | "read" | "what" | "show"
-                       | "frame" | "screen", ...}
+                       | "frame" | "screen" | "audio", ...}
 Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera" | "look" | "forget" | "panel"
-                       | "see" | "note" | "read" | "what" | "show" | "tour" | "web", ...}
+                       | "see" | "note" | "read" | "what" | "show" | "tour" | "web" | "translate" | "heard" | "translated", ...}
 
 "web" is the fingerprint of the pages the bridge serves, sent on each hello: a page that an older bridge served (the
 bridge restarted with new pages) sees it change and reloads, so the phone never runs old code against a new bridge.
@@ -14,6 +14,12 @@ bridge restarted with new pages) sees it change and reloads, so the phone never 
 "show" and "frame" are the one exception to pictures staying on the phone, for Omi Assist: only while the person presses
 "show" on the phone, and only when the facilitator allowed it, the phone sends small JPEG frames; the bridge hands them
 to the setup page on this PC only (never a topic, never a file). The bridge says whether it is allowed.
+
+"audio" is Übersetzen's sound, the other exception (contract 0.7): only while the person holds a half of the panel's
+translate mode, and only when the facilitator allowed it and the phone's link is this computer (USB) or https. 16 kHz
+PCM16 in 250 ms chunks; the bridge hears and translates it (translate.py) and drops the sound. "heard" and
+"translated" carry the words back to the phone alone: never a mirror, a topic, a file or the log. "translate" says
+whether talking is allowed and the models are there.
 
 "camera" is the setup page's camera test: the phone shows the picture on its own screen and says
 whether it works and which codes it read; pictures never leave the phone.
@@ -42,6 +48,8 @@ PAGES = ("face.html", "check.html")   # where the setup page may send the phone
 LAYOUTS = ("landscape", "portrait", "auto")   # face.html?layout=...
 BUTTON_ID = re.compile(r"[A-Za-z0-9_-]{1,20}")
 MAX_FRAME = 96 * 1024       # bytes of a show frame, as base64 (a 320 px JPEG is about 15-30 KB)
+MAX_AUDIO = 44 * 1024       # bytes of an audio chunk, as base64: up to 1 s of 16 kHz PCM16 (the phone sends 250 ms)
+MAX_SEQ = 1000              # chunks of one hold (30 s are 120)
 
 
 def _num(v, lo=-1e6, hi=1e6) -> float:
@@ -224,6 +232,20 @@ def parse(raw: str) -> dict:
         if m.get("error"):
             out["error"] = _text(m["error"], 80)
         return out
+    if t == "audio":  # Übersetzen: a chunk of what the person says while holding, or the end of it
+        lang = _one_of(m.get("lang"), c.TALK_LANGS)
+        if m.get("end") is True:
+            return {"t": "audio", "lang": lang, "end": True}
+        data, seq = m.get("pcm"), m.get("seq")
+        if not isinstance(data, str) or not data or len(data) > MAX_AUDIO:
+            raise ValueError("audio: not a small chunk")
+        try:
+            pcm = base64.b64decode(data, validate=True)
+        except ValueError:
+            raise ValueError("audio: not base64") from None
+        if len(pcm) % 2:
+            raise ValueError("audio: not PCM16")
+        return {"t": "audio", "lang": lang, "seq": int(_num(seq, 0, MAX_SEQ)), "pcm": pcm, "end": False}
     if t == "screen":  # what the screen shows: keys and ids only, for the mirrors
         return screen_report(m)
     if t == "pad":
@@ -253,6 +275,8 @@ def screen_report(m: dict) -> dict:
             "arg": m.get("arg") if ok_toast and toast in ("is", "think") and m.get("arg") in c.OBJECTS else "",
             "note": ids(m.get("note")), "badge": bool(m.get("badge")), "allowed": bool(m.get("allowed")),
             "speaking": bool(m.get("speaking")),
+            "talk": m.get("talk") if m.get("talk") in c.TALK_STATES else "",       # Übersetzen's state: never its words
+            "talk_lang": m.get("talk_lang") if m.get("talk_lang") in c.TALK_LANGS else "",
             "sensors": sensor_report(m.get("sensors"))}
 
 
@@ -460,3 +484,13 @@ def web(fingerprint: str) -> dict:
 def show(allowed: bool, on: bool = False) -> dict:
     """Whether the phone may show its picture to this PC (the facilitator's choice), and whether to stop now."""
     return {"t": "show", "allowed": bool(allowed), "on": bool(allowed and on)}
+
+
+def talk(allowed: bool, ready: bool, guest: str = "", guest_on: bool = False) -> dict:
+    """Whether the phone may send its sound for Übersetzen (the facilitator's choice, a link that is this computer or
+    https), and whether the models are there. To the robot's phone also the guest page's link (with the guest key, for
+    its QR code) and whether a guest phone is there; never to a mirror."""
+    out = {"t": "translate", "allowed": bool(allowed), "ready": bool(allowed and ready)}
+    if guest or guest_on:
+        out.update(guest=guest if allowed else "", guest_on=bool(guest_on))
+    return out

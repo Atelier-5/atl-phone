@@ -16,6 +16,7 @@ off, faces reach ROS without their numbers, whatever the phone sends.
 import base64
 import json
 import re
+import secrets
 import time
 
 import rclpy
@@ -31,7 +32,8 @@ from . import omi
 from . import phone_health
 from . import protocol as p
 from .registry import Registry
-from .wsserver import PhoneServer, lan_address, web_id
+from .translate import Session, Translator
+from .wsserver import GuestServer, PhoneServer, lan_address, web_id
 
 
 class Bridge(Node):
@@ -49,6 +51,9 @@ class Bridge(Node):
         self.allow_show = bool(self.declare_parameter("show", False).value)  # the phone may show its picture to this PC (Omi)
         self.showing = False                          # the person is showing now (the phone's show tile)
         self.frame = (b"", 0.0)                       # the last show frame and when: for the setup page only, in memory only
+        self.allow_translate = bool(self.declare_parameter("translate", False).value)  # Übersetzen: the phone may send its sound
+        self.translator = Translator(self.declare_parameter("models", "").value or None)  # start.sh: models/ at /models
+        self.talk_last = {}                           # the last Übersetzen's counts, for the setup page (never its words)
         self.note = None                              # the card a program put over the face (note): a phone that comes gets it
         self.screen = None                            # what the phone's screen shows (its screen report), for the mirrors
         self.omi = {}                                 # Omi Assist's last state (omi_assist), for the setup page
@@ -82,7 +87,8 @@ class Bridge(Node):
             "codes": self.create_publisher(String, self.t["codes"], 10),
             "pad": self.create_publisher(String, self.t["pad"], 10),
             "panel_mode": self.create_publisher(String, self.t["panel_mode"], latched),
-            **{k: self.create_publisher(String, self.t[k], 10) for k in ("menu", "note_answer", "read_result", "what_result")},
+            **{k: self.create_publisher(String, self.t[k], 10) for k in ("menu", "note_answer", "read_result", "what_result",
+                                                                          "translate_result")},
             **{k: self.create_publisher(String, self.t[k], 10) for k in p.VISION},
         }
         self.create_subscription(String, self.t["expression"], lambda m: self.out(p.face, m.data), 10)
@@ -112,8 +118,27 @@ class Bridge(Node):
                        "look": Bool, "familiar": Bool, "forget": Empty, "panel": String, "see": String, "note": String,
                        "read": String, "what": String}.items()}
 
+        # Übersetzen: the sound is heard and translated on a worker; the words go back to the phone alone
+        self.talk = Session(self.translator, send=lambda m: self.talk_send("robot", m), done=self.talk_done,
+                            log=lambda s: self.get_logger().warning(s))
+        # and a guest phone on the home Wi-Fi (talk.html, its own https port): its own worker, the same models
+        self.guest_talk = Session(self.translator, send=lambda m: self.talk_send("guest", m), done=self.talk_done,
+                                  log=lambda s: self.get_logger().warning(s))
+        self.guest_key = ""                           # in the QR code on the robot's phone; new each time Übersetzen is allowed
+        self.guest = None                             # its server, after the phone's (below)
+        if self.allow_translate:
+            self.guest_key = secrets.token_urlsafe(9)
+            if self.translator.ready:
+                self.talk.warm()
         self.server = PhoneServer(web, port, bind, key, on_open=self.opened, on_text=self.text, on_close=self.closed,
                                   cert=cert, cert_key=cert_key, api=self, ca=ca, on_mirror=self.mirrored, docs=docs).start()
+        guest_port = int(self.declare_parameter("guest_port", 0).value)
+        guest_cert = self.declare_parameter("guest_cert", "").value
+        guest_cert_key = self.declare_parameter("guest_cert_key", "").value
+        if guest_port and guest_cert and guest_cert_key:
+            self.guest = GuestServer(web, guest_port, guest_cert, guest_cert_key, key=lambda: self.guest_key,
+                                     on_open=self.guest_opened, on_text=self.guest_text, on_close=self.guest_closed,
+                                     ca=self.declare_parameter("guest_ca", "").value or None).start()
         self.status()
         q = f"?key={key}" if key else ""
         self.get_logger().info(f"{c.CONTRACT} for /{self.robot}: {self.server.scheme}://<this PC>:{self.server.port}/{q}"
@@ -178,6 +203,75 @@ class Bridge(Node):
         self.out(p.show, self.allow_show, self.showing)
         self.status()
 
+    def talk_allowed(self) -> bool:
+        return self.allow_translate and self.server.phone_local
+
+    def set_translate(self, allowed: bool):
+        """The facilitator allows Übersetzen or not (translate:=true, the setup page); off, what is being heard is dropped."""
+        self.allow_translate = bool(allowed)
+        if not self.allow_translate:
+            self.talk.cancel()
+            self.guest_talk.cancel()
+        elif self.translator.ready:
+            self.talk.warm()
+        self.new_guest_key()
+        self.status()
+
+    def guest_url(self) -> str:
+        if not (self.guest and self.guest_key and self.allow_translate):
+            return ""
+        return f"https://{lan_address()}:{self.guest.port}/talk.html?k={self.guest_key}"
+
+    def talk_state(self):
+        """Übersetzen's state to the robot's phone alone (the guest's link and key are in it: never to a mirror), and to
+        the guest."""
+        guest_on = bool(self.guest and self.guest.connected)
+        self.server.send_phone(json.dumps(p.talk(self.talk_allowed(), self.translator.ready, self.guest_url(), guest_on)))
+        if guest_on:
+            self.guest.send(json.dumps(p.talk(self.allow_translate, self.translator.ready, "", True)))
+
+    def new_guest_key(self):
+        """A new guest code (allowed again, or asked for on the setup page): the guest that was there goes."""
+        self.guest_key = secrets.token_urlsafe(9) if self.allow_translate else ""
+        if self.guest:
+            self.guest.drop()
+        self.talk_state()
+
+    def talk_send(self, who: str, m: dict):
+        """What a worker heard and translated: to both phones while a guest is there (they talk with each other), an
+        error to the one who spoke only. Never to a mirror, ROS or the log."""
+        text = json.dumps(dict(m, who=who))
+        to_robot = who == "robot" or not m.get("error")
+        to_guest = bool(self.guest) and (who == "guest" or not m.get("error"))
+        if to_robot:
+            self.server.send_phone(text)
+        if to_guest:
+            self.guest.send(text)
+
+    def guest_opened(self, link):
+        self.get_logger().info("Übersetzen: a guest phone joined")
+        self.talk_state()
+
+    def guest_closed(self, link):
+        self.get_logger().info("Übersetzen: the guest phone left")
+        self.guest_talk.cancel()
+        self.talk_state()
+
+    def guest_text(self, raw: str):
+        """The guest phone only talks: its sound, while Übersetzen is allowed; anything else is dropped."""
+        try:
+            m = p.parse(raw)
+        except ValueError:
+            return
+        if m["t"] == "audio" and self.allow_translate and self.guest_key:
+            self.guest_talk.audio(m)
+
+    def talk_done(self, r: dict):
+        """How one Übersetzen went, as counts: to ROS and the setup page; the log says no word of it."""
+        self.pub["translate_result"].publish(String(data=json.dumps(r)))
+        self.talk_last = dict(r, at=time.time())
+        self.get_logger().info(f"translate: {r['from']} to {r['to']}, {r['words']} words, {r['ms']} ms")
+
     def show_frame(self):
         """The last frame the person showed, for the setup page: only while showing, and fresh (3 s)."""
         jpeg, at = self.frame
@@ -192,7 +286,7 @@ class Bridge(Node):
     def status(self):
         s = {"contract": c.CONTRACT, "connected": self.server.connected,
              "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar,
-             "show_allowed": self.allow_show, "showing": self.showing}
+             "show_allowed": self.allow_show, "showing": self.showing, "translate_allowed": self.allow_translate}
         if s["connected"]:
             s.update(self.phone)
         self.pub["status"].publish(String(data=json.dumps(s)))
@@ -217,6 +311,7 @@ class Bridge(Node):
         self.get_logger().info(f"phone at {link.peer} gone")
         self.phone = {}
         self.showing, self.frame = False, (b"", 0.0)
+        self.talk.cancel()
         self.screen = None
         self.server.send_mirrors(json.dumps(self.phone_line()))
         self.status()
@@ -244,6 +339,7 @@ class Bridge(Node):
             if self.note and self.note["text"]:
                 self.server.send(json.dumps(self.note))
             self.out(p.show, self.allow_show, False)
+            self.talk_state()
         elif t == "imu":
             now = time.monotonic()
             if now - self.last_imu < 1.0 / c.MAX_IMU_RATE:
@@ -332,6 +428,12 @@ class Bridge(Node):
                 self.out(p.show, False)
             self.get_logger().info(f"show: {'on' if self.showing else 'off'}" + ("" if self.allow_show else " (not allowed)"))
             self.status()
+        elif t == "audio":  # Übersetzen's sound: to the worker, only when allowed and the link is this computer or https
+            if not self.talk_allowed():
+                if m["end"] or m["seq"] == 0:
+                    self.server.send_phone(json.dumps(p.talk(False, False)))
+                return
+            self.talk.audio(m)
         elif t == "screen":  # what the phone's screen shows (keys only): for the mirrors, not for ROS
             self.screen = m
             self.server.send_mirrors(json.dumps(m))
@@ -354,6 +456,10 @@ class Bridge(Node):
                 "look": self.look["on"], "familiar": self.familiar(), "familiar_allowed": self.allow_familiar,
                 "panel": self.panel, "see": self.see, "guardian": self.guardian, "note": self.note, "omi": self.omi,
                 "show": {"allowed": self.allow_show, "on": self.showing, "fresh": self.show_frame() is not None},
+                "translate": {"allowed": self.allow_translate, "link_ok": self.server.phone_local,
+                              "guest": {"port": self.guest.port if self.guest else None, "url": self.guest_url(),
+                                        "connected": bool(self.guest and self.guest.connected)},
+                              "models": self.translator.models(), "ready": self.translator.ready, "last": self.talk_last},
                 "mirrors": self.server.mirror_count, "screen": self.screen, "web": self.web_id, "docs": bool(self.server.docs)}
 
     def act(self, body: dict):
@@ -404,6 +510,12 @@ class Bridge(Node):
                 self.omi_pub["reminders"].publish(String(data=json.dumps(omi.clean(body["reminders"]))))  # a bad one: 400
             if "omi" in body:
                 self.omi_pub["run"].publish(Bool(data=bool(body["omi"])))
+            return
+        if "allow_translate" in body:  # the facilitator's choice, on this PC only (the setup page)
+            self.set_translate(body["allow_translate"])
+            return
+        if "guest_new" in body:  # a new guest code: the guest phone that was there goes
+            self.new_guest_key()
             return
         if "allow_familiar" in body:  # the facilitator's choice, on this PC only (the setup page)
             self.allow_familiar = bool(body["allow_familiar"])
@@ -477,6 +589,10 @@ class Bridge(Node):
         return {"saved": f"reports/{rel}"}
 
     def destroy_node(self):
+        self.talk.stop()
+        self.guest_talk.stop()
+        if self.guest:
+            self.guest.stop()
         self.server.stop()
         super().destroy_node()
 

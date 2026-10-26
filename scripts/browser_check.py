@@ -21,33 +21,38 @@ Prints PASS/FAIL per check and exits 1 if any failed. Standard library only.
 import argparse
 import base64
 import json
+import math
 import os
+import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
 import time
 import urllib.request
+import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ros2" / "atl_phone"))
 from atl_phone.mock_phone import MockPhone  # noqa: E402  (a WebSocket client is all CDP needs)
+from atl_phone.contract import OMI_MENU  # noqa: E402
 from atl_phone import mock_adb  # noqa: E402
 
 DEBUG_PORT = 9333
 
 
 class Page:
-    def __init__(self, url: str, extra=()):
+    def __init__(self, url: str, extra=(), debug_port: int = DEBUG_PORT):
         self.profile = tempfile.mkdtemp(prefix="atl-phone-chrome-", dir=os.environ.get("ATL_SCRATCH"))
         self.chrome = subprocess.Popen(
             ["google-chrome", "--headless=new", "--no-sandbox", f"--user-data-dir={self.profile}",
-             f"--remote-debugging-port={DEBUG_PORT}", "--remote-allow-origins=*", "--window-size=800,450",
+             f"--remote-debugging-port={debug_port}", "--remote-allow-origins=*", "--window-size=800,450",
              "--use-angle=swiftshader", "--enable-unsafe-swiftshader", *extra, url],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(50):
             try:
-                pages = json.load(urllib.request.urlopen(f"http://127.0.0.1:{DEBUG_PORT}/json/list", timeout=1))
+                pages = json.load(urllib.request.urlopen(f"http://127.0.0.1:{debug_port}/json/list", timeout=1))
                 ws = next(p["webSocketDebuggerUrl"] for p in pages if p["type"] == "page")
                 break
             except (OSError, StopIteration, ValueError):
@@ -115,6 +120,8 @@ def main() -> int:
     a.add_argument("--robot", default="thymio_1")
     a.add_argument("--shots", type=Path)
     a.add_argument("--face", type=Path, help="a picture with one face, for the fake front camera")
+    a.add_argument("--speech", type=Path, help="German speech (a WAV) for the fake microphone: Übersetzen then hears and "
+                   "translates it (else a tone, which it hears as nothing); the test bridge needs the models (models:=/models)")
     a.add_argument("--fake-adb", metavar="ADB:CDP", help="the ports the test bridge was given (-e ADB_SERVER_PORT, -e ATL_CDP_PORT): "
                    "a fake adb and phone Chrome there, for the setup page's lighter-phone card (never the real phone)")
     args = a.parse_args()
@@ -127,6 +134,11 @@ def main() -> int:
         failed += not good
 
     camera = ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
+    sound = tempfile.mkdtemp(prefix="atl-phone-sound-", dir=os.environ.get("ATL_SCRATCH"))
+    with wave.open(os.path.join(sound, "tone.wav"), "wb") as w:  # the fake microphone: a 440 Hz tone at half level (headless Chrome's own is silent)
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+        w.writeframes(b"".join(struct.pack("<h", int(16000 * math.sin(2 * math.pi * 440 * i / 16000))) for i in range(32000)))
+    camera.append(f"--use-file-for-fake-audio-capture={os.path.join(sound, 'tone.wav')}")
     tmp = None
     if args.face:  # Chrome's fake camera plays a .y4m (or .mjpeg) file
         tmp = tempfile.mkdtemp(prefix="atl-phone-face-", dir=os.environ.get("ATL_SCRATCH"))
@@ -322,7 +334,15 @@ def main() -> int:
         ok("setup page: 'open the check' sends the phone to check.html", where == "/check.html", where)
         before = len(state().get("reports", []))
         page.wait_for("typeof sendReport === 'function'")
-        page.js("sendReport()")  # what Test everything ends with: the report to the PC, then the face, turned as held
+        xy = page.js("(function () { var b = document.getElementById('note-mic').parentNode.parentNode.querySelector('button');"
+                     " b.scrollIntoView({block: 'center'}); var r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; })()")
+        page.tap(int(xy[0]), int(xy[1]))  # a real tap, as on the phone; Chrome's fake microphone beeps
+        live = page.wait_for("mic.on && /^level .* peak [0-9.]+$/.test(document.getElementById('note-mic').textContent)"
+                             " && document.getElementById('note-mic').parentNode.parentNode.querySelector('button').textContent")
+        ok("check page: the microphone test runs until Stop, its level shown as it comes", live == "Stop", live)
+        page.js("sendReport()")  # while the microphone test runs: the report waits for it (and stops it)
+        waited = page.wait_for("document.getElementById('msg').textContent")
+        ok("check page: a report sent during a test waits for it", "running tests" in (waited or ""), waited)
         where = None
         for _ in range(40):
             time.sleep(0.3)
@@ -335,6 +355,9 @@ def main() -> int:
         r = state().get("reports", [])
         ok("check page: the report goes to the PC, then on to the face (layout=auto)",
            len(r) > before and where == "/face.html?layout=auto", (len(r), where))
+        mic = (r[-1].get("checks") or {}).get("mic", {}) if len(r) > before else {}
+        ok("check page: the report has the microphone tested, with its peak", mic.get("ok") is True
+           and "peak" in mic.get("note", ""), mic)
     finally:
         page.close()
 
@@ -393,7 +416,8 @@ def main() -> int:
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "color=c=white:s=1280x480:d=2:r=10", "-vf", draw,
                     "-pix_fmt", "yuv420p", os.path.join(otmp, "text.y4m")], check=True)
     page = Page(f"http://localhost:{args.port}/face.html?autostart=1&layout=portrait&lang=de",
-                ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", f"--use-file-for-fake-video-capture={otmp}/text.y4m"])
+                ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", f"--use-file-for-fake-video-capture={otmp}/text.y4m",
+                 f"--use-file-for-fake-audio-capture={args.speech or os.path.join(sound, 'tone.wav')}"])
     try:
         page.size(360, 760, mobile=True)
         page.wait_for("ws && ws.readyState === 1")
@@ -576,6 +600,89 @@ def main() -> int:
            bool(hello) and hello.startswith("Hallo Omi! Ich bin Omi Assist") and menu == "menu" and ended == "ended", (hello, menu, ended))
         ok("0.6: the screen report follows the presentation: its step (tour.menu), the tiles open, Gesicht among them",
            sc.get("toast") == "tour.menu" and sc.get("menu") is True and "face" in sc.get("tiles", []), sc)
+
+        # Übersetzen (0.7): the tile only when allowed; hold a half and speak, the microphone open only while held
+        act({"allow_translate": False})
+        act({"topic": "panel", "value": {"mode": "mouth", "style": "tiles", "lang": "de", "menu": OMI_MENU}})
+        page.wait_for("talk.allowed === false && panel.menu.indexOf('translate') >= 0")
+        hidden = page.js("showMenu(); !document.querySelector('#menu button[data-mode=translate]')")
+        act({"allow_translate": True})
+        r = page.wait_for("talk.allowed && talk.ready && (function () { showMenu(); var b = document.querySelector('#menu button[data-mode=translate]');"
+                          " if (!b) return null; b = b.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()", 60)
+        ok("Übersetzen: its tile only when the bridge allows it (and the models are there)", hidden is True and bool(r), (hidden, r))
+        page.tap(int(r[0]), int(r[1]))
+        halves = page.wait_for("panel.mode === 'translate' && document.getElementById('talk').style.display === 'flex'"
+                               " && document.getElementById('menu').style.display === 'none'"   # (a press on the tiles would miss)
+                               " && [].map.call(document.querySelectorAll('#talk .half b'), function (b) { return b.textContent; }).join('|')")
+        ok("Übersetzen: the tile opens two halves, Deutsch and Français", halves == "🇩🇪 Deutsch|🇫🇷 Français", halves)
+        shoot("talk.png")
+        xy = page.js("(function () { var b = document.querySelector('#talk .half[data-l=de]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
+        page.call("Input.dispatchMouseEvent", type="mousePressed", x=int(xy[0]), y=int(xy[1]), button="left", clickCount=1)
+        held = page.wait_for("talk.stream && document.getElementById('listening').style.display === 'block' && talk.seq > 2"
+                             " && document.querySelector('#talk .half.on') && document.getElementById('listening').textContent")
+        sc = screen_until(lambda x: x.get("talk") == "listening")
+        shoot("talk-listening.png")
+        time.sleep(4.0 if args.speech else 1.0)
+        page.call("Input.dispatchMouseEvent", type="mouseReleased", x=int(xy[0]), y=int(xy[1]), button="left", clickCount=1)
+        closed = page.wait_for("!talk.stream && !talk.holding && document.getElementById('listening').style.display === 'none' && 'closed'")
+        ok("Übersetzen: held, the microphone is open with the red badge, and its state (never words) in the screen report; let go, it closes",
+           held == "● HÖRT ZU" and sc.get("talk") == "listening" and sc.get("talk_lang") == "de" and closed == "closed", (held, sc.get("talk"), closed))
+        if args.speech:
+            res = page.wait_for("talk.state === 'result' && [document.querySelector('#talk .half[data-l=de] .heard').textContent,"
+                                " document.querySelector('#talk .half[data-l=fr] .said').textContent]", 100)
+            r = state().get("translate", {}).get("last", {})
+            ok("Übersetzen: what was said in German shows on its half, its French big on the other, said aloud; the setup page gets counts",
+               bool(res) and len(res[0]) > 3 and len(res[1]) > 3 and r.get("from") == "de" and r.get("words", 0) > 0
+               and res[0] not in json.dumps(state()), (res, r))
+        else:
+            res = page.wait_for("talk.state === 'nothing' && document.getElementById('toast').textContent", 100)
+            ok("Übersetzen: a tone is heard as nothing: the phone says so (for real speech: --speech)",
+               res == "Ich habe nichts verstanden. Halte und sprich noch einmal.", res)
+        shoot("talk-result.png")
+
+        # a guest phone on the Wi-Fi (talk.html, the guest port): the robot's phone shows the QR code where the eyes are
+        g = state().get("translate", {}).get("guest", {})
+        if g.get("port") and g.get("url"):
+            qr = page.wait_for("document.getElementById('guest').style.display === 'flex' && !document.getElementById('guest').classList.contains('on')"
+                               " && document.querySelector('#guest canvas').width")
+            ok("Übersetzen: in its mode the robot's phone shows the guest page's QR code where the eyes are", bool(qr) and qr >= 150, qr)
+            shoot("talk-qr.png")
+            gurl = re.sub(r"//[^/:]+:", "//127.0.0.1:", g["url"])   # the PC's own address, as a phone on the Wi-Fi would use its LAN one
+            guest = Page(gurl, ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--ignore-certificate-errors",
+                                f"--use-file-for-fake-audio-capture={args.speech or os.path.join(sound, 'tone.wav')}"], debug_port=DEBUG_PORT + 2)
+            try:
+                guest.size(360, 760, mobile=True)
+                ready = guest.wait_for("talk.allowed && talk.ready && document.querySelectorAll('#talk .half').length")
+                joined = page.wait_for("talk.guestOn && document.getElementById('guest').classList.contains('on')"
+                                       " && document.querySelector('#guest canvas').style.display === 'none' && document.querySelector('#guest span').textContent")
+                ok("Übersetzen: a guest page joins with the QR code's link (https): it may talk, and the robot's phone shows it joined instead of the code",
+                   ready == 2 and joined == "📱 ein zweites Handy ist dabei", (ready, joined))
+                xy = guest.js("(function () { var b = document.querySelector('#talk .half[data-l=de]').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
+                guest.js("window.__said = []; (function () { var sp = speak; speak = function (t, l) { window.__said.push(t); return sp(t, l); }; })()")
+                page.js("window.__said = []")
+                guest.call("Input.dispatchMouseEvent", type="mousePressed", x=int(xy[0]), y=int(xy[1]), button="left", clickCount=1)
+                guest.wait_for("talk.stream && talk.seq > 2")
+                time.sleep(4.0 if args.speech else 1.0)
+                guest.call("Input.dispatchMouseEvent", type="mouseReleased", x=int(xy[0]), y=int(xy[1]), button="left", clickCount=1)
+                if args.speech:
+                    on_guest = guest.wait_for("talk.state === 'result' && document.querySelector('#talk .half[data-l=fr] .said').textContent", 100)
+                    on_robot = page.wait_for("talk.state === 'result' && document.querySelector('#talk .half[data-l=fr] .said').textContent", 30)
+                    spoke = (guest.js("window.__said.join(' / ')"), page.js("window.__said.join(' / ')"))
+                    ok("Übersetzen: what the guest says shows on both phones, and only the guest's phone, which listened, says it aloud",
+                       bool(on_guest) and on_guest == on_robot and len(on_guest) > 3 and spoke[0].replace('\u00a0', ' ') == on_guest.replace('\u00a0', ' ') and spoke[1] == "",
+                       (on_guest, on_robot, spoke))
+                else:
+                    said = guest.wait_for("talk.state === 'nothing' && document.getElementById('toast').textContent", 100)
+                    ok("Übersetzen: the guest page holds and sends like the robot's phone (a tone: nothing heard, said on the guest only)",
+                       bool(said) and page.js("talk.state") != "nothing", said)
+                guest.shot(Path(args.shots) / "guest-result.png") if args.shots else None
+            finally:
+                guest.close()
+            back = page.wait_for("!talk.guestOn && document.querySelector('#guest canvas').style.display === 'block' && 'qr'")
+            ok("Übersetzen: the guest gone, the robot's phone shows the QR code again", back == "qr", back)
+        act({"allow_translate": False})
+        gone = page.wait_for("!talk.allowed && (showMenu(), !document.querySelector('#menu button[data-mode=translate]')) && 'gone'")
+        ok("Übersetzen: not allowed any more, its tile goes", gone == "gone", gone)
         act({"topic": "panel", "value": {"mode": "mouth", "style": "chips", "menu": ["mouth", "pad", "off", "camera", "camera_back", "sensors"]}})
         page.wait_for("panel.style === 'chips' && cam === null")
     finally:
@@ -668,6 +775,7 @@ def main() -> int:
                 mock_adb.stop(fadb, fchrome)
     finally:
         page.close()
+        shutil.rmtree(sound, ignore_errors=True)
         if tmp:
             shutil.rmtree(tmp, ignore_errors=True)
     print("all passed" if not failed else f"{failed} failed")
