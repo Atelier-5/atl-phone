@@ -668,8 +668,8 @@ def main() -> int:
                     on_guest = guest.wait_for("talk.state === 'result' && document.querySelector('#talk .half[data-l=fr] .said').textContent", 100)
                     on_robot = page.wait_for("talk.state === 'result' && document.querySelector('#talk .half[data-l=fr] .said').textContent", 30)
                     spoke = (guest.js("window.__said.join(' / ')"), page.js("window.__said.join(' / ')"))
-                    ok("Übersetzen: what the guest says shows on both phones, and only the guest's phone, which listened, says it aloud",
-                       bool(on_guest) and on_guest == on_robot and len(on_guest) > 3 and spoke[0].replace('\u00a0', ' ') == on_guest.replace('\u00a0', ' ') and spoke[1] == "",
+                    ok("Übersetzen: what the guest says shows on both phones, and only the robot's phone, the listener's, says it aloud",
+                       bool(on_guest) and on_guest == on_robot and len(on_guest) > 3 and spoke[1].replace('\u00a0', ' ') == on_guest.replace('\u00a0', ' ') and spoke[0] == "",
                        (on_guest, on_robot, spoke))
                 else:
                     said = guest.wait_for("talk.state === 'nothing' && document.getElementById('toast').textContent", 100)

@@ -346,7 +346,7 @@ beantwortet.
   then Proceed; `/ca.crt` is there to install). That port serves only the guest page and `/ws/talk?k=CODE`; the code
   (in the QR code, compared with `hmac.compare_digest`) is new each time Übersetzen is allowed, or with the setup
   page's **New guest code**, which drops the guest. One guest at a time: a new one takes over. Both phones show what
-  either says; the phone that listened says the translation aloud, the other only shows it. When the guest
+  either says; the other phone, the listener's, says the translation aloud, and the speaker's only shows it. When the guest
   is there, the QR code gives way to "📱 a second phone is with us"; when it goes, the QR code comes back. The link
   and the words go to the two phones only, never to a mirror or ROS.
 - **Showing the picture** is the one exception to "pictures stay on the phone", and only when allowed: see

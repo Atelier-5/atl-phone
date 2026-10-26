@@ -7,7 +7,7 @@
 // in the two halves and said in the other language. The screen report says only the state, never the words.
 // A guest phone on the home Wi-Fi can join (talk.html, the bridge's guest port): in this mode the robot's phone shows
 // its link as a QR code where the eyes are, until a guest is there; then both phones see what either says, and the
-// phone whose half was held says the translation aloud (the other one only shows it).
+// other phone, the one of the person who listens, says the translation aloud (alone, the robot's phone says it).
 // Loaded after face.js and omi.js (speak, send, setPanel, tell, ot), or on the guest page after guest.js (TALK_GUEST).
 'use strict';
 
@@ -128,7 +128,8 @@ function talkMsg(m) {  // face.js handle(): translate (allowed?), heard, transla
     var from = l === 'de' ? 'fr' : 'de';
     talk.last[from][1] = ''; talk.last[l] = ['', text];
     talkSet('result', l);
-    if ((m.who || 'robot') === (TALK_GUEST ? 'guest' : 'robot')) speak(text, l);   // in the other language's voice, on the phone that listened
+    var mine = (m.who || 'robot') === (TALK_GUEST ? 'guest' : 'robot');   // said on this phone's half
+    if (TALK_GUEST ? !mine : !mine || !talk.guestOn) speak(text, l);   // in the other language's voice, for the one who listens
   }
 }
 talkBuild();
