@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
     },
     "legend": {
       "entries": {
@@ -23,7 +23,7 @@
   "components": [
     {
       "id": "face", "type": "frontend", "label": "face.html", "sublabel": "face, vision, reading", "pos": [40, 220], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 444, "end_line": 457 }, { "path": "ros2/atl_phone/web/see.js", "line": 58, "end_line": 72 }, { "path": "ros2/atl_phone/web/omi.js", "line": 175, "end_line": 199 }]
+      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 447, "end_line": 460 }, { "path": "ros2/atl_phone/web/see.js", "line": 58, "end_line": 72 }, { "path": "ros2/atl_phone/web/omi.js", "line": 175, "end_line": 199 }]
     },
     {
       "id": "adb", "type": "external", "label": "adb server", "sublabel": "the PC, :5037", "pos": [280, 220], "size": [150, 64],
@@ -31,19 +31,19 @@
     },
     {
       "id": "bridge", "type": "backend", "label": "bridge_node", "sublabel": ":8782, pages, /docs/", "pos": [520, 220], "size": [150, 64],
-      "sources": [{ "path": "start.sh", "line": 95, "end_line": 97 }, { "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 242, "end_line": 250 }, { "path": "docker/Dockerfile", "line": 17, "end_line": 17 }]
+      "sources": [{ "path": "start.sh", "line": 118, "end_line": 120 }, { "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 258, "end_line": 266 }, { "path": "docker/Dockerfile", "line": 20, "end_line": 20 }]
     },
     {
       "id": "setup", "type": "frontend", "label": "setup.html", "sublabel": "browser on the PC", "pos": [280, 60], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/setup.js", "line": 304, "end_line": 316 }, { "path": "ros2/atl_phone/web/how.js", "line": 1, "end_line": 4 }]
+      "sources": [{ "path": "ros2/atl_phone/web/setup.js", "line": 322, "end_line": 334 }, { "path": "ros2/atl_phone/web/how.js", "line": 1, "end_line": 4 }]
     },
     {
       "id": "topics", "type": "messagebus", "label": "ROS 2 topics", "sublabel": "/thymio_1/…, UDP", "pos": [760, 220], "size": [150, 64],
-      "sources": [{ "path": "start.sh", "line": 94, "end_line": 96 }, { "path": "ros2/atl_phone/atl_phone/contract.py", "line": 21, "end_line": 24 }]
+      "sources": [{ "path": "start.sh", "line": 117, "end_line": 119 }, { "path": "ros2/atl_phone/atl_phone/contract.py", "line": 22, "end_line": 25 }]
     },
     {
       "id": "programs", "type": "backend", "label": "omi_assist, guardian", "sublabel": "beside the bridge", "pos": [760, 60], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/launch/phone.launch.py", "line": 28, "end_line": 34 }]
+      "sources": [{ "path": "ros2/atl_phone/launch/phone.launch.py", "line": 33, "end_line": 39 }]
     },
     {
       "id": "thymio", "type": "external", "label": "Thymio link", "sublabel": "atl-bot-thymio", "pos": [1000, 220], "size": [150, 64],
@@ -51,7 +51,7 @@
     },
     {
       "id": "twin", "type": "backend", "label": "atl_phone_twin", "sublabel": "--mirror, Docker", "pos": [520, 400], "size": [150, 64],
-      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 802, "end_line": 816 }, { "path": "README.md", "line": 222, "end_line": 228 }]
+      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 818, "end_line": 832 }, { "path": "README.md", "line": 224, "end_line": 230 }]
     },
     {
       "id": "webots", "type": "external", "label": "Webots R2025a", "sublabel": "the host, :1240", "pos": [760, 400], "size": [150, 64],
@@ -78,7 +78,7 @@
       "dot": "cyan",
       "title": "One computer",
       "items": [
-        "./start.sh runs the bridge in Docker with --net=host; Omi Assist and the Desk Guardian start beside it from the same launch file, waiting until the setup page or a flag starts them (start.sh 95–97, phone.launch.py 28–34).",
+        "./start.sh runs the bridge in Docker with --net=host; Omi Assist and the Desk Guardian start beside it from the same launch file, waiting until the setup page or a flag starts them (start.sh 118–120, phone.launch.py 33–39).",
         "The phone is on the PC's USB: scripts/usb.sh sets adb reverse, so its page is localhost:8782, a secure page for camera, motion and microphone, and the cable charges it (usb.sh 11–16).",
         "The same adb server lets the setup page's phone card look at the phone's load (phone_health.py 21–23)."
       ]
@@ -87,16 +87,16 @@
       "dot": "violet",
       "title": "Pages and docs",
       "items": [
-        "The setup page, on the PC, polls /api/state four times a second; /api answers loopback only (setup.js 304–316, wsserver.py 308–317). Its How it works view is static text (how.js).",
-        "The bridge also serves this architecture pack at /docs/; the image carries docs/architecture/*.html (wsserver.py 242–250, Dockerfile 17).",
-        "After a restart, the pages reload themselves: the bridge sends its pages' fingerprint on each hello (bridge_node.py 237, face.js 481–485)."
+        "The setup page, on the PC, polls /api/state four times a second; /api answers loopback only (setup.js 322–334, wsserver.py 324–333). Its How it works view is static text (how.js).",
+        "The bridge also serves this architecture pack at /docs/; the image carries docs/architecture/*.html (wsserver.py 258–266, Dockerfile 17).",
+        "After a restart, the pages reload themselves: the bridge sends its pages' fingerprint on each hello (bridge_node.py 332, face.js 485–489)."
       ]
     },
     {
       "dot": "emerald",
       "title": "Webots beside it",
       "items": [
-        "The phone's twin follows the real phone as a mirror, beside atl-bot-thymio's Thymio twin; when the bridge restarts it shows the phone away and joins again every 2 s (atl_phone_twin.py 802–816).",
+        "The phone's twin follows the real phone as a mirror, beside atl-bot-thymio's Thymio twin; when the bridge restarts it shows the phone away and joins again every 2 s (atl_phone_twin.py 818–832).",
         "A real Thymio, when connected, is atl-bot-thymio's link on the same ROS domain (guardian_node.py 7–9)."
       ]
     }

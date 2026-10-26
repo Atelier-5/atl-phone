@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
     },
     "legend": {
       "entries": {
@@ -24,7 +24,7 @@
   "components": [
     {
       "id": "cams", "type": "external", "label": "Cameras", "sublabel": "front, back", "pos": [40, 300], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 547, "end_line": 560 }]
+      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 551, "end_line": 564 }]
     },
     {
       "id": "eyes", "type": "frontend", "label": "Follow", "sublabel": "the eyes, 4/s or 1/s", "pos": [280, 60], "size": [150, 64],
@@ -48,11 +48,11 @@
     },
     {
       "id": "bridge", "type": "security", "label": "bridge_node", "sublabel": "checked, ≤ 10 faces/s", "pos": [760, 300], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/protocol.py", "line": 121, "end_line": 240 }, { "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 287, "end_line": 302 }]
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/protocol.py", "line": 129, "end_line": 262 }, { "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 383, "end_line": 398 }]
     },
     {
       "id": "topics", "type": "messagebus", "label": "phone/* topics", "sublabel": "faces, objects, hands…", "pos": [1000, 300], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/contract.py", "line": 28, "end_line": 44 }]
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/contract.py", "line": 29, "end_line": 45 }]
     },
     {
       "id": "guardian", "type": "backend", "label": "Desk Guardian", "sublabel": "wakes, turns, owner card", "pos": [1240, 180], "size": [150, 64],
@@ -100,7 +100,7 @@
       "dot": "emerald",
       "title": "Edge: on the Pi",
       "items": [
-        "The Pi gets numbers, never pixels: parse() keeps known fields and clamps them; faces go out at most 10 a second, other kinds at MAX_SEE_RATE (protocol.py 121–240, bridge_node.py 287–302).",
+        "The Pi gets numbers, never pixels: parse() keeps known fields and clamps them; faces go out at most 10 a second, other kinds at MAX_SEE_RATE (protocol.py 129–262, bridge_node.py 383–398).",
         "The Desk Guardian decides on them: a face wakes it, the Thymio turns to it, the owner's QR card makes a friend (guardian.py 28–39, 133–147). Omi Assist asks for faces only, with following, and greets a face after five minutes alone (omi_assist.py 26–29, 85–91)."
       ]
     },
@@ -108,8 +108,8 @@
       "dot": "rose",
       "title": "Kept back",
       "items": [
-        "Telling faces apart is face-api's 128-number signature, in the page's memory for this session only; the bridge sets the number to null unless the facilitator allowed it (see.js 137–140, bridge_node.py 292).",
-        "Reading and \"what is this?\" send only line counts and a label (contract.py 43–44). A heavier model on the Pi would need the pictures to leave the phone; a camera of the Pi's own would be the way (not built). In Webots the twin's Recognition stands in for these models."
+        "Telling faces apart is face-api's 128-number signature, in the page's memory for this session only; the bridge sets the number to null unless the facilitator allowed it (see.js 137–140, bridge_node.py 388).",
+        "Reading and \"what is this?\" send only line counts and a label (contract.py 44–45). A heavier model on the Pi would need the pictures to leave the phone; a camera of the Pi's own would be the way (not built). In Webots the twin's Recognition stands in for these models."
       ]
     }
   ]

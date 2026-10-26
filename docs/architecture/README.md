@@ -1,6 +1,6 @@
 # The phone bridge's architecture pack
 
-Open `index.html` (or `/docs/` on a running bridge): the thirteen diagrams, what each one answers, and the review findings.
+Open `index.html` (or `/docs/` on a running bridge): the fourteen diagrams, what each one answers, and the review findings.
 
 | | Diagram | Type |
 |---|---|---|

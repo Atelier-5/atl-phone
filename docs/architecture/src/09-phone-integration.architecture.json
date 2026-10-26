@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
     },
     "legend": {
       "entries": {
@@ -48,13 +48,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 444,
-          "end_line": 457
+          "line": 447,
+          "end_line": 460
         },
         {
           "path": "ros2/atl_phone/web/omi.js",
           "line": 347,
-          "end_line": 366
+          "end_line": 367
         }
       ]
     },
@@ -95,13 +95,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 287,
-          "end_line": 306
+          "line": 303,
+          "end_line": 322
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 206,
-          "end_line": 218
+          "line": 222,
+          "end_line": 234
         }
       ]
     },
@@ -121,13 +121,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 115,
-          "end_line": 128
+          "line": 133,
+          "end_line": 153
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 200,
-          "end_line": 209
+          "line": 294,
+          "end_line": 303
         }
       ]
     },
@@ -178,13 +178,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 648,
-          "end_line": 681
+          "line": 672,
+          "end_line": 705
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 328,
-          "end_line": 353
+          "line": 344,
+          "end_line": 369
         }
       ]
     },
@@ -204,13 +204,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 184,
-          "end_line": 196
+          "line": 189,
+          "end_line": 212
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 335,
-          "end_line": 342
+          "line": 437,
+          "end_line": 444
         }
       ]
     },
@@ -230,13 +230,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 74,
-          "end_line": 101
+          "line": 79,
+          "end_line": 107
         },
         {
           "path": "start.sh",
-          "line": 94,
-          "end_line": 97
+          "line": 117,
+          "end_line": 120
         }
       ]
     },
@@ -266,8 +266,8 @@
         },
         {
           "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
-          "line": 850,
-          "end_line": 872
+          "line": 866,
+          "end_line": 888
         }
       ]
     },
@@ -287,13 +287,13 @@
       "sources": [
         {
           "path": "README.md",
-          "line": 231,
-          "end_line": 237
+          "line": 233,
+          "end_line": 239
         },
         {
           "path": "README.md",
-          "line": 280,
-          "end_line": 281
+          "line": 282,
+          "end_line": 283
         }
       ]
     },
@@ -451,7 +451,7 @@
       "title": "The real phone",
       "items": [
         "USB: scripts/usb.sh runs adb reverse tcp:8782, so the page is http://localhost:8782 on the phone, a secure page for camera and motion without a certificate (usb.sh 9–16). Over Wi-Fi it needs the bridge's https and its key instead.",
-        "face.js opens one WebSocket to /ws and reconnects; code 4000 (another phone took over) stays quiet (face.js 444–457). The page reports its screen as keys and numbers every change and every 5 s (omi.js 347–366).",
+        "face.js opens one WebSocket to /ws and reconnects; code 4000 (another phone took over) stays quiet (face.js 447–460). The page reports its screen as keys and numbers every change and every 5 s (omi.js 347–367).",
         "phone_health speaks adb's own protocol to the adb server already on the host (shell, a DevTools forward), so the container needs no adb of its own, whose version would kill the host's server and the USB link (phone_health.py 21–88)."
       ]
     },
@@ -459,7 +459,7 @@
       "dot": "violet",
       "title": "The Webots twin",
       "items": [
-        "--bridge: the twin is the phone. It connects to /ws like the page; the bridge cannot tell them apart, so ROS sees the same topics. It still opens /ws/mirror for the props (atl_phone_twin.py 859–863).",
+        "--bridge: the twin is the phone. It connects to /ws like the page; the bridge cannot tell them apart, so ROS sees the same topics. It still opens /ws/mirror for the props (atl_phone_twin.py 875–879).",
         "--mirror: the real phone is in charge. The twin draws what the bridge sends the phone and the phone's screen report, and sends nothing but hello (atl_phone_twin.py 185–194, 390–407).",
         "Both run as extern controllers of the Webots on the host (tcp :1240/PH5v0001; the Thymio twin is atl-bot-thymio's). The robot's stack (Pi box, riser, clamp) is AtlOmiStack in the Thymio's bodySlot; the phone rides on it (AtlOmiStack.proto 5–11)."
       ]
@@ -468,9 +468,9 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "/ws and /ws/mirror refuse a foreign Origin and a wrong key (hmac); /ws/mirror without a key answers this computer only (wsserver.py 287–295).",
-        "/api/* answers loopback only (wsserver.py 308–317): the setup page, its props and its phone card work from the bridge's computer.",
-        "A shown frame goes to loopback mirrors only (wsserver.py 190–196), so with the bridge on the Pi a PC over Wi-Fi gets no pictures."
+        "/ws and /ws/mirror refuse a foreign Origin and a wrong key (hmac); /ws/mirror without a key answers this computer only (wsserver.py 303–311).",
+        "/api/* answers loopback only (wsserver.py 324–333): the setup page, its props and its phone card work from the bridge's computer.",
+        "A shown frame goes to loopback mirrors only (wsserver.py 206–212), so with the bridge on the Pi a PC over Wi-Fi gets no pictures."
       ]
     }
   ]

@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
     },
     "legend": {
       "entries": {
@@ -34,8 +34,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 444,
-          "end_line": 457
+          "line": 447,
+          "end_line": 460
         }
       ]
     },
@@ -47,8 +47,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 355,
-          "end_line": 375
+          "line": 371,
+          "end_line": 391
         }
       ]
     },
@@ -60,8 +60,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 206,
-          "end_line": 225
+          "line": 222,
+          "end_line": 241
         }
       ]
     },
@@ -73,8 +73,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 210,
-          "end_line": 235
+          "line": 304,
+          "end_line": 330
         }
       ]
     },
@@ -86,8 +86,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 355,
-          "end_line": 375
+          "line": 371,
+          "end_line": 391
         }
       ]
     },
@@ -99,8 +99,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 438,
-          "end_line": 450
+          "line": 441,
+          "end_line": 453
         }
       ]
     }
@@ -224,16 +224,16 @@
       "dot": "emerald",
       "title": "What holds",
       "items": [
-        "The swap of PhoneServer.link is under a lock, and release() only clears the link it owns, so the old thread cannot drop phone B (wsserver.py 206–225).",
-        "Phone A's page ignores code 4000 and does not reconnect (face.js 453).",
-        "deliver() hands a frame to on_text only while its link is the current one, under the same lock as take_over (wsserver.py 206–225)."
+        "The swap of PhoneServer.link is under a lock, and release() only clears the link it owns, so the old thread cannot drop phone B (wsserver.py 222–241).",
+        "Phone A's page ignores code 4000 and does not reconnect (face.js 456).",
+        "deliver() hands a frame to on_text only while its link is the current one, under the same lock as take_over (wsserver.py 222–241)."
       ]
     },
     {
       "dot": "emerald",
       "title": "Fixed in 6b29b5a: the stale frame",
       "items": [
-        "serve_ws checks link.open before it blocks in read_frame, so a frame the old phone sent before the close is still read (wsserver.py 361–364).",
+        "serve_ws checks link.open before it blocks in read_frame, so a frame the old phone sent before the close is still read (wsserver.py 377–380).",
         "Before the fix it went to on_text, which cannot tell links apart: a late imu or touch from A was published as B's, a late hello overwrote B's model.",
         "Now take_over and deliver share PhoneServer.lock: a frame being delivered finishes before the swap, and any frame read after it is dropped."
       ]

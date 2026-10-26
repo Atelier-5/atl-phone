@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "e2504ab6-c81f-4b7d-9200-b95514d4ebed",
+  "receiptId": "ea3cd1d6-6b96-4804-9488-82faf8fb34f7",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/10-twin-in-step.sequence.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/10-twin-in-step.html",
   "specification": {
-    "sha256": "d27480f58804d8c47df3459f9a08ce8659ae49f2b35c0647b15d2a6f43780035",
+    "sha256": "849d29c370120817d6d99a2b31996da9387da60a0ba0743b52f7d20499209273",
     "bytes": 6617
   },
   "artifact": {
-    "sha256": "e4648b7fa29e0ec5133adae251a6d06a9513555f9a002037008afd160272e10b",
+    "sha256": "25f2b3f0a414fb5d8a1edc84cc250233b27915087dc6a2dc69cd38040e914afd",
     "bytes": 819663
   }
 }

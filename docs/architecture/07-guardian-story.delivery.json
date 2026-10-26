@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "2c6fb279-f985-4fe8-895f-dbf6350975a1",
+  "receiptId": "6d30b041-6f38-45f3-92d8-122f63c811ec",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/07-guardian-story.sequence.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/07-guardian-story.html",
   "specification": {
-    "sha256": "dce91ceb1abd4bd821709c2a7c52ad46d313f5568d9207ee7ddd7bcffbadaddd",
+    "sha256": "91290c8c0a16db8fb571d96a97e14ff4ee4bd548bd131c8f23ba992a90e38a58",
     "bytes": 6275
   },
   "artifact": {
-    "sha256": "cb827d19bbc1b995a03ebf2ce76726556d3cc2d7621dd7f94b4f5722a5a7a591",
+    "sha256": "d0789ea03ba41e89f46efc878d802e3d37ba3b55e07a53d912719c8818129704",
     "bytes": 818990
   }
 }

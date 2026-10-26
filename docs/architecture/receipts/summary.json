@@ -1,5 +1,5 @@
 {
-  "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9",
+  "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584",
   "diagrams": {
     "01-setup-flow.workflow.json": {
       "output": "01-setup-flow.html",
@@ -135,6 +135,17 @@
     },
     "13-recognition.architecture.json": {
       "output": "13-recognition.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "14-translate.sequence.json": {
+      "output": "14-translate.html",
       "status": "pass",
       "gates": {
         "validate": "pass",

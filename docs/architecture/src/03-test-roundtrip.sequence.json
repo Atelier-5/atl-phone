@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
     },
     "legend": {
       "entries": {
@@ -31,8 +31,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 304,
-          "end_line": 316
+          "line": 322,
+          "end_line": 334
         }
       ]
     },
@@ -44,8 +44,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 252,
-          "end_line": 353
+          "line": 268,
+          "end_line": 369
         }
       ]
     },
@@ -57,18 +57,18 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 122,
-          "end_line": 128
+          "line": 147,
+          "end_line": 153
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 278,
-          "end_line": 284
+          "line": 374,
+          "end_line": 380
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 414,
-          "end_line": 447
+          "line": 526,
+          "end_line": 559
         }
       ]
     },
@@ -80,8 +80,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/contract.py",
-          "line": 20,
-          "end_line": 65
+          "line": 21,
+          "end_line": 68
         }
       ]
     },
@@ -93,13 +93,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 107,
-          "end_line": 135
+          "line": 112,
+          "end_line": 140
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 355,
-          "end_line": 375
+          "line": 371,
+          "end_line": 391
         }
       ]
     },
@@ -111,13 +111,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 526,
-          "end_line": 597
+          "line": 530,
+          "end_line": 601
         },
         {
           "path": "ros2/atl_phone/web/face.js",
           "line": 203,
-          "end_line": 269
+          "end_line": 271
         }
       ]
     }
@@ -305,7 +305,7 @@
       "title": "Why through ROS",
       "items": [
         "act() publishes on the contract topic and the bridge's own subscription forwards it: a passing setup test proves topic → bridge → WebSocket → page.",
-        "open and camera have no topic, so they go straight to the phone (bridge_node.py 366–370)."
+        "open and camera have no topic, so they go straight to the phone (bridge_node.py 472–476)."
       ]
     },
     {
@@ -313,14 +313,14 @@
       "title": "Fixed: output tests with no phone",
       "items": [
         "Until d2b04ac an output test answered 204 with no phone connected, so the page looked as if it was sent (out() ignores server.send's result).",
-        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 414–416). Robot programs' own messages are still dropped quietly."
+        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 526–528). Robot programs' own messages are still dropped quietly."
       ]
     },
     {
       "dot": "slate",
       "title": "Privacy",
       "items": [
-        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 526–597)."
+        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 530–601)."
       ]
     }
   ]

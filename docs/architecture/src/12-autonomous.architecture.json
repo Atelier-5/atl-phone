@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "c098351b1ea26bc1eec6cdeac9fea8330182dde9"
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
     },
     "legend": {
       "entries": {
@@ -24,7 +24,7 @@
   "components": [
     {
       "id": "face", "type": "frontend", "label": "face.html", "sublabel": "face, vision, reading", "pos": [40, 220], "size": [150, 64],
-      "sources": [{ "path": "webots/omi_robot.ttl", "line": 118, "end_line": 121 }, { "path": "ros2/atl_phone/web/face.js", "line": 444, "end_line": 457 }]
+      "sources": [{ "path": "webots/omi_robot.ttl", "line": 118, "end_line": 121 }, { "path": "ros2/atl_phone/web/face.js", "line": 447, "end_line": 460 }]
     },
     {
       "id": "adb", "type": "external", "label": "adb on the Pi", "sublabel": "USB, adb reverse", "pos": [280, 220], "size": [150, 64],
@@ -32,15 +32,15 @@
     },
     {
       "id": "bridge", "type": "backend", "label": "bridge_node", "sublabel": "Docker, :8782", "pos": [520, 220], "size": [150, 64],
-      "sources": [{ "path": "webots/omi_robot.ttl", "line": 115, "end_line": 115 }, { "path": "start.sh", "line": 95, "end_line": 97 }]
+      "sources": [{ "path": "webots/omi_robot.ttl", "line": 115, "end_line": 115 }, { "path": "start.sh", "line": 118, "end_line": 120 }]
     },
     {
       "id": "omi", "type": "backend", "label": "omi_assist", "sublabel": "tiles, reminders", "pos": [520, 60], "size": [150, 64],
-      "sources": [{ "path": "webots/omi_robot.ttl", "line": 116, "end_line": 116 }, { "path": "ros2/atl_phone/launch/phone.launch.py", "line": 32, "end_line": 34 }]
+      "sources": [{ "path": "webots/omi_robot.ttl", "line": 116, "end_line": 116 }, { "path": "ros2/atl_phone/launch/phone.launch.py", "line": 37, "end_line": 39 }]
     },
     {
       "id": "topics", "type": "messagebus", "label": "ROS 2 topics", "sublabel": "on the Pi", "pos": [760, 220], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/contract.py", "line": 21, "end_line": 24 }]
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/contract.py", "line": 22, "end_line": 25 }]
     },
     {
       "id": "link", "type": "external", "label": "Thymio link", "sublabel": "atl-bot-thymio", "pos": [1000, 220], "size": [150, 64],
@@ -52,19 +52,19 @@
     },
     {
       "id": "gate", "type": "security", "label": "/api", "sublabel": "loopback only", "pos": [520, 400], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 308, "end_line": 317 }]
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/wsserver.py", "line": 324, "end_line": 333 }]
     },
     {
       "id": "tunnel", "type": "external", "label": "SSH tunnel", "sublabel": "-L 8782:localhost:8782", "pos": [280, 560], "size": [150, 64],
-      "sources": [{ "path": "README.md", "line": 58, "end_line": 61 }]
+      "sources": [{ "path": "README.md", "line": 59, "end_line": 62 }]
     },
     {
       "id": "setup", "type": "frontend", "label": "setup.html", "sublabel": "PC or tablet", "pos": [40, 560], "size": [150, 64],
-      "sources": [{ "path": "webots/omi_robot.ttl", "line": 122, "end_line": 122 }, { "path": "ros2/atl_phone/web/setup.js", "line": 304, "end_line": 316 }]
+      "sources": [{ "path": "webots/omi_robot.ttl", "line": 122, "end_line": 122 }, { "path": "ros2/atl_phone/web/setup.js", "line": 322, "end_line": 334 }]
     },
     {
       "id": "twin", "type": "backend", "label": "atl_phone_twin", "sublabel": "--mirror, on the PC", "pos": [520, 560], "size": [150, 64],
-      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 802, "end_line": 816 }]
+      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 818, "end_line": 832 }]
     }
   ],
   "boundaries": [
@@ -89,7 +89,7 @@
       "dot": "amber",
       "title": "Status: designed, not yet run on the Pi",
       "items": [
-        "The ontology says what runs where: the bridge, Omi Assist and the Thymio link on the Pi; the face, vision, reading and speech on the phone; the setup page on a PC (omi_robot.ttl 111–122). The same image and launch file as in the lab (start.sh 95–97); the Pi needs Docker, its arm64 build of the image, and adb.",
+        "The ontology says what runs where: the bridge, Omi Assist and the Thymio link on the Pi; the face, vision, reading and speech on the phone; the setup page on a PC (omi_robot.ttl 111–122). The same image and launch file as in the lab (start.sh 118–120); the Pi needs Docker, its arm64 build of the image, and adb.",
         "Both cables are the Pi's USB: the phone (data through adb reverse, and charging) and the Thymio (omi_robot.ttl 96–106). The Pi needs 5 V and 3 A; a power bank on the robot changes its balance (omi_robot.ttl 151–155)."
       ]
     },
@@ -97,7 +97,7 @@
       "dot": "rose",
       "title": "Reaching it from a PC",
       "items": [
-        "/api and a keyless /ws/mirror answer loopback only (wsserver.py 287–295, 308–317). A PC or tablet on the Wi-Fi opens an SSH tunnel to the Pi and then uses http://localhost:8782/setup.html: to the bridge it is loopback, so the setup page, the Webots mirror and a shown picture (Zeigen) work as in the lab (README.md 58–61).",
+        "/api and a keyless /ws/mirror answer loopback only (wsserver.py 303–311, 324–333). A PC or tablet on the Wi-Fi opens an SSH tunnel to the Pi and then uses http://localhost:8782/setup.html: to the bridge it is loopback, so the setup page, the Webots mirror and a shown picture (Zeigen) work as in the lab (README.md 58–61).",
         "The phone stays on USB, so its page is still localhost: no certificate is needed on the robot."
       ]
     },
@@ -105,8 +105,8 @@
       "dot": "emerald",
       "title": "What changes from the lab",
       "items": [
-        "Only where things run: the topics, the pages and the programs are the same, so a program tested in the lab runs unchanged on the robot (contract.py 21–24).",
-        "Webots stays on the PC: the twin mirrors the robot through the tunnel and rejoins when the Pi's bridge restarts (atl_phone_twin.py 802–816)."
+        "Only where things run: the topics, the pages and the programs are the same, so a program tested in the lab runs unchanged on the robot (contract.py 22–25).",
+        "Webots stays on the PC: the twin mirrors the robot through the tunnel and rejoins when the Pi's bridge restarts (atl_phone_twin.py 818–832)."
       ]
     }
   ]

@@ -1,0 +1,310 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "atl-phone: Übersetzen, two phones at the table",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "14-translate.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "7e7272f87f49acc9f0012b940886c910c4c0d584"
+    },
+    "legend": {
+      "entries": {
+        "security": {
+          "label": "sound, only while held"
+        },
+        "dashed": {
+          "label": "words, to the phones only"
+        },
+        "emphasis": {
+          "label": "to ROS 2: counts"
+        }
+      }
+    }
+  },
+  "segments": [
+    {
+      "from": 150,
+      "to": 280,
+      "label": "Allowed: the QR code"
+    },
+    {
+      "from": 300,
+      "to": 490,
+      "label": "A second phone joins"
+    },
+    {
+      "from": 510,
+      "to": 1020,
+      "label": "Omi holds Deutsch and speaks"
+    }
+  ],
+  "participants": [
+    {
+      "id": "omi",
+      "type": "external",
+      "label": "Omi",
+      "sublabel": "speaks German"
+    },
+    {
+      "id": "phone",
+      "type": "frontend",
+      "label": "Robot's phone",
+      "sublabel": "face.html, talk.js (USB)",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/talk.js",
+          "line": 52,
+          "end_line": 67
+        },
+        {
+          "path": "ros2/atl_phone/web/talk.js",
+          "line": 68,
+          "end_line": 109
+        },
+        {
+          "path": "ros2/atl_phone/web/talk.js",
+          "line": 110,
+          "end_line": 133
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Bridge",
+      "sublabel": "bridge_node.py, wsserver.py",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 206,
+          "end_line": 267
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 431,
+          "end_line": 436
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 195,
+          "end_line": 204
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "Worker",
+      "sublabel": "translate.py: Vosk, Opus-MT",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/translate.py",
+          "line": 177,
+          "end_line": 215
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/translate.py",
+          "line": 216,
+          "end_line": 254
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/translate.py",
+          "line": 256,
+          "end_line": 273
+        }
+      ]
+    },
+    {
+      "id": "ros",
+      "type": "messagebus",
+      "label": "ROS 2",
+      "sublabel": "translate/result",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/contract.py",
+          "line": 46,
+          "end_line": 46
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 269,
+          "end_line": 273
+        }
+      ]
+    },
+    {
+      "id": "guest",
+      "type": "frontend",
+      "label": "Guest phone",
+      "sublabel": "talk.html, guest.js (Wi-Fi)",
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/guest.js",
+          "line": 37,
+          "end_line": 51
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 421,
+          "end_line": 465
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 495,
+          "end_line": 530
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "m-warm",
+      "from": "bridge",
+      "to": "worker",
+      "y": 180,
+      "label": "warm()",
+      "note": "allowed: a new guest code; the models load"
+    },
+    {
+      "id": "m-allowed",
+      "from": "bridge",
+      "to": "phone",
+      "y": 236,
+      "label": "{t: translate, allowed, guest: url}",
+      "variant": "dashed",
+      "note": "send_phone(): no mirror copy; the phone draws the URL as a QR code over the eyes"
+    },
+    {
+      "id": "m-join",
+      "from": "guest",
+      "to": "bridge",
+      "y": 330,
+      "label": "wss :8783 /ws/talk?k=code",
+      "note": "https (its microphone needs it); Origin checked, code by compare_digest"
+    },
+    {
+      "id": "m-on",
+      "from": "bridge",
+      "to": "phone",
+      "y": 400,
+      "label": "{t: translate, guest_on: true}",
+      "variant": "dashed",
+      "note": "the QR code gives way to “a second phone is with us”"
+    },
+    {
+      "id": "m-gon",
+      "from": "bridge",
+      "to": "guest",
+      "y": 460,
+      "label": "{t: translate, allowed, ready}",
+      "variant": "dashed"
+    },
+    {
+      "id": "m-hold",
+      "from": "omi",
+      "to": "phone",
+      "y": 540,
+      "label": "holds 🇩🇪 Deutsch, speaks",
+      "note": "the microphone opens; the red ● HÖRT ZU badge"
+    },
+    {
+      "id": "m-audio",
+      "from": "phone",
+      "to": "bridge",
+      "y": 600,
+      "label": "{t: audio, de, seq, pcm}",
+      "variant": "security",
+      "note": "16 kHz, 250 ms chunks; refused unless allowed and USB or https"
+    },
+    {
+      "id": "m-queue",
+      "from": "bridge",
+      "to": "worker",
+      "y": 660,
+      "label": "Session.audio(m)",
+      "note": "queued (at most 240); the reader never waits on a model"
+    },
+    {
+      "id": "m-let",
+      "from": "omi",
+      "to": "phone",
+      "y": 720,
+      "label": "lets go"
+    },
+    {
+      "id": "m-end",
+      "from": "phone",
+      "to": "bridge",
+      "y": 760,
+      "label": "{t: audio, de, end}",
+      "note": "the microphone closes at once"
+    },
+    {
+      "id": "m-words",
+      "from": "worker",
+      "to": "bridge",
+      "y": 820,
+      "label": "heard, translated (fr)",
+      "variant": "dashed",
+      "note": "sentences cut at pauses; the sound is dropped"
+    },
+    {
+      "id": "m-show",
+      "from": "bridge",
+      "to": "phone",
+      "y": 880,
+      "label": "heard, translated, who: robot",
+      "variant": "dashed",
+      "note": "shown on both halves, not said: Omi spoke"
+    },
+    {
+      "id": "m-say",
+      "from": "bridge",
+      "to": "guest",
+      "y": 930,
+      "label": "the same, to the guest",
+      "variant": "dashed",
+      "note": "the listener's phone says it in French"
+    },
+    {
+      "id": "m-counts",
+      "from": "bridge",
+      "to": "ros",
+      "y": 1000,
+      "label": "{ok, from, to, words, ms}",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Two gates for the sound",
+      "items": [
+        "The facilitator allows Übersetzen (translate:=true, or the setup page's card); off, both workers drop what they were hearing (bridge_node.py 209–218).",
+        "The robot's phone may send sound only over this computer's own link (USB, adb reverse) or https (phone_local, wsserver.py 199–204; refused at bridge_node.py 431–436).",
+        "The guest phone needs the code from the QR code, new each time Übersetzen is allowed or the setup page asks; a new code drops the guest (bridge_node.py 233–238, wsserver.py 506–510)."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Where the words go",
+      "items": [
+        "To the phones only: talk_send() writes with send_phone() and to the guest, never to a mirror, ROS, a file or the log (bridge_node.py 240–249, wsserver.py 195–198).",
+        "An error (nothing heard, no models) goes to the one who spoke only.",
+        "The phone that listens says the translation; alone, the robot's phone says it itself (talk.js 127–132)."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "What is kept",
+      "items": [
+        "Nothing: an utterance's sound is dropped when its text is made, at most 30 s of it (translate.py 216–254).",
+        "ROS and the setup page get counts: which way, how many words, how long (bridge_node.py 269–273)."
+      ]
+    }
+  ]
+}
