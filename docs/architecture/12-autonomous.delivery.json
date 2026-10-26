@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "d4578ecf-8af8-47ee-9a22-b5980a574756",
+  "receiptId": "b0af0d82-1400-4915-9426-826535d2ca81",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/12-autonomous.architecture.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/12-autonomous.html",
   "specification": {
-    "sha256": "27130b0d8b275bad1f55b0802df39adcbbdf768b33305a24180c8e186b1d502b",
-    "bytes": 6712
+    "sha256": "fbafdaad7aaf731ec60492ec9722170483eeaea89ad73671a8fa6fb8e5e5dcab",
+    "bytes": 6705
   },
   "artifact": {
-    "sha256": "7cf5e32428dec9cc1206085d83121b17b45efd83f31332b9a0c34f1ecfc0c9db",
-    "bytes": 833075
+    "sha256": "5c58c48a3c3f732f3ccbe4e678d3867a0cfcad505ed5c627735c44a729f4fea0",
+    "bytes": 835305
   }
 }

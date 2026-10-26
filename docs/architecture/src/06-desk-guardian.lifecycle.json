@@ -8,7 +8,7 @@
     "output": "06-desk-guardian.html",
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
-      "link_mode": "local-only",
+      "link_mode": "web",
       "revision": "056fab4a132e7e08d3fc1664485237669db75ed5"
     }
   },

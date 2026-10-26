@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "d2e0ad19-d5ff-4ff4-8b14-13715c5ab768",
+  "receiptId": "b7f7ff06-4c52-459a-95b4-b752e7e3cab4",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/14-translate.sequence.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/14-translate.html",
   "specification": {
-    "sha256": "952957c3fb5673b09b96782c474fa308771510047adb441fd18de4bfa69cb2f0",
-    "bytes": 8037
+    "sha256": "4113f0d054b83ac763a105008bb14d9784b26374c3184d6f8c1f047eec375366",
+    "bytes": 8030
   },
   "artifact": {
-    "sha256": "1f0fa25be9df276acfc8899f509f07d728b190c992bf8c2e69fcb825a02d0f8a",
-    "bytes": 824618
+    "sha256": "fad91ba693a80491e21619f7cbace3599f39b57ea030d584cebf647eb48b4cb8",
+    "bytes": 826624
   }
 }
