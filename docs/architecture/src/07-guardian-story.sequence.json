@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
     },
     "legend": {
       "entries": {
@@ -43,18 +43,18 @@
     {
       "id": "phone",
       "type": "frontend",
-      "label": "face.js look",
+      "label": "see.js look",
       "sublabel": "real phone, or mock",
       "sources": [
         {
-          "path": "ros2/atl_phone/web/face.js",
-          "line": 303,
-          "end_line": 318
+          "path": "ros2/atl_phone/web/see.js",
+          "line": 138,
+          "end_line": 153
         },
         {
-          "path": "ros2/atl_phone/web/face.js",
-          "line": 320,
-          "end_line": 365
+          "path": "ros2/atl_phone/web/see.js",
+          "line": 162,
+          "end_line": 207
         }
       ]
     },
@@ -66,13 +66,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 95,
-          "end_line": 104
+          "line": 128,
+          "end_line": 137
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 178,
-          "end_line": 188
+          "line": 284,
+          "end_line": 310
         }
       ]
     },
@@ -84,18 +84,18 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian_node.py",
-          "line": 74,
-          "end_line": 80
+          "line": 109,
+          "end_line": 115
         },
         {
           "path": "ros2/atl_phone/atl_phone/guardian_node.py",
-          "line": 96,
-          "end_line": 129
+          "line": 131,
+          "end_line": 170
         },
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 132,
-          "end_line": 207
+          "line": 133,
+          "end_line": 208
         }
       ]
     },
@@ -112,8 +112,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/guardian_check.py",
-          "line": 57,
-          "end_line": 66
+          "line": 58,
+          "end_line": 69
         }
       ]
     }
@@ -223,15 +223,15 @@
       "dot": "cyan",
       "title": "Only topics between them",
       "items": [
-        "The guardian never sees the page or Webots: phone/faces, codes, touch and imu in; the face, say and look out; prox/ground in and cmd_vel out on the Thymio's side (guardian_node.py 96–129).",
-        "So the same run is guardian_check's story (a mock phone and a fake Thymio, guardian_check.py 57–66), the twin in Webots (scripts/guardian_twin_check.py), or the real phone on a Thymio."
+        "The guardian never sees the page or Webots: phone/faces, codes, touch and imu in; the face, say and look out; prox/ground in and cmd_vel out on the Thymio's side (guardian_node.py 131–170).",
+        "So the same run is guardian_check's story (a mock phone and a fake Thymio, guardian_check.py 58–69), the twin in Webots (scripts/guardian_twin_check.py), or the real phone on a Thymio."
       ]
     },
     {
       "dot": "emerald",
       "title": "What leaves the phone",
       "items": [
-        "Where each face is and how big, and a number when familiar is allowed: four fields, clamped by protocol.py. Pictures and signatures stay in the page (face.js 303–365)."
+        "Where each face is and how big, and a number when familiar is allowed: four fields, clamped by protocol.py. Pictures and signatures stay in the page (see.js 138–207)."
       ]
     },
     {

@@ -47,10 +47,11 @@
   <h1>The phone bridge, drawn from its code</h1>
   <p class="lead">An old Android phone is a robot's face, eyes and ears. It runs a web page; the <code>atl_phone</code> bridge, a
     ROS 2 node in Docker, serves that page and maps its WebSocket to topics under <code>/&lt;robot&gt;/phone/</code>
-    (contract <code>atl-phone/0.2</code>). The brain stays on the PC. These seven diagrams show how a phone gets connected
-    and tested, what the bridge remembers, where it can go wrong, and the Desk Guardian: a ROS 2 node that knows only
-    topics and runs the same against a mock phone, the Thymio twin in Webots, and the real phone.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>a259a7a</code>; the build checked each citation
+    (contract <code>atl-phone/0.6</code>). The brain stays on the PC, or on the robot's Raspberry Pi. These ten diagrams
+    show how a phone gets connected and tested, what the bridge remembers, where it can go wrong, the Desk Guardian (a
+    ROS 2 node that knows only topics), what flows between the phone and ROS 2, and how the real phone and its Webots
+    twin plug into the bridge.</p>
+  <p class="lead">Every box cites the lines it comes from, at commit <code>4220c01</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -61,8 +62,8 @@
         WebSocket, a page that is not secure.</p></div>
     <div class="card"><span class="n">02</span><a href="02-bridge-state.html">What the bridge keeps in memory</a>
       <span class="kind">data model</span>
-      <p>The current Link, the phone's hello, the senses seen and the check reports: nothing on disk, all of it sent whole
-        on <code>/api/state</code>.</p></div>
+      <p>The current Link, the phone's hello, the senses seen and the check reports, and since 0.5–0.6 what a phone that
+        comes gets again, the show state and the screen report: nothing on disk.</p></div>
     <div class="card"><span class="n">03</span><a href="03-test-roundtrip.html">One setup test, there and back</a>
       <span class="kind">sequence</span>
       <p>An output test through the contract's own ROS topic, the camera test straight to the phone, and the poll that
@@ -82,6 +83,18 @@
       <span class="kind">sequence</span>
       <p>Phone, bridge, guardian and Thymio, topic by topic: where the face is goes in, a turn of the wheels comes out;
         pictures and signatures never leave the phone.</p></div>
+    <div class="card"><span class="n">08</span><a href="08-ros-dataflow.html">What flows between the phone and ROS 2</a>
+      <span class="kind">data flow</span>
+      <p>Senses, vision and picks are checked and clamped, rate-limited and published; programs answer on the in-topics,
+        whose makers check again. What never reaches ROS: frames, the screen report, the location.</p></div>
+    <div class="card"><span class="n">09</span><a href="09-phone-integration.html">The real phone and its Webots twin, wired</a>
+      <span class="kind">architecture</span>
+      <p>USB through the host's adb server, the two gates <code>/ws</code> and <code>/ws/mirror</code>, the phone card
+        through adb's own protocol, and the twin as the phone or as its mirror, beside the Thymio twin.</p></div>
+    <div class="card"><span class="n">10</span><a href="10-twin-in-step.html">A tap on the phone, drawn by the twin</a>
+      <span class="kind">sequence</span>
+      <p>The twin joins and gets the current screen; a tap, a tile and a shown letter travel as keys, a ROS topic and,
+        with consent, loopback-only frames.</p></div>
   </div>
 
   <h2>Review findings</h2>
@@ -92,77 +105,106 @@
       phone (<code>on_text</code> did not know which link a message came from), so a late hello could overwrite the new
       phone's model. Now <code>deliver()</code> passes a frame on only while its link is current, under the same lock as
       the takeover. A test reproduces the race.</td>
-      <td><code>wsserver.py</code> 161–180, 283–286 · <a href="05-takeover-race.html">05</a></td>
+      <td><code>wsserver.py</code> 190–209, 335–338 · <a href="05-takeover-race.html">05</a></td>
       <td><span class="tag ok">fixed in 6b29b5a</span></td></tr>
     <tr><td>Output tests (face, gaze, colour, say, torch, vibrate) answered 204 even with no phone, because <code>out()</code>
       ignores the result of <code>server.send</code>. It misled the first real-phone test (a Galaxy A50): the phone was on
       the check page while its outputs were tried. <code>act()</code> now refuses them with "no phone", and step 4 shows
       whether a phone is connected.</td>
-      <td><code>bridge_node.py</code> 202–216 · <a href="03-test-roundtrip.html">03</a></td>
+      <td><code>bridge_node.py</code> 411–413 · <a href="03-test-roundtrip.html">03</a></td>
       <td><span class="tag ok">fixed in d2b04ac</span></td></tr>
     <tr><td>Between a disconnect and the next phone, <code>/api/state</code> still shows the old senses:
       <code>closed()</code> clears the phone, not <code>seen</code>. The setup page relies on <code>connected</code>, and
       keeps what passed once, so its marks stay right.</td>
-      <td><code>bridge_node.py</code> 113–122, <code>setup.js</code> 404–420 · <a href="04-phone-link.html">04</a></td>
+      <td><code>bridge_node.py</code> 208–220, <code>setup.js</code> 771–787 · <a href="04-phone-link.html">04</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>A check report was matched to the connected phone by model text only. Two phones of a kind looked the same,
       and the first real phone did not match itself: its hello named it <code>SM-A505FN</code> (client hints), its report
       "Android 10 phone" (the user agent says <code>K</code>), so the page fell back to the latest report of any phone.
       Now the face and check pages keep a random id in the browser and both messages carry it.</td>
-      <td><code>face.js</code> 147–156, <code>bridge_node.py</code> 244–252, <code>setup.js</code> 247–253 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>face.js</code> 428–437, <code>bridge_node.py</code> 446–454, <code>setup.js</code> 395–401 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">fixed in 9861131</span></td></tr>
     <tr><td>The state dicts are shared between threads without a lock. A stress test (200 000 <code>json.dumps</code> of
       a dict while another thread adds keys, Python 3.12.3 in the image) raised no error; the bridge replaces values, it
       does not mutate them in place.</td>
-      <td><code>bridge_node.py</code> 138–200 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>bridge_node.py</code> 244–350 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">checked · no issue</span></td></tr>
     <tr><td>A phone on plain http over Wi-Fi gets no camera, motion, compass or battery; it now says so in its hello and
       the setup page marks them blocked, with the fix (USB, or <code>--cert</code>).</td>
-      <td><code>face.js</code> 157–162, <code>setup.js</code> 415–420 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>face.js</code> 438–443, <code>setup.js</code> 782–787 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">handled in e8570a6</span></td></tr>
     <tr><td>Wi-Fi with camera and motion needs HTTPS. <code>./start.sh --make-cert</code> makes this PC's own certificate
       authority once; the bridge offers <code>/ca.crt</code> and each phone installs it once. The authority's key is not
       mounted into the container. A phone that has the authority installed trusts anything this PC's key signs, so the
       setup page says how to remove it when a phone leaves the class.</td>
-      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 68–77, <code>wsserver.py</code> 199–210 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>scripts/make_cert.sh</code>, <code>start.sh</code> 83–92, <code>wsserver.py</code> 233–244 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">added in d2b04ac</span></td></tr>
     <tr><td>Telling faces apart ("familiar") is a signature kept in the phone's page only. A program can ask for it but
       not allow it: the facilitator does (<code>familiar:=true</code> or the setup page), and until then the bridge sets
       every face's number to null, whatever the phone sends. The contract check sends a number and a 128-number
       descriptor and sees neither reach ROS.</td>
-      <td><code>bridge_node.py</code> 95–104, 178–185, <code>protocol.py</code> 101–112 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>bridge_node.py</code> 128–137, 284–291, <code>protocol.py</code> 161–175 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>The phone reuses face numbers once it forgets its signatures (familiar off, page reloaded). The guardian
       kept number 1 as its friend, so a second run of its story greeted a new face as the owner. It now forgets its
       friends when the bridge's status shows the phone forgot.</td>
-      <td><code>guardian_node.py</code> 74–80, <code>guardian.py</code> 117–120 · <a href="06-desk-guardian.html">06</a></td>
+      <td><code>guardian_node.py</code> 109–115, <code>guardian.py</code> 118–121 · <a href="06-desk-guardian.html">06</a></td>
       <td><span class="tag ok">fixed in a259a7a</span></td></tr>
     <tr><td>The guardian, in the bridge's container, heard nothing from atl-bot-thymio's: Fast DDS uses shared memory
       between processes on one host, and containers do not share <code>/dev/shm</code>. <code>start.sh</code> now makes
       it use UDP.</td>
-      <td><code>start.sh</code> 78–80 · <a href="07-guardian-story.html">07</a></td>
+      <td><code>start.sh</code> 93–95 · <a href="07-guardian-story.html">07</a></td>
       <td><span class="tag ok">fixed in a259a7a</span></td></tr>
     <tr><td>Both ground sensors over nothing count as lifted, so a Thymio that reaches the desk's edge head-on stops and
       asks to be put down instead of backing off (atl-bot-thymio's behaviours read it the same way). Safe, but not the
       cliff reaction. The guardian itself never drives forward, so it reaches an edge only by turning.</td>
-      <td><code>guardian.py</code> 87–101 · <a href="06-desk-guardian.html">06</a></td>
+      <td><code>guardian.py</code> 88–102 · <a href="06-desk-guardian.html">06</a></td>
       <td><span class="tag warn">open · minor</span></td></tr>
     <tr><td>While the robot is lifted or backing off from the edge, a long touch is not kept for later: petting during
       those 2.2 s is lost.</td>
-      <td><code>guardian.py</code> 152–176 · <a href="06-desk-guardian.html">06</a></td>
+      <td><code>guardian.py</code> 153–177 · <a href="06-desk-guardian.html">06</a></td>
       <td><span class="tag warn">open · minor</span></td></tr>
+    <tr><td>Following faces and hands at about 3 searches a second kept the ANE-LX1 at a load average of about 40. Omi now
+      follows faces only, at 4 searches a second with someone in view and 1 with nobody. The browser check tests the
+      pace; the phone's load after the change is <em>not measured yet</em>.</td>
+      <td><code>see.js</code> 21, 323–326, <code>omi_assist.py</code> 29 · <a href="08-ros-dataflow.html">08</a></td>
+      <td><span class="tag ok">fixed in 4220c01</span></td></tr>
+    <tr><td>A phone keeps running the page's old scripts after the bridge restarts: it reconnects to <code>/ws</code>
+      with what it loaded, and the bridge has no way to make it reload. Fix: the bridge's first message carries a hash
+      of its web files, and the page reloads when it differs. Seen on 2026-10-26.</td>
+      <td><code>face.js</code> 444–457 · <a href="09-phone-integration.html">09</a></td>
+      <td><span class="tag warn">open · minor</span></td></tr>
+    <tr><td>The twin in <code>--mirror</code> mode stops when the bridge closes the mirror socket, so a bridge restart
+      leaves Webots with a frozen phone until the twin is started again. Fix: retry like the page does (1 s to 5 s).
+      Seen on 2026-10-26.</td>
+      <td><code>atl_phone_twin.py</code> 808–813 · <a href="09-phone-integration.html">09</a></td>
+      <td><span class="tag warn">open · minor</span></td></tr>
+    <tr><td>A frame she shows (Zeigen) goes to loopback mirrors and the setup page only. With the bridge on the robot's
+      Pi, a PC over Wi-Fi gets no pictures, neither on its setup page nor in its Webots twin.</td>
+      <td><code>wsserver.py</code> 174–180, 282–291 · <a href="10-twin-in-step.html">10</a></td>
+      <td><span class="tag ok">by design</span></td></tr>
+    <tr><td>The screen report and the sensor numbers carry ids, text keys and clamped numbers only:
+      <code>screen_report()</code> drops an unknown key, a toast's argument must be a known object, and there is no field
+      for the location. Two tests send free text and a location and see neither pass (<code>test_protocol.py</code> 238–263); the browser check sees only the four sensor keys in the page's report.</td>
+      <td><code>protocol.py</code> 238–277 · <a href="10-twin-in-step.html">10</a></td>
+      <td><span class="tag ok">by design</span></td></tr>
+    <tr><td>The phone card needs adb, but the container has none: a second adb of another version would kill the host's
+      server and the phone's USB link. <code>phone_health</code> speaks adb's protocol to the host's server instead, and
+      never offers or closes the bridge's own tab (tested against a fake adb and a fake phone Chrome).</td>
+      <td><code>phone_health.py</code> 5–7, 145–159 · <a href="09-phone-integration.html">09</a></td>
+      <td><span class="tag ok">by design</span></td></tr>
   </table>
   </div>
 
   <h2>Rebuild</h2>
   <pre>cd docs/architecture
-python3 build.py            # every diagram; python3 build.py 06- for one
+python3 build.py            # every diagram; python3 build.py 08- for one
 </pre>
   <p class="lead">The sources are <code>src/*.json</code>; <code>receipts/</code> keeps each run's validation, browser
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit a259a7a</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 4220c01</footer>
 </main>
 </body>
 </html>

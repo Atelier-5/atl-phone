@@ -1,6 +1,6 @@
 # The phone bridge's architecture pack
 
-Open `index.html`: the seven diagrams, what each one answers, and the review findings.
+Open `index.html`: the ten diagrams, what each one answers, and the review findings.
 
 | | Diagram | Type |
 |---|---|---|
@@ -11,6 +11,9 @@ Open `index.html`: the seven diagrams, what each one answers, and the review fin
 | 05 | A second phone takes over (race) | sequence |
 | 06 | The Desk Guardian's states | lifecycle |
 | 07 | The guardian sees a face, then its owner | sequence |
+| 08 | What flows between the phone and ROS 2 | data flow |
+| 09 | The real phone and its Webots twin, wired to the bridge | architecture |
+| 10 | A tap on the phone, drawn by its Webots twin | sequence |
 
 - `src/*.json`: the Archify sources. Each box cites repository lines at the commit in `meta.repository`.
 - `*.html`: the rendered diagrams, standalone (open them from disk). `*.delivery.json`: their provenance.

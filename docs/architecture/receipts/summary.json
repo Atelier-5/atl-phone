@@ -1,5 +1,5 @@
 {
-  "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c",
+  "revision": "4220c013ec23b07b8272572fef203adcb53360ca",
   "diagrams": {
     "01-setup-flow.workflow.json": {
       "output": "01-setup-flow.html",
@@ -69,6 +69,39 @@
     },
     "07-guardian-story.sequence.json": {
       "output": "07-guardian-story.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "08-ros-dataflow.dataflow.json": {
+      "output": "08-ros-dataflow.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "09-phone-integration.architecture.json": {
+      "output": "09-phone-integration.html",
+      "status": "pass",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "diagnostics": []
+    },
+    "10-twin-in-step.sequence.json": {
+      "output": "10-twin-in-step.html",
       "status": "pass",
       "gates": {
         "validate": "pass",

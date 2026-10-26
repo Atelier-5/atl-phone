@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
     },
     "legend": {
       "entries": {
@@ -99,14 +99,14 @@
       "sources": [
         {
           "path": "start.sh",
-          "line": 51,
-          "end_line": 57,
+          "line": 58,
+          "end_line": 64,
           "label": "hash label"
         },
         {
           "path": "start.sh",
-          "line": 79,
-          "end_line": 90,
+          "line": 94,
+          "end_line": 105,
           "label": "run + wait"
         }
       ]
@@ -126,13 +126,13 @@
         },
         {
           "path": "start.sh",
-          "line": 46,
-          "end_line": 49
+          "line": 53,
+          "end_line": 56
         },
         {
           "path": "start.sh",
-          "line": 68,
-          "end_line": 77
+          "line": 83,
+          "end_line": 92
         }
       ]
     },
@@ -147,8 +147,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 33,
-          "end_line": 85
+          "line": 37,
+          "end_line": 118
         }
       ]
     },
@@ -162,8 +162,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 173,
-          "end_line": 183
+          "line": 300,
+          "end_line": 310
         }
       ]
     },
@@ -182,8 +182,8 @@
         },
         {
           "path": "ros2/atl_phone/web/setup.html",
-          "line": 110,
-          "end_line": 144
+          "line": 151,
+          "end_line": 185
         }
       ]
     },
@@ -197,8 +197,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 407,
-          "end_line": 416
+          "line": 634,
+          "end_line": 644
         }
       ]
     },
@@ -212,8 +212,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 215,
-          "end_line": 243
+          "line": 261,
+          "end_line": 280
         }
       ]
     },
@@ -227,13 +227,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 141,
-          "end_line": 169
+          "line": 422,
+          "end_line": 450
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 67,
-          "end_line": 74
+          "line": 127,
+          "end_line": 134
         }
       ]
     },
@@ -247,13 +247,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/check.html",
-          "line": 310,
-          "end_line": 311
+          "line": 372,
+          "end_line": 384
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 244,
-          "end_line": 252
+          "line": 446,
+          "end_line": 454
         }
       ]
     },
@@ -267,8 +267,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 202,
-          "end_line": 242
+          "line": 356,
+          "end_line": 444
         }
       ]
     },
@@ -282,13 +282,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/contract.py",
-          "line": 15,
-          "end_line": 38
+          "line": 20,
+          "end_line": 65
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 56,
-          "end_line": 78
+          "line": 72,
+          "end_line": 111
         }
       ]
     },
@@ -302,8 +302,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 367,
-          "end_line": 401
+          "line": 591,
+          "end_line": 628
         }
       ]
     },
@@ -317,8 +317,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 124,
-          "end_line": 200
+          "line": 63,
+          "end_line": 65
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 208,
+          "end_line": 216
         }
       ]
     },
@@ -332,8 +337,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 415,
-          "end_line": 446
+          "line": 782,
+          "end_line": 816
         }
       ]
     },
@@ -347,8 +352,8 @@
       "sources": [
         {
           "path": "start.sh",
-          "line": 59,
-          "end_line": 63
+          "line": 66,
+          "end_line": 70
         }
       ]
     },
@@ -362,8 +367,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 234,
-          "end_line": 243
+          "line": 282,
+          "end_line": 291
         }
       ]
     },
@@ -377,8 +382,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/setup.js",
-          "line": 404,
-          "end_line": 420
+          "line": 771,
+          "end_line": 787
         }
       ]
     }
@@ -511,7 +516,7 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 234–243).",
+        "/api/state and /api/act answer loopback only; /ws and /report refuse a foreign Origin (wsserver.py 282–291).",
         "A phone over plain http says secure: false in hello; the setup page then shows camera, motion, compass and battery as blocked, not failed."
       ]
     },

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "atl-phone: a tap on the real phone, drawn by its Webots twin",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "10-twin-in-step.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
+    },
+    "legend": {
+      "entries": {
+        "emphasis": { "label": "to ROS 2" },
+        "dashed": { "label": "to the mirror only" },
+        "security": { "label": "pictures, with consent" }
+      }
+    }
+  },
+  "segments": [
+    { "from": 150, "to": 260, "label": "The twin joins" },
+    { "from": 280, "to": 560, "label": "She opens the tiles" },
+    { "from": 580, "to": 800, "label": "She shows a letter" }
+  ],
+  "participants": [
+    {
+      "id": "person", "type": "external", "label": "She", "sublabel": "at the phone"
+    },
+    {
+      "id": "page", "type": "frontend", "label": "face.js, omi.js", "sublabel": "the real phone",
+      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 217, "end_line": 217 }, { "path": "ros2/atl_phone/web/omi.js", "line": 322, "end_line": 334 }, { "path": "ros2/atl_phone/web/omi.js", "line": 347, "end_line": 366 }]
+    },
+    {
+      "id": "bridge", "type": "backend", "label": "Bridge", "sublabel": "bridge_node.py",
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 198, "end_line": 207 }, { "path": "ros2/atl_phone/atl_phone/bridge_node.py", "line": 311, "end_line": 339 }, { "path": "ros2/atl_phone/atl_phone/protocol.py", "line": 238, "end_line": 253 }]
+    },
+    {
+      "id": "ros", "type": "messagebus", "label": "ROS 2", "sublabel": "omi_assist",
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/omi_assist.py", "line": 93, "end_line": 94 }]
+    },
+    {
+      "id": "twin", "type": "backend", "label": "Twin --mirror", "sublabel": "atl_phone_twin.py",
+      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 389, "end_line": 406 }, { "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 678, "end_line": 719 }, { "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 739, "end_line": 759 }]
+    }
+  ],
+  "messages": [
+    { "id": "m-join", "from": "twin", "to": "bridge", "y": 180, "label": "GET /ws/mirror", "note": "loopback, or with the key; it only listens" },
+    { "id": "m-state", "from": "bridge", "to": "twin", "y": 236, "label": "phone, panel, note, screen", "variant": "dashed", "note": "mirrored(): it starts with what the phone shows now" },
+    { "id": "m-tap", "from": "person", "to": "page", "y": 310, "label": "a tap on the eyes" },
+    { "id": "m-screen", "from": "page", "to": "bridge", "y": 366, "label": "{t: screen, menu: true, tiles}", "variant": "dashed", "note": "keys and ids only; checked every 250 ms, sent on a change or every 5 s" },
+    { "id": "m-copy", "from": "bridge", "to": "twin", "y": 432, "label": "screen (clamped)", "variant": "dashed", "note": "screen_report(): unknown keys dropped; not on ROS. The twin draws the tiles" },
+    { "id": "m-pick", "from": "page", "to": "bridge", "y": 498, "label": "{t: menu, id: back}" },
+    { "id": "m-menu", "from": "bridge", "to": "ros", "y": 540, "label": "phone/menu", "variant": "emphasis", "note": "the screen report follows: mode camera_back" },
+    { "id": "m-show", "from": "person", "to": "page", "y": 610, "label": "Zeigen" },
+    { "id": "m-on", "from": "page", "to": "bridge", "y": 650, "label": "{t: show, on: true}", "note": "refused unless the facilitator allowed it" },
+    { "id": "m-frame", "from": "page", "to": "bridge", "y": 710, "label": "{t: frame, jpeg}", "variant": "security", "note": "a few a second, at most a minute, the red badge on" },
+    { "id": "m-frame2", "from": "bridge", "to": "twin", "y": 770, "label": "frame, base64", "variant": "security", "note": "loopback mirrors only; drawn while fresh (3 s), kept nowhere" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "What the twin is sent",
+      "items": [
+        "A copy of everything the bridge sends the phone: server.send() writes to the phone and then each mirror (wsserver.py 168–172).",
+        "The phone's screen report, checked by screen_report(): mode, expression, tiles, highlighted tile, a toast key, note id, badge and the sensor numbers (protocol.py 238–277). Never a sentence read aloud, never the location.",
+        "A mirror that joins gets the phone line, the panel, the open note and the last screen first, so it starts in step (bridge_node.py 198–207)."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Pictures",
+      "items": [
+        "Frames exist only while she shows (Zeigen) and the facilitator allowed it; otherwise the bridge drops them at once (bridge_node.py 324–339).",
+        "They go to the setup page (/api/show.jpg) and to mirrors on loopback only (wsserver.py 174–180); none reaches ROS or disk.",
+        "The twin draws one only while the badge is on and it is under 3 s old, else a camera symbol (atl_phone_twin.py 678–719)."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "The other mode",
+      "items": [
+        "With --bridge the twin is the phone itself: it connects to /ws, draws what it is sent, and copies on the mirror socket are ignored except props (atl_phone_twin.py 389–397)."
+      ]
+    }
+  ]
+}

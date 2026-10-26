@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
     }
   },
   "mainPath": [
@@ -28,8 +28,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 407,
-          "end_line": 416
+          "line": 634,
+          "end_line": 644
         }
       ]
     },
@@ -42,13 +42,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 163,
-          "end_line": 165
+          "line": 444,
+          "end_line": 446
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 215,
-          "end_line": 232
+          "line": 261,
+          "end_line": 280
         }
       ]
     },
@@ -61,13 +61,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 277,
-          "end_line": 281
+          "line": 329,
+          "end_line": 333
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 113,
-          "end_line": 117
+          "line": 208,
+          "end_line": 212
         }
       ]
     },
@@ -81,13 +81,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 131,
-          "end_line": 135
+          "line": 229,
+          "end_line": 233
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 106,
-          "end_line": 111
+          "line": 190,
+          "end_line": 196
         }
       ]
     },
@@ -100,8 +100,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 217,
-          "end_line": 224
+          "line": 263,
+          "end_line": 272
         }
       ]
     },
@@ -113,13 +113,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 170,
-          "end_line": 174
+          "line": 451,
+          "end_line": 455
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 119,
-          "end_line": 122
+          "line": 214,
+          "end_line": 220
         }
       ]
     },
@@ -132,13 +132,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 161,
-          "end_line": 165
+          "line": 190,
+          "end_line": 194
         },
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 172,
-          "end_line": 172
+          "line": 453,
+          "end_line": 453
         }
       ]
     },
@@ -150,8 +150,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 187,
-          "end_line": 187
+          "line": 472,
+          "end_line": 476
         }
       ]
     }
@@ -234,8 +234,8 @@
       "dot": "cyan",
       "title": "One phone per bridge",
       "items": [
-        "take_over() swaps in the new Link, then closes the old one with code 4000 (wsserver.py 161–165).",
-        "A page closed with 4000 does not reconnect, so two phones never fight over the bridge (face.js 172)."
+        "take_over() swaps in the new Link, then closes the old one with code 4000 (wsserver.py 190–194).",
+        "A page closed with 4000 does not reconnect, so two phones never fight over the bridge (face.js 453)."
       ]
     },
     {
@@ -243,7 +243,7 @@
       "title": "State that outlives the link",
       "items": [
         "closed() clears phone but keeps seen; the next opened() resets seen. Between the two, /api/state shows the old senses with connected: false.",
-        "The setup page keeps its own passed map, so a sense that worked once stays ticked across a reconnect (setup.js 416–420)."
+        "The setup page keeps its own passed map, so a sense that worked once stays ticked across a reconnect (setup.js 783–787)."
       ]
     },
     {

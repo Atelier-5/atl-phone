@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
     }
   },
   "mainPath": [
@@ -27,8 +27,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 196,
-          "end_line": 202
+          "line": 197,
+          "end_line": 203
         }
       ]
     },
@@ -41,8 +41,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 181,
-          "end_line": 193
+          "line": 182,
+          "end_line": 194
         }
       ]
     },
@@ -55,13 +55,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 140,
-          "end_line": 149
+          "line": 141,
+          "end_line": 150
         },
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 177,
-          "end_line": 180
+          "line": 178,
+          "end_line": 181
         }
       ]
     },
@@ -73,8 +73,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 184,
-          "end_line": 189
+          "line": 185,
+          "end_line": 190
         }
       ]
     },
@@ -86,13 +86,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 87,
-          "end_line": 92
+          "line": 88,
+          "end_line": 93
         },
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 152,
-          "end_line": 161
+          "line": 153,
+          "end_line": 162
         }
       ]
     },
@@ -104,13 +104,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 95,
-          "end_line": 101
+          "line": 96,
+          "end_line": 102
         },
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 162,
-          "end_line": 170
+          "line": 163,
+          "end_line": 171
         }
       ]
     },
@@ -122,8 +122,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/guardian.py",
-          "line": 173,
-          "end_line": 176
+          "line": 174,
+          "end_line": 177
         }
       ]
     }
@@ -218,23 +218,23 @@
       "dot": "cyan",
       "title": "Who wins",
       "items": [
-        "Each step checks the body first: lifted, then the desk's edge, then a long touch, then faces (guardian.py 152–193). From any state, a lift or an edge comes first; the diagram draws those from Guarding only.",
-        "Both ground sensors over nothing counts as lifted, so a head-on edge stops the robot rather than backing it off (guardian.py 87–92)."
+        "Each step checks the body first: lifted, then the desk's edge, then a long touch, then faces (guardian.py 153–194). From any state, a lift or an edge comes first; the diagram draws those from Guarding only.",
+        "Both ground sensors over nothing counts as lifted, so a head-on edge stops the robot rather than backing it off (guardian.py 88–93)."
       ]
     },
     {
       "dot": "emerald",
       "title": "Friends are numbers",
       "items": [
-        "The owner card shown with a face makes that face's number a friend; without familiar, the face in view is a friend until it has been gone 10 s (guardian.py 140–149).",
-        "When the phone forgets its faces (familiar off, another page or phone), the guardian forgets its friends too: the numbers may go to someone else (guardian_node.py 74–80)."
+        "The owner card shown with a face makes that face's number a friend; without familiar, the face in view is a friend until it has been gone 10 s (guardian.py 141–150).",
+        "When the phone forgets its faces (familiar off, another page or phone), the guardian forgets its friends too: the numbers may go to someone else (guardian_node.py 109–115)."
       ]
     },
     {
       "dot": "amber",
       "title": "One brain, three worlds",
       "items": [
-        "It reads only topics (guardian_node.py 96–129): guardian_check plays it with a mock phone and a fake Thymio, scripts/guardian_twin_check.py on the Thymio twin in Webots, ./start.sh --guardian with the real phone."
+        "It reads only topics (guardian_node.py 131–170): guardian_check plays it with a mock phone and a fake Thymio, scripts/guardian_twin_check.py on the Thymio twin in Webots, ./start.sh --guardian with the real phone."
       ]
     }
   ]

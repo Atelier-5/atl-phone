@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "local-only",
-      "revision": "a259a7a73e3929a4d6e0298e1fb7ec7c447f5e8c"
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
     }
   },
   "layout": {
@@ -51,13 +51,17 @@
         {
           "name": "ca",
           "type": "path | None (/ca.crt)"
+        },
+        {
+          "name": "mirrors",
+          "type": "list[Link] (0.6)"
         }
       ],
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 116,
-          "end_line": 180
+          "line": 124,
+          "end_line": 209
         }
       ]
     },
@@ -90,8 +94,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 85,
-          "end_line": 113
+          "line": 93,
+          "end_line": 121
         }
       ]
     },
@@ -141,13 +145,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 113,
-          "end_line": 135
+          "line": 208,
+          "end_line": 233
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 67,
-          "end_line": 74
+          "line": 127,
+          "end_line": 134
         }
       ]
     },
@@ -193,8 +197,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 138,
-          "end_line": 175
+          "line": 244,
+          "end_line": 281
         }
       ]
     },
@@ -230,8 +234,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 244,
-          "end_line": 252
+          "line": 446,
+          "end_line": 454
         }
       ]
     },
@@ -274,13 +278,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 248,
-          "end_line": 249
+          "line": 450,
+          "end_line": 451
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
-          "line": 267,
-          "end_line": 270
+          "line": 315,
+          "end_line": 318
         }
       ]
     },
@@ -309,13 +313,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 44,
-          "end_line": 45
+          "line": 48,
+          "end_line": 55
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 95,
-          "end_line": 104
+          "line": 128,
+          "end_line": 137
         }
       ]
     },
@@ -348,13 +352,173 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 101,
-          "end_line": 112
+          "line": 161,
+          "end_line": 175
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 178,
-          "end_line": 185
+          "line": 284,
+          "end_line": 291
+        }
+      ]
+    },
+    {
+      "id": "replay",
+      "label": "Bridge, for a phone that comes",
+      "sublabel": "the last a program set",
+      "tag": "Omi, mirror (0.5–0.6)",
+      "row": 2,
+      "col": 0,
+      "width": 264,
+      "attributes": [
+        {
+          "name": "panel",
+          "type": "dict | None"
+        },
+        {
+          "name": "see",
+          "type": "dict | None"
+        },
+        {
+          "name": "note",
+          "type": "dict, till answered"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 52,
+          "end_line": 57
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 235,
+          "end_line": 243
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 314,
+          "end_line": 319
+        }
+      ]
+    },
+    {
+      "id": "show",
+      "label": "Bridge.show",
+      "sublabel": "Zeigen, in memory only",
+      "tag": "Omi, mirror (0.5–0.6)",
+      "row": 2,
+      "col": 1,
+      "width": 264,
+      "attributes": [
+        {
+          "name": "allowed",
+          "type": "bool (show:=)"
+        },
+        {
+          "name": "showing",
+          "type": "bool (her tile)"
+        },
+        {
+          "name": "frame",
+          "type": "(jpeg, t)"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 49,
+          "end_line": 51
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 170,
+          "end_line": 178
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 324,
+          "end_line": 339
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "label": "Bridge.screen",
+      "sublabel": "the phone's report",
+      "tag": "Omi, mirror (0.5–0.6)",
+      "row": 2,
+      "col": 2,
+      "width": 264,
+      "attributes": [
+        {
+          "name": "mode",
+          "type": "PANEL_MODES"
+        },
+        {
+          "name": "tiles, hi",
+          "type": "ids"
+        },
+        {
+          "name": "toast, arg",
+          "type": "a text key"
+        },
+        {
+          "name": "sensors",
+          "type": "numbers, no place"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 53,
+          "end_line": 53
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 332,
+          "end_line": 334
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/protocol.py",
+          "line": 238,
+          "end_line": 253
+        }
+      ]
+    },
+    {
+      "id": "omi",
+      "label": "Bridge.omi, .guardian",
+      "sublabel": "the programs' last state",
+      "tag": "Omi, mirror (0.5–0.6)",
+      "row": 2,
+      "col": 3,
+      "width": 264,
+      "attributes": [
+        {
+          "name": "state",
+          "type": "str"
+        },
+        {
+          "name": "at",
+          "type": "float (time)"
+        }
+      ],
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 54,
+          "end_line": 54
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 164,
+          "end_line": 168
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 184,
+          "end_line": 188
         }
       ]
     }
@@ -423,11 +587,12 @@
       "dot": "cyan",
       "title": "Facts",
       "items": [
-        "Nothing is stored on disk: phone, seen and reports live in the Bridge node and go out whole on GET /api/state (bridge_node.py 192–200).",
-        "phone and seen have no id of their own; they belong to whichever Link is current. opened() replaces both, closed() clears phone but leaves seen (bridge_node.py 113–122).",
+        "Nothing is stored on disk: phone, seen and reports live in the Bridge node and go out whole on GET /api/state (bridge_node.py 343–350).",
+        "phone and seen have no id of their own; they belong to whichever Link is current. opened() replaces both, closed() clears phone but leaves seen (bridge_node.py 208–220).",
         "Every value is checked and clamped by protocol.parse before it lands here.",
         "seen.camera also holds error and torch; codes keeps the last 5 read. Each sense records its time in at.",
-        "Look adds two tables: what programs asked for (look, look/familiar) next to the facilitator's allowed, and the latest faces, each only x, y, size and a number (protocol.py 101–112)."
+        "Look adds two tables: what programs asked for (look, look/familiar) next to the facilitator's allowed, and the latest faces, each only x, y, size and a number (protocol.py 161–175).",
+        "Since 0.5–0.6 the bridge also keeps what a phone that comes needs again (panel, see, an unanswered note), the phone's screen report for the mirrors, the show state with the last frame, and the programs' last states; opened() and closed() reset show and screen (bridge_node.py 208–220). A shown frame goes from Bridge.show to the loopback mirrors only (wsserver.py 174–180). Bridge.screen is the current phone's last report, and is cleared when it goes."
       ]
     },
     {
@@ -437,7 +602,7 @@
         "A report is matched to its phone by a random id the face and check pages keep in the browser (setup.js report()); by model only when storage is blocked. Until 9861131 it was by model alone, and one phone did not even match itself: hello named it from client hints, the report from the user agent (\"K\").",
         "The dicts are read by HTTP threads and written by the phone's thread without a lock. A stress test of json.dumps against a writer adding keys (200 000 runs, Python 3.12.3) raised no error: the values are replaced, not mutated.",
         "The id lives per address: the same phone has one id over USB (localhost) and another over Wi-Fi.",
-        "A face's number reaches ROS only while familiar is both asked and allowed; otherwise the bridge sets it to null, whatever the phone sends (bridge_node.py 178–185). The signatures behind the numbers stay in the phone's page."
+        "A face's number reaches ROS only while familiar is both asked and allowed; otherwise the bridge sets it to null, whatever the phone sends (bridge_node.py 284–291). The signatures behind the numbers stay in the phone's page."
       ]
     }
   ]

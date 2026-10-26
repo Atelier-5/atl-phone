@@ -1,0 +1,397 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "atl-phone: what flows between the phone and ROS 2",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": "08-ros-dataflow.html",
+    "repository": {
+      "url": "https://github.com/Atelier-5/atl-phone.git",
+      "link_mode": "local-only",
+      "revision": "4220c013ec23b07b8272572fef203adcb53360ca"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "Numbers and ids"
+        },
+        "emphasis": {
+          "label": "Published on ROS 2"
+        },
+        "security": {
+          "label": "Checked or held back"
+        }
+      }
+    }
+  },
+  "stages": [
+    {
+      "label": "On the phone"
+    },
+    {
+      "label": "Bridge: checked"
+    },
+    {
+      "label": "Bridge node"
+    },
+    {
+      "label": "ROS 2 topics"
+    },
+    {
+      "label": "Programs"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "senses",
+      "type": "frontend",
+      "label": "Senses",
+      "sublabel": "face.js: imu, compass, touch",
+      "stage": 0,
+      "row": 0,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 591,
+          "end_line": 628
+        }
+      ]
+    },
+    {
+      "id": "vision",
+      "type": "frontend",
+      "label": "Vision",
+      "sublabel": "see.js: faces, markers…",
+      "stage": 0,
+      "row": 1,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/see.js",
+          "line": 162,
+          "end_line": 207
+        },
+        {
+          "path": "ros2/atl_phone/web/see.js",
+          "line": 236,
+          "end_line": 299
+        }
+      ]
+    },
+    {
+      "id": "picks",
+      "type": "frontend",
+      "label": "Tiles, cards",
+      "sublabel": "menu, answer, read, what",
+      "stage": 0,
+      "row": 2,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 217,
+          "end_line": 217
+        },
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 337,
+          "end_line": 337
+        },
+        {
+          "path": "ros2/atl_phone/web/omi.js",
+          "line": 205,
+          "end_line": 252
+        }
+      ]
+    },
+    {
+      "id": "face",
+      "type": "frontend",
+      "label": "The face",
+      "sublabel": "face.js handle()",
+      "stage": 0,
+      "row": 3,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/web/face.js",
+          "line": 444,
+          "end_line": 477
+        }
+      ]
+    },
+    {
+      "id": "parse",
+      "type": "security",
+      "label": "parse()",
+      "sublabel": "known fields, clamped",
+      "stage": 1,
+      "row": 1,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/protocol.py",
+          "line": 118,
+          "end_line": 237
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/wsserver.py",
+          "line": 196,
+          "end_line": 202
+        }
+      ]
+    },
+    {
+      "id": "makers",
+      "type": "security",
+      "label": "Makers",
+      "sublabel": "face(), say(), see()…",
+      "stage": 1,
+      "row": 3,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/protocol.py",
+          "line": 287,
+          "end_line": 452
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 120,
+          "end_line": 126
+        }
+      ]
+    },
+    {
+      "id": "text",
+      "type": "backend",
+      "label": "text()",
+      "sublabel": "rates, familiar",
+      "stage": 2,
+      "row": 1,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 222,
+          "end_line": 339
+        }
+      ]
+    },
+    {
+      "id": "seen",
+      "type": "database",
+      "label": "seen",
+      "sublabel": "latest, setup page",
+      "stage": 2,
+      "row": 2,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 63,
+          "end_line": 65
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 343,
+          "end_line": 354
+        }
+      ]
+    },
+    {
+      "id": "subs",
+      "type": "backend",
+      "label": "Subscriptions",
+      "sublabel": "one per in-topic",
+      "stage": 2,
+      "row": 3,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 86,
+          "end_line": 99
+        }
+      ]
+    },
+    {
+      "id": "outtopics",
+      "type": "messagebus",
+      "label": "phone/* out",
+      "sublabel": "imu, faces, menu…",
+      "stage": 3,
+      "row": 1,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/contract.py",
+          "line": 23,
+          "end_line": 44
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 72,
+          "end_line": 85
+        }
+      ]
+    },
+    {
+      "id": "intopics",
+      "type": "messagebus",
+      "label": "phone/* in",
+      "sublabel": "face, say, see, note…",
+      "stage": 3,
+      "row": 3,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/contract.py",
+          "line": 45,
+          "end_line": 64
+        }
+      ]
+    },
+    {
+      "id": "thymio",
+      "type": "external",
+      "label": "Thymio link",
+      "sublabel": "atl-thymio",
+      "stage": 4,
+      "row": 0,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian_node.py",
+          "line": 7,
+          "end_line": 9
+        }
+      ]
+    },
+    {
+      "id": "programs",
+      "type": "backend",
+      "label": "Programs",
+      "sublabel": "omi_assist, guardian, any",
+      "stage": 4,
+      "row": 2,
+      "sources": [
+        {
+          "path": "ros2/atl_phone/atl_phone/omi_assist.py",
+          "line": 40,
+          "end_line": 48
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/guardian_node.py",
+          "line": 59,
+          "end_line": 73
+        },
+        {
+          "path": "ros2/atl_phone/atl_phone/bridge_node.py",
+          "line": 107,
+          "end_line": 111
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "from": "senses",
+      "to": "parse",
+      "label": "imu, touch",
+      "variant": "default"
+    },
+    {
+      "from": "vision",
+      "to": "parse",
+      "label": "faces, markers",
+      "variant": "default"
+    },
+    {
+      "from": "picks",
+      "to": "parse",
+      "label": "menu, answer",
+      "variant": "default"
+    },
+    {
+      "from": "parse",
+      "to": "text",
+      "label": "a checked dict",
+      "variant": "security"
+    },
+    {
+      "from": "text",
+      "to": "outtopics",
+      "label": "Imu, String",
+      "variant": "emphasis"
+    },
+    {
+      "from": "text",
+      "to": "seen",
+      "label": "latest of each",
+      "variant": "default"
+    },
+    {
+      "from": "intopics",
+      "to": "subs",
+      "label": "std_msgs",
+      "variant": "emphasis"
+    },
+    {
+      "from": "subs",
+      "to": "makers",
+      "label": "values",
+      "variant": "default"
+    },
+    {
+      "from": "makers",
+      "to": "face",
+      "label": "JSON on /ws",
+      "variant": "security"
+    },
+    {
+      "from": "outtopics",
+      "to": "programs",
+      "label": "faces, menu, imu",
+      "variant": "emphasis"
+    },
+    {
+      "from": "programs",
+      "to": "intopics",
+      "label": "face, say, note",
+      "variant": "emphasis"
+    },
+    {
+      "from": "thymio",
+      "to": "programs",
+      "label": "prox/ground",
+      "variant": "default"
+    },
+    {
+      "from": "programs",
+      "to": "thymio",
+      "label": "cmd_vel",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Facts: out, from the phone to ROS",
+      "items": [
+        "The page sends JSON over its one WebSocket; deliver() hands it on only while that link is the current phone (wsserver.py 196–202).",
+        "parse() keeps the known fields of each message type and clamps every number (protocol.py 118–237); anything else is dropped with a warning.",
+        "text() publishes standard types where they exist (Imu, Float32, BatteryState) and JSON in a String otherwise; IMU at most 60 Hz, faces 10 Hz, vision MAX_SEE_RATE (bridge_node.py 244–299).",
+        "A face's familiar number goes out only while familiar is asked and allowed; otherwise the bridge sets it to null (bridge_node.py 289)."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Facts: in, from ROS to the phone",
+      "items": [
+        "One subscription per in-topic; each goes through out() and a protocol maker that checks and clamps it before it is sent (bridge_node.py 86–99, 120–126).",
+        "server.send() gives the phone the message and every mirror a copy (wsserver.py 168–172): diagram 09.",
+        "Programs: omi_assist (tiles, the follower, reminders), guardian_node (the Desk Guardian, which also drives the Thymio: cmd_vel out, prox/ground in) and any program; they use only these topics (omi_assist.py 40–48, guardian_node.py 59–73). The setup page's tests publish on the same topics (bridge_node.py 107–111)."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Held back from ROS",
+      "items": [
+        "Pictures: no topic carries a frame. A frame the person shows (Zeigen) goes to the setup page and to loopback mirrors only, and only while showing is allowed (bridge_node.py 335–339).",
+        "The screen report goes to the mirrors, not to ROS (bridge_node.py 332–334). The text read aloud stays on the phone: read/result carries counts (contract.py 43).",
+        "The location stays on the phone's screen: sensor_report() has no field for it (protocol.py 256–277)."
+      ]
+    }
+  ]
+}
