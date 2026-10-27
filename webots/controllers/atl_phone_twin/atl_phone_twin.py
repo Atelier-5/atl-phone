@@ -530,6 +530,8 @@ class Twin:
         """The card's text and buttons: the reminder the bridge sent, or the presentation's sample."""
         if note_id == "tour":
             return self.word("tour", "card"), NOTE_WORDS[self.lang()]
+        if note_id == c.READ_ASK:   # the phone asks whether to read a letter translated
+            return self.word("omi", "readAsk"), [self.word("omi", "readYes"), self.word("omi", "readNo")]
         if self.note and self.note.get("id") == note_id:
             l = self.lang()
             labels = [b.get("label") for b in self.note.get("buttons", [])]

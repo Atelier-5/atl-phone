@@ -23,6 +23,10 @@ says it in the other language.
 - **Nothing kept:** the sound and the words are not written to disk, not logged, and not shown on the setup page or in
   the robot's twin in Webots. The robot's programs (ROS) only learn that a translation happened, how many words, and how
   long it took. The words stay on the phone's screen until the next one.
+- **Letters:** while it is allowed, when the phone reads a letter that is in French (for Omi, who speaks German), it
+  first asks whether to read it in German. Only if she says yes does the letter's text go to the robot's computer, in
+  the same way as the sound, to be translated there; the German comes back to her phone alone, not to a second phone,
+  and is not kept either. If she says no, the phone reads it as it is, and nothing leaves the phone.
 - **A second phone:** someone at the table can join with their own phone on the home Wi-Fi. In Übersetzen, the robot's
   phone shows a QR code where the eyes are; scanning it opens a page on the robot's computer (encrypted, https; the
   first time, Chrome warns about the connection because the robot made its own certificate). Both phones then show
@@ -51,6 +55,11 @@ la tuile et parle, et le téléphone le redit dans l'autre langue.
   d'installation ou dans le jumeau du robot dans Webots. Les programmes du robot (ROS) apprennent seulement qu'une
   traduction a eu lieu, combien de mots, et en combien de temps. Les mots restent sur l'écran du téléphone jusqu'à la
   suivante.
+- **Les lettres :** tant que c'est permis, quand le téléphone lit une lettre en français (pour Omi, qui parle
+  allemand), il demande d'abord s'il doit la lire en allemand. Le texte de la lettre ne va à l'ordinateur du robot,
+  comme le son, pour y être traduit, que si elle dit oui ; l'allemand revient sur son téléphone seulement, pas sur un
+  deuxième téléphone, et n'est pas gardé non plus. Si elle dit non, le téléphone la lit telle quelle, et rien ne
+  quitte le téléphone.
 - **Un deuxième téléphone :** quelqu'un à table peut se joindre avec son propre téléphone sur le Wi-Fi de la maison.
   Dans Übersetzen, le téléphone du robot affiche un code QR à la place des yeux ; le scanner ouvre une page sur
   l'ordinateur du robot (chiffrée, https ; la première fois, Chrome avertit au sujet de la connexion, car le robot a
@@ -81,6 +90,11 @@ spricht, und das Handy sagt es in der anderen Sprache.
   Einrichtungsseite oder im Zwilling des Roboters in Webots gezeigt. Die Programme des Roboters (ROS) erfahren nur, dass
   übersetzt wurde, wie viele Wörter und wie lange es dauerte. Die Wörter bleiben bis zur nächsten Übersetzung auf dem
   Bildschirm des Handys.
+- **Briefe:** solange es erlaubt ist und das Handy einen Brief auf Französisch vorliest (für Omi, die Deutsch spricht),
+  fragt es zuerst, ob es ihn auf Deutsch vorlesen soll. Nur wenn sie Ja sagt, geht der Text des Briefs wie der Ton an
+  den Computer des Roboters und wird dort übersetzt; das Deutsche kommt nur auf ihr Handy zurück, nicht auf ein
+  zweites Handy, und wird auch nicht behalten. Sagt sie Nein, liest das Handy ihn so vor, wie er ist, und nichts
+  verlässt das Handy.
 - **Ein zweites Handy:** jemand am Tisch kann mit dem eigenen Handy im WLAN zu Hause dazukommen. In Übersetzen zeigt
   das Handy des Roboters einen QR-Code, wo sonst die Augen sind; wer ihn scannt, öffnet eine Seite auf dem Computer des
   Roboters (verschlüsselt, https; beim ersten Mal warnt Chrome vor der Verbindung, weil der Roboter sein Zertifikat

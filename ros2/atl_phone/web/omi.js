@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Atelier-5
-// Omi Assist's helpers, on the phone (contract atl-phone/0.6): the time, the magnifier, reading aloud, "what is this?",
+// Omi Assist's helpers, on the phone (contract atl-phone/0.8): the time, the magnifier, reading aloud, "what is this?",
 // the eyes following, and showing the picture to the PC. Loaded after face.js and see.js, whose camera, speech, panel and
 // vision it uses. Reading (vendor/tesseract) and "what is this?" (MediaPipe's objects) run here: what they read or see
-// is said and written on this screen, and ROS only hears how it went (lines, characters, a label, how long). Showing is
+// is said and written on this screen, and ROS only hears how it went (lines, characters, a label, how long); a letter in
+// the other language of Übersetzen goes to the bridge to be translated only when the person says yes. Showing is
 // the one exception to "pictures stay on the phone": only when the bridge allows it, only while the person shows, with
 // the red badge on, at most a minute; the frames go to the bridge, which hands them to the setup page and keeps none.
 'use strict';
@@ -176,45 +177,115 @@ function grabStill(width) {
 }
 
 // ---- reading aloud: Tesseract on the phone, said sentence by sentence; a tap stops it ---------------------------------
-function tesseract(l) {
-  if (!omi.tess[l]) {
+// A letter in the other language of Übersetzen (French for a German Omi, German for a French one), when Übersetzen is
+// allowed: the phone asks whether to read it translated; yes, its sentences go to the bridge in pieces of at most
+// TR_CHARS (the same gate as the sound, contract 0.8), the translation comes back to this phone alone and is said.
+// No, or no translation: it is read as it is, in its own language's voice.
+var READ_TR = { de: 'fr', fr: 'de' }, TR_CHARS = 500, TR_WAIT_MS = 20000;
+var STOP_WORDS = {  // short words that tell the two apart (none in both)
+  fr: 'le la les et est un une du que qui pour pas vous nous je tu il elle avec dans sur ce cette mais au aux ne très bien merci mon ma mes ton ta tes votre vos bisous chère cher'.split(' '),
+  de: 'der die das und ist ein eine nicht ich du er sie wir mit auf für den dem zu im von bitte danke mein meine dein dich mir liebe lieber auch'.split(' ')
+};
+function letterLang(text) {  // 'fr', 'de' or '' (too few words to tell)
+  var n = { fr: 0, de: 0 };
+  (text.toLowerCase().match(/[a-zà-ÿß]+/g) || []).forEach(function (w) {
+    if (STOP_WORDS.fr.indexOf(w) >= 0) n.fr++; else if (STOP_WORDS.de.indexOf(w) >= 0) n.de++;
+  });
+  return n.fr >= 3 && n.fr > 2 * n.de ? 'fr' : n.de >= 3 && n.de > 2 * n.fr ? 'de' : '';
+}
+function canTranslate(l) { return !!READ_TR[l] && typeof talk === 'object' && talk.allowed && talk.ready && !TALK_GUEST; }
+function tesseract(code) {  // 'deu', or 'deu+fra' when a letter may be in the other language
+  if (!omi.tess[code]) {
     var base = new URL(TESS + '/', location.href).href;
-    omi.tess[l] = (window.Tesseract ? Promise.resolve() : script(TESS + '/tesseract.min.js')).then(function () {
-      return Tesseract.createWorker(OCR_LANG[l] || 'eng', 1, { workerPath: base + 'worker.min.js', corePath: base, langPath: base + 'lang',
-                                                              workerBlobURL: false, gzip: true, cacheMethod: 'none' });
+    omi.tess[code] = (window.Tesseract ? Promise.resolve() : script(TESS + '/tesseract.min.js')).then(function () {
+      return Tesseract.createWorker(code, 1, { workerPath: base + 'worker.min.js', corePath: base, langPath: base + 'lang',
+                                               workerBlobURL: false, gzip: true, cacheMethod: 'none' });
     });
-    omi.tess[l].catch(function () { delete omi.tess[l]; });
+    omi.tess[code].catch(function () { delete omi.tess[code]; });
   }
-  return omi.tess[l];
+  return omi.tess[code];
 }
 function sentences(text) {
   return (text.replace(/-\n/g, '').replace(/\s*\n\s*/g, ' ').replace(/\s+/g, ' ').trim()
     .match(/[^.!?…:;]+[.!?…:;]*/g) || []).map(function (s) { return s.trim(); }).filter(function (s) { return /[A-Za-zÀ-ÿ0-9]/.test(s); });
 }
+function pieces(ss) {  // sentences in pieces of at most TR_CHARS, for the bridge
+  var out = [], cur = '';
+  ss.forEach(function (x) {
+    x = x.slice(0, TR_CHARS);
+    if (cur && cur.length + 1 + x.length > TR_CHARS) { out.push(cur); cur = ''; }
+    cur = cur ? cur + ' ' + x : x;
+  });
+  if (cur) out.push(cur);
+  return out;
+}
 function stopReading() {
   omi.reading++; document.removeEventListener('pointerdown', stopReading, true);
+  clearTimeout(omi.trOff); omi.tr = null;
+  if (cardId === 'readAsk') noteCard({ id: 'readAsk', text: '' });
   speechSynthesis.cancel(); speaking = false; toast('');
+}
+function sayAll(ss, l, run, done) {  // said one after the other, written big; a tap stops it
+  document.addEventListener('pointerdown', stopReading, true);
+  (function next(i) {
+    if (run !== omi.reading) return;
+    if (i >= ss.length) { document.removeEventListener('pointerdown', stopReading, true); toast(''); if (done) done(); return; }
+    tell(ss[i], l, 60000, function () { next(i + 1); }, 'reading');  // the screen report: "reading", never the text
+  })(0);
+}
+function readTranslated(ps, src, l, run) {  // one piece at a time: asked, translated on the bridge, said
+  (function ask(i) {
+    if (run !== omi.reading) return;
+    if (i >= ps.length) { omi.tr = null; return; }
+    omi.tr = { n: (omi.trN = (omi.trN || 0) + 1), i: i, ps: ps, src: src, l: l, run: run, next: ask };
+    send({ t: 'translate', text: ps[i], from: src, to: l, n: omi.tr.n });
+    clearTimeout(omi.trOff);
+    omi.trOff = setTimeout(function () { omiTranslated({ n: omi.tr && omi.tr.n, error: 'late' }); }, TR_WAIT_MS);
+  })(0);
+}
+function omiTranslated(m) {  // face.js handle(): a piece of the letter, translated ("source": "text", its n)
+  var tr = omi.tr;
+  if (!tr || m.n !== tr.n || tr.run !== omi.reading) return;   // an old answer, or reading stopped
+  clearTimeout(omi.trOff);
+  var ss = m.error ? [] : sentences(String(m.text || ''));
+  if (!ss.length) {  // the bridge could not: the rest as it is, in its own voice
+    omi.tr = null;
+    var rest = sentences(tr.ps.slice(tr.i).join(' '));
+    return tell(ot(tr.l, 'trFail'), tr.l, 6000, function () { sayAll(rest, tr.src, tr.run); });
+  }
+  sayAll(ss, tr.l, tr.run, function () { tr.next(tr.i + 1); });
 }
 function readAloud(l) {
   if (omi.busy) return;
   omi.busy = 'read';
-  var t0 = performance.now(), run = ++omi.reading;
+  var t0 = performance.now(), run = ++omi.reading, other = canTranslate(l) ? READ_TR[l] : '';
   tell(ot(l, 'reading'), l, 20000);
-  Promise.all([grabStill(1600), tesseract(l)]).then(function (r) {
+  Promise.all([grabStill(1600), tesseract((OCR_LANG[l] || 'eng') + (other ? '+' + OCR_LANG[other] : ''))]).then(function (r) {
     return r[1].recognize(r[0]);
   }).then(function (res) {
     var d = res.data || {}, lines = (d.lines || []).filter(function (x) { return x.confidence >= 40 && /[A-Za-zÀ-ÿ0-9]{2}/.test(x.text); });
     var text = lines.map(function (x) { return x.text; }).join('\n'), ss = sentences(text), ms = Math.round(performance.now() - t0);
+    var found = other ? letterLang(text) : '';
+    var report = function (tr) {  // ROS: how it went, the language it found, and whether it was read translated; never the text
+      var r = { t: 'read', ok: true, lines: lines.length, chars: text.replace(/\s/g, '').length, ms: ms };
+      if (found) { r.lang = found; r.translated = !!tr; }
+      send(r);
+    };
     omi.busy = '';
-    send({ t: 'read', ok: true, lines: lines.length, chars: text.replace(/\s/g, '').length, ms: ms });
-    if (run !== omi.reading) return;
-    if (!ss.length) return tell(ot(l, 'notext'), l, 8000);
-    document.addEventListener('pointerdown', stopReading, true);
-    (function next(i) {
-      if (run !== omi.reading) return;
-      if (i >= ss.length) { document.removeEventListener('pointerdown', stopReading, true); toast(''); return; }
-      tell(ss[i], l, 60000, function () { next(i + 1); }, 'reading');  // the screen report: "reading", never the text
-    })(0);
+    if (run !== omi.reading) return report(false);
+    if (!ss.length) { report(false); return tell(ot(l, 'notext'), l, 8000); }
+    if (found !== other || !other) { report(false); return sayAll(ss, found || l, run); }
+    toast('');
+    noteCard({ id: 'readAsk', text: ot(l, 'readAsk'), say: true,
+               buttons: [{ id: 'yes', label: ot(l, 'readYes') }, { id: 'no', label: ot(l, 'readNo') }],
+               pick: function (id) {
+                 if (run !== omi.reading) return;
+                 report(id === 'yes');
+                 if (id !== 'yes') return sayAll(ss, found, run);
+                 if (!canTranslate(l)) return tell(ot(l, 'trFail'), l, 6000, function () { sayAll(ss, found, run); });
+                 tell(ot(l, 'translating'), l, 20000);
+                 readTranslated(pieces(ss), found, l, run);
+               } });
   }).catch(function (e) {
     omi.busy = '';
     send({ t: 'read', ok: false, lines: 0, chars: 0, ms: Math.round(performance.now() - t0), error: camError(e) });

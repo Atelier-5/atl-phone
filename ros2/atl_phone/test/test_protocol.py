@@ -9,6 +9,7 @@ import pytest
 
 from atl_phone import contract as c
 from atl_phone import protocol as p
+from atl_phone import translate
 
 
 def parse(**m):
@@ -302,6 +303,9 @@ def test_omi_messages_from_the_phone():
     assert parse(t="menu", id="time") == {"t": "menu", "id": "time"}
     assert parse(t="answer", note="r1", id="done") == {"t": "answer", "note": "r1", "id": "done"}
     assert parse(t="read", ok=True, lines=3.7, chars=-2, ms=900, text="never kept") == {"t": "read", "ok": True, "lines": 3, "chars": 0, "ms": 900}
+    assert parse(t="read", ok=True, lines=2, chars=40, ms=900, lang="fr", translated=1) == {   # 0.8: a letter in French, read in German
+        "t": "read", "ok": True, "lines": 2, "chars": 40, "ms": 900, "lang": "fr", "translated": True}
+    assert "lang" not in parse(t="read", ok=True, lang="en")   # only the languages it translates
     assert parse(t="what", ok=True, label="cup", score=0.83, ms=1200)["label"] == "cup"
     assert parse(t="what", ok=False, label="cup")["label"] is None
     assert parse(t="what", ok=True, label=None)["label"] is None   # it looked, and knew nothing there
@@ -344,6 +348,17 @@ def test_the_phone_knows_every_tile_and_names_every_object():
     assert sorted(what) == sorted(c.OBJECTS)
     for label, row in what.items():
         assert len(row) == 3 and all(isinstance(w, str) and w for w in row), label
+
+
+def test_a_letter_to_translate_is_checked():
+    m = p.parse(json.dumps({"t": "translate", "text": "  Chère maman.  ", "from": "fr", "to": "de", "n": 4.6}))
+    assert m == {"t": "translate", "text": "Chère maman.", "from": "fr", "to": "de", "n": 4}
+    assert len(p.parse(json.dumps({"t": "translate", "text": "a" * 2000, "from": "de", "to": "fr"}))["text"]) == p.MAX_TEXT
+    assert p.MAX_TEXT == translate.MAX_CHARS
+    for bad in ({"text": "x", "from": "fr", "to": "fr"}, {"text": "x", "from": "en", "to": "de"}, {"text": "  ", "from": "fr", "to": "de"},
+                {"text": 5, "from": "fr", "to": "de"}, {"text": "x", "from": "fr", "to": "de", "n": "1"}):
+        with pytest.raises(ValueError):
+            p.parse(json.dumps(dict(bad, t="translate")))
 
 
 def test_audio_chunks_are_checked():

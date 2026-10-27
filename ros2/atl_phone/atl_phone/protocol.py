@@ -4,7 +4,7 @@
 
 Phone -> bridge: {"t": "hello" | "imu" | "heading" | "touch" | "battery" | "camera" | "look" | "faces" | "code" | "pad" | "panel"
                        | "see" | "markers" | "blobs" | "objects" | "hands" | "menu" | "answer" | "read" | "what" | "show"
-                       | "frame" | "screen" | "audio", ...}
+                       | "frame" | "screen" | "audio" | "translate", ...}
 Bridge -> phone: {"t": "face" | "gaze" | "color" | "say" | "torch" | "vibrate" | "open" | "camera" | "look" | "forget" | "panel"
                        | "see" | "note" | "read" | "what" | "show" | "tour" | "web" | "translate" | "heard" | "translated", ...}
 
@@ -19,7 +19,9 @@ to the setup page on this PC only (never a topic, never a file). The bridge says
 translate mode, and only when the facilitator allowed it and the phone's link is this computer (USB) or https. 16 kHz
 PCM16 in 250 ms chunks; the bridge hears and translates it (translate.py) and drops the sound. "heard" and
 "translated" carry the words back to the phone alone: never a mirror, a topic, a file or the log. "translate" says
-whether talking is allowed and the models are there.
+whether talking is allowed and the models are there. From the phone, "translate" is a letter it read in the other
+language (contract 0.8): at most MAX_TEXT characters of it a request, numbered n, under the same gate; its
+"translated" comes back to the robot's phone alone, with "source": "text" and the same n.
 
 "camera" is the setup page's camera test: the phone shows the picture on its own screen and says
 whether it works and which codes it read; pictures never leave the phone.
@@ -50,6 +52,8 @@ BUTTON_ID = re.compile(r"[A-Za-z0-9_-]{1,20}")
 MAX_FRAME = 96 * 1024       # bytes of a show frame, as base64 (a 320 px JPEG is about 15-30 KB)
 MAX_AUDIO = 44 * 1024       # bytes of an audio chunk, as base64: up to 1 s of 16 kHz PCM16 (the phone sends 250 ms)
 MAX_SEQ = 1000              # chunks of one hold (30 s are 120)
+MAX_TEXT = 500              # characters of a letter to translate, a request (translate.MAX_CHARS)
+MAX_N = 1000000             # the phone's request numbers
 
 
 def _num(v, lo=-1e6, hi=1e6) -> float:
@@ -195,6 +199,10 @@ def parse(raw: str) -> dict:
     if t == "read":  # read aloud on the phone: how it went, never the text
         out = {"t": "read", "ok": bool(m.get("ok")), "lines": int(_num(m.get("lines", 0), 0, 1000)),
                "chars": int(_num(m.get("chars", 0), 0, 100000)), "ms": int(_num(m.get("ms", 0), 0, 600000))}
+        if m.get("lang") in c.TALK_LANGS:  # the language it found the text in (0.8), and whether it was read translated
+            out["lang"] = m["lang"]
+        if "translated" in m:
+            out["translated"] = bool(m["translated"])
         if m.get("error"):
             out["error"] = _text(m["error"], 80)
         return out
@@ -246,6 +254,14 @@ def parse(raw: str) -> dict:
         if len(pcm) % 2:
             raise ValueError("audio: not PCM16")
         return {"t": "audio", "lang": lang, "seq": int(_num(seq, 0, MAX_SEQ)), "pcm": pcm, "end": False}
+    if t == "translate":  # a letter read on the phone, in the other language: a piece of it to translate
+        src, dst = _one_of(m.get("from"), c.TALK_LANGS), _one_of(m.get("to"), c.TALK_LANGS)
+        if src == dst:
+            raise ValueError("translate: from and to are the same")
+        text = _text(m.get("text"), MAX_TEXT).strip()
+        if not text:
+            raise ValueError("translate: empty")
+        return {"t": "translate", "text": text, "from": src, "to": dst, "n": int(_num(m.get("n", 0), 0, MAX_N))}
     if t == "screen":  # what the screen shows: keys and ids only, for the mirrors
         return screen_report(m)
     if t == "pad":

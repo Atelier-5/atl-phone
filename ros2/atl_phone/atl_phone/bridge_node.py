@@ -239,10 +239,11 @@ class Bridge(Node):
 
     def talk_send(self, who: str, m: dict):
         """What a worker heard and translated: to both phones while a guest is there (they talk with each other), an
-        error to the one who spoke only. Never to a mirror, ROS or the log."""
+        error to the one who spoke only, and a letter's translation to the robot's phone only. Never to a mirror, ROS or
+        the log."""
         text = json.dumps(dict(m, who=who))
         to_robot = who == "robot" or not m.get("error")
-        to_guest = bool(self.guest) and (who == "guest" or not m.get("error"))
+        to_guest = bool(self.guest) and (who == "guest" or not m.get("error")) and m.get("source") != "text"
         if to_robot:
             self.server.send_phone(text)
         if to_guest:
@@ -434,6 +435,11 @@ class Bridge(Node):
                     self.server.send_phone(json.dumps(p.talk(False, False)))
                 return
             self.talk.audio(m)
+        elif t == "translate":  # a letter the phone read in the other language: the same gate as the sound
+            if not self.talk_allowed():
+                self.server.send_phone(json.dumps(p.talk(False, False)))
+                return
+            self.talk.text(m["text"], m["from"], m["to"], m["n"])
         elif t == "screen":  # what the phone's screen shows (keys only): for the mirrors, not for ROS
             self.screen = m
             self.server.send_mirrors(json.dumps(m))

@@ -337,9 +337,10 @@ function noteCard(m) {
     el.addEventListener('pointerdown', function (e) {
       e.preventDefault(); e.stopPropagation();
       if (navigator.vibrate) navigator.vibrate(30);
-      send({ t: 'answer', note: cardId, id: b.id });
-      speak(entryLabel(b), lang);
       cardEl.style.display = 'none'; cardId = '';
+      if (m.pick) return m.pick(b.id);   // a question of this page's own: what it does next is said instead
+      send({ t: 'answer', note: m.id || 'note', id: b.id });
+      speak(entryLabel(b), lang);
     });
     row.appendChild(el);
   });
@@ -472,6 +473,7 @@ function handle(m) {
   else if (m.t === 'see') seeAt(m);
   else if (m.t === 'note') noteCard(m);
   else if (['read', 'what', 'show', 'tour'].indexOf(m.t) >= 0 && typeof omiAsk === 'function') omiAsk(m);  // omi.js
+  else if (m.t === 'translated' && m.source === 'text') { if (typeof omiTranslated === 'function') omiTranslated(m); }  // a letter: omi.js
   else if (['translate', 'heard', 'translated'].indexOf(m.t) >= 0 && typeof talkMsg === 'function') talkMsg(m);  // talk.js
   else if (m.t === 'web' && /^[0-9a-f]{16}$/.test(m.id)) newPages(m.id);
   else if (m.t === 'open' && ['face.html', 'check.html'].indexOf(m.page) >= 0) {

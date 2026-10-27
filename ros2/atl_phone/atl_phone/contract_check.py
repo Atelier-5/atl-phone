@@ -29,6 +29,8 @@ from std_msgs.msg import Bool, ColorRGBA, Empty, Float32, Int32, String
 from . import contract as c
 from .mock_phone import ID as MOCK_ID, MockPhone
 
+LETTER = "Chère maman, nous arrivons demain à midi. Je t’embrasse."   # a letter's first lines, for 0.8
+
 
 class Check:
     def __init__(self, robot: str):
@@ -528,6 +530,7 @@ class Check:
                 not leaked and set(counts) <= {"ok", "from", "to", "words", "seconds", "ms"}
                 and not any(w in json.dumps(st).lower() for w in words if len(w) > 3)
                 and st.get("translate", {}).get("last", {}).get("words") == counts.get("words"), (leaked, counts))
+        self.letter(api, phone, twin)
         self.guest(api, phone, twin, chunks, wav)
         api("/api/act", {"allow_translate": False})
         off, end = None, time.monotonic() + 3.0
@@ -535,9 +538,50 @@ class Check:
             off = get(phone, "translate", max(0.1, end - time.monotonic()))
         self.ok("0.7: not allowed any more, the phone is told at once (and no guest link)",
                 bool(off) and off["allowed"] is False and not off.get("guest"), off)
+        phone.send(t="translate", text=LETTER, **{"from": "fr"}, to="de", n=99)
+        no = get(phone, "translate")
+        self.ok("0.8: a letter is not translated unless allowed: the phone is told, nothing comes back",
+                bool(no) and no["allowed"] is False and self.letter_back(phone, 99, 1.0) is None, no)
         phone.close()
         twin.close()
 
+
+    @staticmethod
+    def letter_back(link, n, timeout):
+        """The translation of the letter's piece n, if it comes (other messages are skipped)."""
+        end = time.monotonic() + timeout
+        while time.monotonic() < end:
+            try:
+                m = link.expect("translated", end - time.monotonic())
+            except TimeoutError:
+                return None
+            if m.get("source") == "text" and m.get("n") == n:
+                return m
+        return None
+
+    def letter(self, api, phone, twin):
+        """0.8, a letter in French read on the phone: a piece of it is translated on the bridge, back to the phone alone,
+        with its number; ROS gets counts, the mirror nothing."""
+        def get(link, t, timeout=3.0):
+            try:
+                return link.expect(t, timeout)
+            except TimeoutError:
+                return None
+
+        phone.send(t="translate", text=LETTER, **{"from": "fr"}, to="de", n=5)
+        back = self.letter_back(phone, 5, 20.0)
+        r = self.wait("translate_result", lambda m: json.loads(m.data).get("source") == "text", timeout=5.0)
+        counts = json.loads(r.data) if r else {}
+        self.ok("0.8: a letter's piece in French comes back in German, with its number, to the robot's phone",
+                bool(back) and back.get("source") == "text" and back.get("n") == 5 and back.get("lang") == "de"
+                and len(back.get("text", "")) > 10 and back.get("who") == "robot", back)
+        words = {w for w in (LETTER + " " + (back or {}).get("text", "")).lower().replace(",", " ").replace(".", " ").split() if len(w) > 4}
+        mirrored = json.dumps(list(twin.got.queue), ensure_ascii=False).lower()
+        self.ok("0.8: ROS gets counts marked as text; the mirror and the setup page no word of the letter",
+                counts.get("source") == "text" and counts.get("from") == "fr" and counts.get("words", 0) >= 8
+                and set(counts) <= {"ok", "from", "to", "words", "ms", "source"}
+                and not any(w in mirrored for w in words)
+                and not any(w in json.dumps(json.load(api("/api/state"))).lower() for w in words), (counts, sorted(words)[:4]))
 
     def guest(self, api, phone, twin, chunks, wav):
         """0.7, a guest phone on the Wi-Fi (talk.html, the guest port): the robot's phone gets its link for the QR code,
@@ -584,6 +628,12 @@ class Check:
             back = get(guest, "translated", 15.0) or get(guest, "heard", 1.0)
             self.ok("0.7: what the robot's phone hears reaches the guest too, marked as the robot's",
                     bool(back) and back.get("who") == "robot", back)
+        while get(guest, "translated", 0.5) or get(guest, "heard", 0.1):
+            pass
+        phone.send(t="translate", text=LETTER, **{"from": "fr"}, to="de", n=6)
+        mine = self.letter_back(phone, 6, 20.0)
+        self.ok("0.8: a letter's translation goes to the robot's phone only, not to the guest",
+                bool(mine) and self.letter_back(guest, 6, 1.0) is None, mine)
         mirrored = json.dumps(list(twin.got.queue))
         self.ok("0.7: the mirror gets neither the guest's link and code nor any words",
                 k not in mirrored and "talk.html" not in mirrored and '"heard"' not in mirrored and '"translated"' not in mirrored, len(mirrored))

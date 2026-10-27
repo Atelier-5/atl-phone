@@ -133,9 +133,14 @@ def test_a_session_sends_the_words_to_the_phone_and_counts_to_ros(tmp_path):
     assert sent[1]["t"] == "translated" and sent[1]["lang"] == "fr" and sent[1]["text"] == "<Ich habe kuchen.> <Möchtest du.>"
     assert counts == [{"ok": True, "from": "de", "to": "fr", "words": 5, "ms": counts[0]["ms"], "seconds": 0.8}]
     assert not any("kuchen" in json_text for json_text in map(str, counts + logs))  # ROS and the log: counts only
-    s.text("Chère maman. Bises", "fr", "de")
+    s.text("Chère maman. Bises", "fr", "de", n=7)
     run(s)
-    assert sent[-1]["text"] == "<Chère maman.> <Bises>" and sent[-1]["source"] == "text" and counts[-1]["from"] == "fr"
+    assert sent[-1] == {"t": "translated", "lang": "de", "text": "<Chère maman.> <Bises>", "ms": sent[-1]["ms"], "source": "text", "n": 7}
+    assert counts[-1] == {"ok": True, "from": "fr", "to": "de", "words": 3, "ms": counts[-1]["ms"], "source": "text"}  # no n, no words
+    s.text("   ", "fr", "de", n=8)   # nothing to translate: still an answer, so the phone does not wait
+    run(s)
+    assert sent[-1] == {"t": "translated", "lang": "de", "text": "", "error": "nothing", "source": "text", "n": 8}
+    assert not any(m["t"] == "heard" for m in sent[2:])   # written text is not "heard"
     s.stop()
 
 

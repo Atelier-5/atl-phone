@@ -45,8 +45,8 @@ docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thy
     [omi:=true] [omi_folder:=/omi] [show:=true] [reports:=/reports] \
     [translate:=true] [models:=/models] [guest_port:=8783 guest_cert:=c.pem guest_cert_key:=k.pem [guest_ca:=ca.crt]]
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
-docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 65 checks, 66 with --wav (--wav: German speech for Übersetzen)
-python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C] [--speech <wav>]   # the pages in headless Chrome: 71 checks
+docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 69 checks, 70 with --wav (--wav: German speech for Übersetzen)
+python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C] [--speech <wav>]   # the pages in headless Chrome: 75 checks
     # (--fake-adb: a fake adb and phone Chrome on the ports the bridge got as ADB_SERVER_PORT, ATL_CDP_PORT; never the real phone)
 ./test.sh                                                        # protocol, WebSocket, check server, guardian, reminders: no ROS, no phone
 ./scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]      # what weighs on the phone (adb); changes only what you confirm
@@ -61,7 +61,7 @@ an older bridge served reloads itself, started without a tap (full screen and th
 The setup page does the same. On the robot with its Pi (autonomous), the phone stays on USB, now the Pi's, and a PC
 opens the setup page through an SSH tunnel (`ssh -L 8782:localhost:8782 pi@<robot>`), since it answers its own computer only.
 
-## The contract: `atl-phone/0.7` (`atl_phone/contract.py`)
+## The contract: `atl-phone/0.8` (`atl_phone/contract.py`)
 
 Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's own contract stays as it is.
 
@@ -82,9 +82,9 @@ Under the robot that carries the phone, so `/thymio_1/phone/...`; the robot's ow
 | `pad` | String JSON | out | `{"id"}`: a button of the panel's pad was pressed |
 | `menu` | String JSON | out | `{"id"}`: the person picked a chip or a tile of the menu (a mode, one of the phone's tiles, or a program's own entry) |
 | `note/answer` | String JSON | out | `{"note", "id"}`: the button pressed on a note card |
-| `read/result` | String JSON | out | `{"ok", "lines", "chars", "ms"}`: the phone read the back camera's text aloud; the text itself stays on the phone |
+| `read/result` | String JSON | out | `{"ok", "lines", "chars", "ms", "lang"?, "translated"?}`: the phone read the back camera's text aloud; the text itself stays on the phone. With Übersetzen allowed (0.8), `lang` is the language it found (`de`, `fr`), and `translated` whether a letter in the other language was read translated, which only then goes to the bridge |
 | `what/result` | String JSON | out | `{"ok", "label", "score", "ms"}`: what the back camera saw nearest (a COCO label, or `null`), said aloud on the phone |
-| `translate/result` | String JSON | out | `{"ok", "from", "to", "words", "seconds", "ms"}` (0.7): Übersetzen heard and translated what was said while a half was held; counts only, the words stay between the phone and the bridge |
+| `translate/result` | String JSON | out | `{"ok", "from", "to", "words", "seconds", "ms"}` (0.7): Übersetzen heard and translated what was said while a half was held, or with `"source": "text"` (0.8) a piece of a letter; counts only, the words stay between the phone and the bridge |
 | `face/expression` | String | in | `neutral` `happy` `sad` `angry` `surprised` `sleepy` `curious` `wink` `scared` `love` |
 | `face/gaze` | Point | in | where the eyes look, x right and y up, each -1..1; left alone, they look around by themselves |
 | `face/color` | ColorRGBA | in | the eyes' colour |
@@ -340,6 +340,13 @@ beantwortet.
   `models/README.md` lists their licences, all Apache-2.0); `start.sh` mounts `models/` read-only. Measured on this PC
   in the container: the text is ready 0.04 s after letting go (it is heard while she speaks), the translation 0.15–0.4 s
   later; the four models take about 555 MB. See [Privacy](#privacy).
+- **A letter in French** (0.8, `web/omi.js`): while Übersetzen is allowed, reading looks for German and French, and
+  counts the short words of each to tell which it is. A letter in the other language (French for a German Omi) makes
+  the phone ask: "Das ist auf Französisch. Soll ich es auf Deutsch vorlesen?" with **Ja, auf Deutsch** and **Nein, so**.
+  Yes: its sentences go to the bridge in pieces of at most 500 characters (`{"t": "translate", "text", "from", "to",
+  "n"}`, refused unless allowed and over USB or https, like the sound), and the German comes back to this phone alone
+  (never the guest phone) and is said sentence by sentence; no, or no translation: it is read as it is, in the French
+  voice. ROS hears the language and whether it was translated, never the text.
 - **A second phone** (`web/talk.html`, `web/guest.js`): in the Übersetzen mode the robot's phone shows a QR code where
   the eyes are; a phone on the home Wi-Fi that scans it opens the guest page on the bridge's own https port (8783,
   tests 8793, the certificate `start.sh` makes in `certs/`: Chrome warns the first time, the page says to tap Advanced,
@@ -412,7 +419,9 @@ or the setup page), only while a half is held (at most 30 s), with a red **● H
 is this computer (USB) or https: the bridge refuses it otherwise. A second phone joins only with the code in the QR
 code on the robot's phone, over https, with the same rules. The sound goes to the bridge's own computer, is heard
 and translated there offline and dropped; the words go back to the phone alone, never to a mirror, a ROS topic, a
-file, the log or the setup page; ROS gets counts. Agree on it with the people at the table first:
+file, the log or the setup page; ROS gets counts. A letter in the other language is the same exception for text: its
+lines go to the bridge to be translated only when she says yes to the question, under the same gate, and come back
+to her phone alone. Agree on it with the people at the table first:
 [consent note](docs/consent-translate.md).
 The browser's own speech recognition is not used: it sends voices to the cloud.
 

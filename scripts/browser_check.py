@@ -692,6 +692,60 @@ def main() -> int:
         ok("Omi's presentation: Übersetzen when allowed: its tile in yellow, its words, the guest link's sentence, then the halves and the QR code",
            said.get("toast") == "tour.translate" and tile == "translate" and said.get("hi") == "translate" and told.get("toast") == "tour.guest"
            and shown == "shown" and ended == "ended", (said, tile, told, shown, ended))
+        # a letter in French (0.8), while Übersetzen is allowed: Tesseract reads German and French; a German page is read
+        # as it is, a French one asks first, and yes: its German, translated on the bridge, is said
+        page.js("setPanel({ mode: 'mouth' }, true); stopReading()")
+        last = (seen().get("read") or {}).get("at")
+        act({"topic": "read", "value": {"lang": "de"}})   # (Omi Assist asks in her language)
+        rd = None
+        for _ in range(240):  # Tesseract loads its French the first time
+            time.sleep(0.5)
+            rd = seen().get("read")
+            if rd and rd.get("at") != last:
+                break
+        asked = page.js("cardId")
+        ok("0.8: with Übersetzen allowed, the German page is read in German and French, found German and read as it is (no question)",
+           bool(rd) and rd.get("at") != last and rd.get("lines") == 3 and rd.get("lang") == "de" and rd.get("translated") is False
+           and asked != "readAsk", (rd, asked))
+        page.js("stopReading(); window.__said = []; if (!window.__spk) { window.__spk = speak; speak = function (t, l, a, d) { window.__said.push(l + ':' + t); if (d) setTimeout(d, 300); }; }"   # a voice that ends (headless has none)
+                " omi.tess['deu+fra'] = Promise.resolve({ recognize: function () { return Promise.resolve({ data: { lines: ["
+                " { text: 'Chère maman,', confidence: 90 }, { text: 'nous arrivons demain à midi avec le train.', confidence: 90 },"
+                " { text: 'Je t’embrasse très fort.', confidence: 90 }] } }); } })")   # what Tesseract would read off a French letter
+        last = (seen().get("read") or {}).get("at")
+        act({"topic": "read", "value": {"lang": "de"}})   # (Omi Assist asks in her language)
+        q = page.wait_for("cardId === 'readAsk' && document.getElementById('card').style.display === 'flex'"
+                          " && [document.querySelector('#card p').textContent, [].map.call(document.querySelectorAll('#card button'), function (b) { return b.textContent; }).join('|')]", 30)
+        sc = screen_until(lambda x: x.get("note") == "readAsk")
+        shoot("omi-letter-ask.png")
+        ok("0.8: a French letter: the phone asks whether to read it in German (Ja / Nein); the screen report says only the card's id",
+           bool(q) and q[0] == "Das ist auf Französisch. Soll ich es auf Deutsch vorlesen?" and q[1] == "Ja, auf Deutsch|Nein, so"
+           and sc.get("note") == "readAsk" and "maman" not in json.dumps(state()), (q, sc.get("note")))
+        r = page.js("(function () { var b = document.querySelector('#card button').getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
+        page.tap(int(r[0]), int(r[1]))
+        said = page.wait_for("(function () { var s = []; window.__said.forEach(function (x) { if (/^de:(Liebe|Ich)/.test(x) && s.indexOf(x) < 0) s.push(x); });"
+                             " return s.length >= 2 && s.join(' / '); })()", 60)   # its two sentences, one after the other
+        rd = None
+        for _ in range(20):
+            rd = seen().get("read")
+            if rd and rd.get("at") != last:
+                break
+            time.sleep(0.25)
+        tr = state().get("translate", {}).get("last", {})
+        reports = json.dumps(state())
+        ok("0.8: Ja: the letter's German is said in the German voice; ROS hears it was French, read translated; no word of it on the setup page",
+           bool(said) and said.startswith("de:Liebe") and rd.get("lang") == "fr" and rd.get("translated") is True and "text" not in rd
+           and tr.get("source") == "text" and not any(w in reports for w in ("maman", "embrasse", "Liebe", "morgen")), (said, rd, tr))
+        page.js("stopReading(); window.__said = []")
+        act({"topic": "read", "value": {"lang": "de"}})
+        page.wait_for("cardId === 'readAsk' && document.getElementById('card').style.display === 'flex'", 30)
+        r = page.js("(function () { var b = document.querySelectorAll('#card button')[1].getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; })()")
+        tl = state().get("translate", {}).get("last", {}).get("at")
+        page.tap(int(r[0]), int(r[1]))
+        asis = page.wait_for("(function () { var f = window.__said.filter(function (x) { return x.indexOf('fr:') === 0; }); return f.length >= 2 && f.slice(0, 2).join(' / '); })()", 30)
+        ok("0.8: Nein: the letter is read as it is, in the French voice, and nothing goes to the bridge",
+           asis == "fr:Chère maman, nous arrivons demain à midi avec le train. / fr:Je t’embrasse très fort."
+           and state().get("translate", {}).get("last", {}).get("at") == tl, asis)
+        page.js("stopReading(); speak = window.__spk; delete window.__spk; delete omi.tess['deu+fra']")
         act({"allow_translate": False})
         gone = page.wait_for("!talk.allowed && (showMenu(), !document.querySelector('#menu button[data-mode=translate]')) && 'gone'")
         ok("Übersetzen: not allowed any more, its tile goes", gone == "gone", gone)

@@ -198,9 +198,10 @@ class Session:
         """A parsed {"t": "audio"} message: a chunk of a hold, or its end."""
         return self._put(("end", m["lang"]) if m.get("end") else ("pcm", m["lang"], m["seq"], m["pcm"]))
 
-    def text(self, text: str, src: str, dst: str) -> bool:
-        """Written text to translate (a letter read on the phone): the translation goes back the same way."""
-        return self._put(("text", text, src, dst))
+    def text(self, text: str, src: str, dst: str, n: int = 0) -> bool:
+        """Written text to translate (a piece of a letter read on the phone): the translation goes back the same way,
+        with "source": "text" and the request's number n."""
+        return self._put(("text", text, src, dst, n))
 
     def warm(self) -> bool:
         """Load the models now, so the first hold is quick (the speech models take a few seconds)."""
@@ -238,8 +239,8 @@ class Session:
                     heard = u.text()
                     self._result(heard, u.lang, other(u.lang), t0, u.seconds)
                 elif job[0] == "text":
-                    _, text, src, dst = job
-                    self._result(" ".join(split_text(text)), src, dst, time.monotonic(), None, spoken=False)
+                    _, text, src, dst, n = job
+                    self._result(" ".join(split_text(text)), src, dst, time.monotonic(), None, n=n)
                 elif job[0] == "warm":
                     for lang in LANGS:
                         self.t.listen(lang)
@@ -253,21 +254,27 @@ class Session:
             finally:
                 self.q.task_done()
 
-    def _result(self, heard: str, src: str, dst: str, t0: float, seconds, spoken=True):
+    def _result(self, heard: str, src: str, dst: str, t0: float, seconds, n=None):
+        spoken = n is None   # else written text, request n
+        kind = {} if spoken else {"source": "text"}   # for ROS; the phone also gets n back
+        tag = {} if spoken else dict(kind, n=n)
         if spoken:
             self.send({"t": "heard", "lang": src, "text": heard, **({} if heard else {"error": "nothing"})})
         if not heard:
-            self.done({"ok": False, "from": src, "to": dst, "words": 0, "seconds": round(seconds or 0, 1), "ms": 0})
+            if not spoken:
+                self.send({"t": "translated", "lang": dst, "text": "", "error": "nothing", **tag})
+            self.done({"ok": False, "from": src, "to": dst, "words": 0, "ms": 0,
+                       **({"seconds": round(seconds or 0, 1)} if spoken else kind)})
             return
         try:
             out = self.t.translate(heard, src, dst)
         except LookupError:
-            self.send({"t": "translated", "lang": dst, "text": "", "error": "models"})
-            self.done({"ok": False, "from": src, "to": dst, "words": len(heard.split()), "ms": 0})
+            self.send({"t": "translated", "lang": dst, "text": "", "error": "models", **tag})
+            self.done({"ok": False, "from": src, "to": dst, "words": len(heard.split()), "ms": 0, **kind})
             return
         ms = int((time.monotonic() - t0) * 1000)
-        self.send({"t": "translated", "lang": dst, "text": out, "ms": ms, **({} if spoken else {"source": "text"})})
-        r = {"ok": bool(out), "from": src, "to": dst, "words": len(heard.split()), "ms": ms}
+        self.send({"t": "translated", "lang": dst, "text": out, "ms": ms, **tag})
+        r = {"ok": bool(out), "from": src, "to": dst, "words": len(heard.split()), "ms": ms, **kind}
         if seconds is not None:
             r["seconds"] = round(seconds, 1)
         self.done(r)
