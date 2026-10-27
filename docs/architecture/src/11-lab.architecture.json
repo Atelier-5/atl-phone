@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     },
     "legend": {
       "entries": {
@@ -23,7 +23,7 @@
   "components": [
     {
       "id": "face", "type": "frontend", "label": "face.html", "sublabel": "face, vision, reading", "pos": [40, 220], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 447, "end_line": 460 }, { "path": "ros2/atl_phone/web/see.js", "line": 58, "end_line": 72 }, { "path": "ros2/atl_phone/web/omi.js", "line": 179, "end_line": 203 }]
+      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 448, "end_line": 461 }, { "path": "ros2/atl_phone/web/see.js", "line": 58, "end_line": 72 }, { "path": "ros2/atl_phone/web/omi.js", "line": 197, "end_line": 263 }]
     },
     {
       "id": "adb", "type": "external", "label": "adb server", "sublabel": "the PC, :5037", "pos": [280, 220], "size": [150, 64],
@@ -39,7 +39,7 @@
     },
     {
       "id": "topics", "type": "messagebus", "label": "ROS 2 topics", "sublabel": "/thymio_1/…, UDP", "pos": [760, 220], "size": [150, 64],
-      "sources": [{ "path": "start.sh", "line": 117, "end_line": 119 }, { "path": "ros2/atl_phone/atl_phone/contract.py", "line": 22, "end_line": 25 }]
+      "sources": [{ "path": "start.sh", "line": 117, "end_line": 119 }, { "path": "ros2/atl_phone/atl_phone/contract.py", "line": 23, "end_line": 26 }]
     },
     {
       "id": "programs", "type": "backend", "label": "omi_assist, guardian", "sublabel": "beside the bridge", "pos": [760, 60], "size": [150, 64],
@@ -51,7 +51,7 @@
     },
     {
       "id": "twin", "type": "backend", "label": "atl_phone_twin", "sublabel": "--mirror, Docker", "pos": [520, 400], "size": [150, 64],
-      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 818, "end_line": 832 }, { "path": "README.md", "line": 224, "end_line": 230 }]
+      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 820, "end_line": 834 }, { "path": "README.md", "line": 224, "end_line": 230 }]
     },
     {
       "id": "webots", "type": "external", "label": "Webots R2025a", "sublabel": "the host, :1240", "pos": [760, 400], "size": [150, 64],
@@ -89,14 +89,14 @@
       "items": [
         "The setup page, on the PC, polls /api/state four times a second; /api answers loopback only (setup.js 322–334, wsserver.py 343–352). Its How it works view is static text (how.js).",
         "The bridge also serves this architecture pack at /docs/; the image carries docs/architecture/*.html (wsserver.py 277–285, Dockerfile 17).",
-        "After a restart, the pages reload themselves: the bridge sends its pages' fingerprint on each hello (bridge_node.py 332, face.js 485–489)."
+        "After a restart, the pages reload themselves: the bridge sends its pages' fingerprint on each hello (bridge_node.py 333, face.js 487–491)."
       ]
     },
     {
       "dot": "emerald",
       "title": "Webots beside it",
       "items": [
-        "The phone's twin follows the real phone as a mirror, beside atl-bot-thymio's Thymio twin; when the bridge restarts it shows the phone away and joins again every 2 s (atl_phone_twin.py 818–832).",
+        "The phone's twin follows the real phone as a mirror, beside atl-bot-thymio's Thymio twin; when the bridge restarts it shows the phone away and joins again every 2 s (atl_phone_twin.py 820–834).",
         "A real Thymio, when connected, is atl-bot-thymio's link on the same ROS domain (guardian_node.py 7–9)."
       ]
     }

@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     },
     "legend": {
       "entries": {
@@ -62,13 +62,13 @@
         },
         {
           "path": "ros2/atl_phone/web/omi.js",
-          "line": 326,
-          "end_line": 338
+          "line": 397,
+          "end_line": 409
         },
         {
           "path": "ros2/atl_phone/web/omi.js",
-          "line": 351,
-          "end_line": 371
+          "line": 422,
+          "end_line": 442
         }
       ]
     },
@@ -80,18 +80,18 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 294,
-          "end_line": 303
+          "line": 295,
+          "end_line": 304
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 410,
-          "end_line": 444
+          "line": 411,
+          "end_line": 450
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 263,
-          "end_line": 280
+          "line": 279,
+          "end_line": 296
         }
       ]
     },
@@ -121,13 +121,13 @@
         },
         {
           "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
-          "line": 695,
-          "end_line": 736
+          "line": 697,
+          "end_line": 738
         },
         {
           "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
-          "line": 756,
-          "end_line": 776
+          "line": 758,
+          "end_line": 778
         }
       ]
     }
@@ -231,17 +231,17 @@
       "title": "What the twin is sent",
       "items": [
         "A copy of everything the bridge sends the phone: server.send() writes to the phone and then each mirror (wsserver.py 208–212).",
-        "The phone's screen report, checked by screen_report(): mode, expression, tiles, highlighted tile, a toast key, note id, badge and the sensor numbers (protocol.py 263–304). Never a sentence read aloud, never the location.",
-        "A mirror that joins gets the phone line, the panel, the open note and the last screen first, so it starts in step (bridge_node.py 294–303)."
+        "The phone's screen report, checked by screen_report(): mode, expression, tiles, highlighted tile, a toast key, note id, badge and the sensor numbers (protocol.py 279–320). Never a sentence read aloud, never the location.",
+        "A mirror that joins gets the phone line, the panel, the open note and the last screen first, so it starts in step (bridge_node.py 295–304)."
       ]
     },
     {
       "dot": "rose",
       "title": "Pictures",
       "items": [
-        "Frames exist only while she shows (Zeigen) and the facilitator allowed it; otherwise the bridge drops them at once (bridge_node.py 423–444).",
+        "Frames exist only while she shows (Zeigen) and the facilitator allowed it; otherwise the bridge drops them at once (bridge_node.py 424–450).",
         "They go to the setup page (/api/show.jpg) and to mirrors on loopback only (wsserver.py 225–231); none reaches ROS or disk.",
-        "The twin draws one only while the badge is on and it is under 3 s old, else a camera symbol (atl_phone_twin.py 695–736)."
+        "The twin draws one only while the badge is on and it is under 3 s old, else a camera symbol (atl_phone_twin.py 697–738)."
       ]
     },
     {

@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     }
   },
   "layout": {
@@ -145,13 +145,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 304,
-          "end_line": 330
+          "line": 305,
+          "end_line": 331
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 138,
-          "end_line": 145
+          "line": 142,
+          "end_line": 149
         }
       ]
     },
@@ -197,8 +197,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 343,
-          "end_line": 380
+          "line": 344,
+          "end_line": 381
         }
       ]
     },
@@ -234,8 +234,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 561,
-          "end_line": 569
+          "line": 567,
+          "end_line": 575
         }
       ]
     },
@@ -278,8 +278,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 565,
-          "end_line": 566
+          "line": 571,
+          "end_line": 572
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
@@ -352,13 +352,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 172,
-          "end_line": 186
+          "line": 176,
+          "end_line": 190
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 383,
-          "end_line": 390
+          "line": 384,
+          "end_line": 391
         }
       ]
     },
@@ -392,13 +392,13 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 333,
-          "end_line": 341
+          "line": 334,
+          "end_line": 342
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 413,
-          "end_line": 418
+          "line": 414,
+          "end_line": 419
         }
       ]
     },
@@ -437,8 +437,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 423,
-          "end_line": 444
+          "line": 424,
+          "end_line": 450
         }
       ]
     },
@@ -476,13 +476,13 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 437,
-          "end_line": 439
+          "line": 443,
+          "end_line": 445
         },
         {
           "path": "ros2/atl_phone/atl_phone/protocol.py",
-          "line": 263,
-          "end_line": 280
+          "line": 279,
+          "end_line": 296
         }
       ]
     },
@@ -517,8 +517,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 280,
-          "end_line": 284
+          "line": 281,
+          "end_line": 285
         }
       ]
     },
@@ -560,8 +560,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 269,
-          "end_line": 273
+          "line": 270,
+          "end_line": 274
         }
       ]
     },
@@ -711,13 +711,13 @@
       "dot": "cyan",
       "title": "Facts",
       "items": [
-        "Nothing is stored on disk: phone, seen and reports live in the Bridge node and go out whole on GET /api/state (bridge_node.py 448–455).",
-        "phone and seen have no id of their own; they belong to whichever Link is current. opened() replaces both, closed() clears phone but leaves seen (bridge_node.py 304–317).",
+        "Nothing is stored on disk: phone, seen and reports live in the Bridge node and go out whole on GET /api/state (bridge_node.py 454–461).",
+        "phone and seen have no id of their own; they belong to whichever Link is current. opened() replaces both, closed() clears phone but leaves seen (bridge_node.py 305–318).",
         "Every value is checked and clamped by protocol.parse before it lands here.",
         "seen.camera also holds error and torch; codes keeps the last 5 read. Each sense records its time in at.",
-        "Look adds two tables: what programs asked for (look, look/familiar) next to the facilitator's allowed, and the latest faces, each only x, y, size and a number (protocol.py 172–186).",
-        "Since 0.5–0.6 the bridge also keeps what a phone that comes needs again (panel, see, an unanswered note), the phone's screen report for the mirrors, the show state with the last frame, and the programs' last states; opened() and closed() reset show and screen (bridge_node.py 304–317). A shown frame goes from Bridge.show to the loopback mirrors only (wsserver.py 225–231). Bridge.screen is the current phone's last report, and is cleared when it goes.",
-        "Übersetzen (0.7) keeps no words: Translate holds whether it is allowed, the guest code and the last counts; each Session holds the utterance being heard, whose sound is dropped when its text is made (translate.py 216–254). The guest code is new each time Übersetzen is allowed (bridge_node.py 233–238)."
+        "Look adds two tables: what programs asked for (look, look/familiar) next to the facilitator's allowed, and the latest faces, each only x, y, size and a number (protocol.py 176–190).",
+        "Since 0.5–0.6 the bridge also keeps what a phone that comes needs again (panel, see, an unanswered note), the phone's screen report for the mirrors, the show state with the last frame, and the programs' last states; opened() and closed() reset show and screen (bridge_node.py 305–318). A shown frame goes from Bridge.show to the loopback mirrors only (wsserver.py 225–231). Bridge.screen is the current phone's last report, and is cleared when it goes.",
+        "Übersetzen (0.7) keeps no words: Translate holds whether it is allowed, the guest code and the last counts; each Session holds the utterance being heard, whose sound is dropped when its text is made (translate.py 217–255). The guest code is new each time Übersetzen is allowed (bridge_node.py 233–238)."
       ]
     },
     {
@@ -727,7 +727,7 @@
         "A report is matched to its phone by a random id the face and check pages keep in the browser (setup.js report()); by model only when storage is blocked. Until 9861131 it was by model alone, and one phone did not even match itself: hello named it from client hints, the report from the user agent (\"K\").",
         "The dicts are read by HTTP threads and written by the phone's thread without a lock. A stress test of json.dumps against a writer adding keys (200 000 runs, Python 3.12.3) raised no error: the values are replaced, not mutated.",
         "The id lives per address: the same phone has one id over USB (localhost) and another over Wi-Fi.",
-        "A face's number reaches ROS only while familiar is both asked and allowed; otherwise the bridge sets it to null, whatever the phone sends (bridge_node.py 383–390). The signatures behind the numbers stay in the phone's page."
+        "A face's number reaches ROS only while familiar is both asked and allowed; otherwise the bridge sets it to null, whatever the phone sends (bridge_node.py 384–391). The signatures behind the numbers stay in the phone's page."
       ]
     }
   ]

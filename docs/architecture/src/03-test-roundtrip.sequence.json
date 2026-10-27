@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     },
     "legend": {
       "entries": {
@@ -62,13 +62,13 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 374,
-          "end_line": 380
+          "line": 375,
+          "end_line": 381
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 526,
-          "end_line": 559
+          "line": 532,
+          "end_line": 565
         }
       ]
     },
@@ -80,8 +80,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/contract.py",
-          "line": 21,
-          "end_line": 68
+          "line": 22,
+          "end_line": 71
         }
       ]
     },
@@ -111,8 +111,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 530,
-          "end_line": 601
+          "line": 532,
+          "end_line": 603
         },
         {
           "path": "ros2/atl_phone/web/face.js",
@@ -305,7 +305,7 @@
       "title": "Why through ROS",
       "items": [
         "act() publishes on the contract topic and the bridge's own subscription forwards it: a passing setup test proves topic → bridge → WebSocket → page.",
-        "open and camera have no topic, so they go straight to the phone (bridge_node.py 472–476)."
+        "open and camera have no topic, so they go straight to the phone (bridge_node.py 478–482)."
       ]
     },
     {
@@ -313,14 +313,14 @@
       "title": "Fixed: output tests with no phone",
       "items": [
         "Until d2b04ac an output test answered 204 with no phone connected, so the page looked as if it was sent (out() ignores server.send's result).",
-        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 526–528). Robot programs' own messages are still dropped quietly."
+        "act() now refuses it with \"no phone\" before publishing, and step 4 shows whether a phone is there (bridge_node.py 532–534). Robot programs' own messages are still dropped quietly."
       ]
     },
     {
       "dot": "slate",
       "title": "Privacy",
       "items": [
-        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 530–601)."
+        "The camera message carries ok, size, error, torch and decoded text only; frames stay in the phone's <video> element (face.js 532–603)."
       ]
     }
   ]

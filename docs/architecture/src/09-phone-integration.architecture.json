@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     },
     "legend": {
       "entries": {
@@ -48,13 +48,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 447,
-          "end_line": 460
+          "line": 448,
+          "end_line": 461
         },
         {
           "path": "ros2/atl_phone/web/omi.js",
-          "line": 351,
-          "end_line": 371
+          "line": 422,
+          "end_line": 442
         }
       ]
     },
@@ -126,8 +126,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 294,
-          "end_line": 303
+          "line": 295,
+          "end_line": 304
         }
       ]
     },
@@ -209,8 +209,8 @@
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 437,
-          "end_line": 444
+          "line": 443,
+          "end_line": 450
         }
       ]
     },
@@ -266,8 +266,8 @@
         },
         {
           "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py",
-          "line": 866,
-          "end_line": 888
+          "line": 868,
+          "end_line": 890
         }
       ]
     },
@@ -451,7 +451,7 @@
       "title": "The real phone",
       "items": [
         "USB: scripts/usb.sh runs adb reverse tcp:8782, so the page is http://localhost:8782 on the phone, a secure page for camera and motion without a certificate (usb.sh 9–16). Over Wi-Fi it needs the bridge's https and its key instead.",
-        "face.js opens one WebSocket to /ws and reconnects; code 4000 (another phone took over) stays quiet (face.js 447–460). The page reports its screen as keys and numbers every change and every 5 s (omi.js 351–371).",
+        "face.js opens one WebSocket to /ws and reconnects; code 4000 (another phone took over) stays quiet (face.js 448–461). The page reports its screen as keys and numbers every change and every 5 s (omi.js 422–442).",
         "phone_health speaks adb's own protocol to the adb server already on the host (shell, a DevTools forward), so the container needs no adb of its own, whose version would kill the host's server and the USB link (phone_health.py 21–88)."
       ]
     },
@@ -459,7 +459,7 @@
       "dot": "violet",
       "title": "The Webots twin",
       "items": [
-        "--bridge: the twin is the phone. It connects to /ws like the page; the bridge cannot tell them apart, so ROS sees the same topics. It still opens /ws/mirror for the props (atl_phone_twin.py 875–879).",
+        "--bridge: the twin is the phone. It connects to /ws like the page; the bridge cannot tell them apart, so ROS sees the same topics. It still opens /ws/mirror for the props (atl_phone_twin.py 877–881).",
         "--mirror: the real phone is in charge. The twin draws what the bridge sends the phone and the phone's screen report, and sends nothing but hello (atl_phone_twin.py 185–194, 390–407).",
         "Both run as extern controllers of the Webots on the host (tcp :1240/PH5v0001; the Thymio twin is atl-bot-thymio's). The robot's stack (Pi box, riser, clamp) is AtlOmiStack in the Thymio's bodySlot; the phone rides on it (AtlOmiStack.proto 5–11)."
       ]

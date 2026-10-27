@@ -51,9 +51,9 @@
     show how a phone gets connected and tested, what the bridge remembers, where it can go wrong, the Desk Guardian (a
     ROS 2 node that knows only topics), what flows between the phone and ROS 2, how the real phone and its Webots
     twin plug into the bridge, where each part runs in the lab and on the robot with its Pi, and which recognition
-    runs on the phone and which on the Pi, and how Übersetzen translates German and French between two phones at the table. The bridge serves this pack at <code>/docs/</code>; the setup page's How it
+    runs on the phone and which on the Pi, and how Übersetzen translates German and French between two phones at the table, and a letter in French for Omi. The bridge serves this pack at <code>/docs/</code>; the setup page's How it
     works view links it.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>0f47539</code>; the build checked each citation
+  <p class="lead">Every box cites the lines it comes from, at commit <code>548cd4b</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -109,10 +109,11 @@
       <span class="kind">architecture</span>
       <p>MediaPipe, face-api, js-aruco2, the browser's QR reader and Tesseract.js on the phone; on the Pi, checked
         numbers only, which the Desk Guardian and Omi Assist act on.</p></div>
-    <div class="card"><span class="n">14</span><a href="14-translate.html">Übersetzen: two phones at the table</a>
+    <div class="card"><span class="n">14</span><a href="14-translate.html">Übersetzen: two phones and a letter</a>
       <span class="kind">sequence</span>
       <p>The QR code over the eyes, a second phone joining over https with its code, a hold in German: sound only while
-        held, heard and translated offline on the robot's computer, the words to the two phones only, counts to ROS.</p></div>
+        held, heard and translated offline on the robot's computer, the words to the two phones only, counts to ROS. Then a letter in French: the question, its text in numbered
+        pieces under the same gate, the German to the robot's phone only.</p></div>
   </div>
 
   <h2>Review findings</h2>
@@ -129,27 +130,27 @@
       ignores the result of <code>server.send</code>. It misled the first real-phone test (a Galaxy A50): the phone was on
       the check page while its outputs were tried. <code>act()</code> now refuses them with "no phone", and step 4 shows
       whether a phone is connected.</td>
-      <td><code>bridge_node.py</code> 526–528 · <a href="03-test-roundtrip.html">03</a></td>
+      <td><code>bridge_node.py</code> 532–534 · <a href="03-test-roundtrip.html">03</a></td>
       <td><span class="tag ok">fixed in d2b04ac</span></td></tr>
     <tr><td>Between a disconnect and the next phone, <code>/api/state</code> still shows the old senses:
       <code>closed()</code> clears the phone, not <code>seen</code>. The setup page relies on <code>connected</code>, and
       keeps what passed once, so its marks stay right.</td>
-      <td><code>bridge_node.py</code> 304–317, <code>setup.js</code> 809–825 · <a href="04-phone-link.html">04</a></td>
+      <td><code>bridge_node.py</code> 305–318, <code>setup.js</code> 809–825 · <a href="04-phone-link.html">04</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>A check report was matched to the connected phone by model text only. Two phones of a kind looked the same,
       and the first real phone did not match itself: its hello named it <code>SM-A505FN</code> (client hints), its report
       "Android 10 phone" (the user agent says <code>K</code>), so the page fell back to the latest report of any phone.
       Now the face and check pages keep a random id in the browser and both messages carry it.</td>
-      <td><code>face.js</code> 431–440, <code>bridge_node.py</code> 561–569, <code>setup.js</code> 419–425 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>face.js</code> 432–441, <code>bridge_node.py</code> 567–575, <code>setup.js</code> 419–425 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">fixed in 9861131</span></td></tr>
     <tr><td>The state dicts are shared between threads without a lock. A stress test (200 000 <code>json.dumps</code> of
       a dict while another thread adds keys, Python 3.12.3 in the image) raised no error; the bridge replaces values, it
       does not mutate them in place.</td>
-      <td><code>bridge_node.py</code> 343–455 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>bridge_node.py</code> 344–461 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">checked · no issue</span></td></tr>
     <tr><td>A phone on plain http over Wi-Fi gets no camera, motion, compass or battery; it now says so in its hello and
       the setup page marks them blocked, with the fix (USB, or <code>--cert</code>).</td>
-      <td><code>face.js</code> 441–446, <code>setup.js</code> 820–825 · <a href="01-setup-flow.html">01</a></td>
+      <td><code>face.js</code> 442–447, <code>setup.js</code> 820–825 · <a href="01-setup-flow.html">01</a></td>
       <td><span class="tag ok">handled in e8570a6</span></td></tr>
     <tr><td>Wi-Fi with camera and motion needs HTTPS. <code>./start.sh --make-cert</code> makes this PC's own certificate
       authority once; the bridge offers <code>/ca.crt</code> and each phone installs it once. The authority's key is not
@@ -161,7 +162,7 @@
       not allow it: the facilitator does (<code>familiar:=true</code> or the setup page), and until then the bridge sets
       every face's number to null, whatever the phone sends. The contract check sends a number and a 128-number
       descriptor and sees neither reach ROS.</td>
-      <td><code>bridge_node.py</code> 155–164, 383–390, <code>protocol.py</code> 172–186 · <a href="02-bridge-state.html">02</a></td>
+      <td><code>bridge_node.py</code> 155–164, 384–391, <code>protocol.py</code> 176–190 · <a href="02-bridge-state.html">02</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>The phone reuses face numbers once it forgets its signatures (familiar off, page reloaded). The guardian
       kept number 1 as its friend, so a second run of its story greeted a new face as the owner. It now forgets its
@@ -192,13 +193,13 @@
       of its web files, and the page reloads when it differs. Seen on 2026-10-26. Now each hello is answered with the
       pages' fingerprint; a page from an older bridge reloads, started without a tap, and the setup page does the same
       with <code>/api/state</code> (contract check and browser check).</td>
-      <td><code>bridge_node.py</code> 332, <code>face.js</code> 485–489 · <a href="11-lab.html">11</a></td>
+      <td><code>bridge_node.py</code> 333, <code>face.js</code> 487–491 · <a href="11-lab.html">11</a></td>
       <td><span class="tag ok">fixed in c098351</span></td></tr>
     <tr><td>The twin in <code>--mirror</code> mode stops when the bridge closes the mirror socket, so a bridge restart
       leaves Webots with a frozen phone until the twin is started again. Fix: retry like the page does (1 s to 5 s).
       Seen on 2026-10-26. Now it shows the phone away and joins again every 2 s; tested across a restart of the live
       bridge ("the bridge closed the mirror; trying again", then "mirror back").</td>
-      <td><code>atl_phone_twin.py</code> 818–832 · <a href="11-lab.html">11</a></td>
+      <td><code>atl_phone_twin.py</code> 820–834 · <a href="11-lab.html">11</a></td>
       <td><span class="tag ok">fixed in c098351</span></td></tr>
     <tr><td>The ontology says the setup page is opened over Wi-Fi "with the pairing key", but <code>/api</code> answers
       loopback only, whatever the key: from a PC on the robot's Wi-Fi the setup page loads and then sees no bridge.
@@ -213,8 +214,8 @@
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>The screen report and the sensor numbers carry ids, text keys and clamped numbers only:
       <code>screen_report()</code> drops an unknown key, a toast's argument must be a known object, and there is no field
-      for the location. Two tests send free text and a location and see neither pass (<code>test_protocol.py</code> 251–280); the browser check sees only the four sensor keys in the page's report.</td>
-      <td><code>protocol.py</code> 263–304 · <a href="10-twin-in-step.html">10</a></td>
+      for the location. Two tests send free text and a location and see neither pass (<code>test_protocol.py</code> 252–281); the browser check sees only the four sensor keys in the page's report.</td>
+      <td><code>protocol.py</code> 279–320 · <a href="10-twin-in-step.html">10</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>The phone card needs adb, but the container has none: a second adb of another version would kill the host's
       server and the phone's USB link. <code>phone_health</code> speaks adb's protocol to the host's server instead, and
@@ -234,13 +235,25 @@
     <tr><td>Übersetzen's words, the guest link and its code go to the phones only: <code>send_phone()</code> has no
       mirror copy, and ROS, the setup page and the log get counts. The contract check speaks German to the bridge and
       sees no word on a mirror, ROS or the setup page.</td>
-      <td><code>bridge_node.py</code> 240–249, 269–273, <code>wsserver.py</code> 214–217 · <a href="14-translate.html">14</a></td>
+      <td><code>bridge_node.py</code> 240–250, 270–274, <code>wsserver.py</code> 214–217 · <a href="14-translate.html">14</a></td>
       <td><span class="tag ok">by design</span></td></tr>
     <tr><td>A phone's page opens the microphone only on a secure page, so the guest phone on Wi-Fi uses its own https
       port with the robot's certificate (Chrome warns once unless <code>/ca.crt</code> is installed); the robot's phone
       may send sound only over USB or https.</td>
       <td><code>bridge_node.py</code> 206–207, <code>wsserver.py</code> 440–454 · <a href="14-translate.html">14</a></td>
       <td><span class="tag ok">by design</span></td></tr>
+    <tr><td>A letter's text leaves the phone only after Ja, in pieces of at most 500 characters, under the sound's gate;
+      the German goes back to the robot's phone and never to the guest, and an answer for a stopped reading (another
+      <code>n</code>) is dropped. The contract check sends a French letter and finds no word on a mirror, ROS or the
+      setup page, and none at the guest; the browser check reads Ja and Nein.</td>
+      <td><code>bridge_node.py</code> 246, 438–442, <code>omi.js</code> 236–257 · <a href="14-translate.html">14</a></td>
+      <td><span class="tag ok">by design</span></td></tr>
+    <tr><td>While the phone's voices are not loaded yet, <code>speak()</code> waits up to 2 s and then speaks; a tap that
+      stops reading in that moment does not cancel the waiting sentence, so one sentence can still be said. Seen in
+      headless Chrome (no voices); on a phone the voices are usually loaded before reading starts. Fix: let the
+      deferred call check the reading's run number. Older than the letters.</td>
+      <td><code>face.js</code> 513–518, <code>omi.js</code> 222–227 · <a href="14-translate.html">14</a></td>
+      <td><span class="tag warn">open · minor</span></td></tr>
     <tr><td>Suspected: when a new guest takes over, the old link's close could cancel the new guest's hold. It does not:
       the handler calls <code>on_close</code> only while its link is still the current one, and a takeover replaced it
       first. <em>Read, not reproduced.</em></td>
@@ -257,7 +270,7 @@ python3 build.py            # every diagram; python3 build.py 8- for one
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 0f47539</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 548cd4b</footer>
 </main>
 </body>
 </html>

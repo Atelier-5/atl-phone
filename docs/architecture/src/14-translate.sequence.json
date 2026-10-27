@@ -2,19 +2,19 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "atl-phone: Übersetzen, two phones at the table",
+    "title": "atl-phone: Übersetzen, two phones and a letter",
     "locale": "en",
     "quality_profile": "showcase",
     "output": "14-translate.html",
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     },
     "legend": {
       "entries": {
         "security": {
-          "label": "sound, only while held"
+          "label": "sound or a letter, only when allowed"
         },
         "dashed": {
           "label": "words, to the phones only"
@@ -40,6 +40,11 @@
       "from": 510,
       "to": 1020,
       "label": "Omi holds Deutsch and speaks"
+    },
+    {
+      "from": 1050,
+      "to": 1580,
+      "label": "A letter in French"
     }
   ],
   "participants": [
@@ -53,22 +58,22 @@
       "id": "phone",
       "type": "frontend",
       "label": "Robot's phone",
-      "sublabel": "face.html, talk.js (USB)",
+      "sublabel": "talk.js, omi.js (USB)",
       "sources": [
         {
           "path": "ros2/atl_phone/web/talk.js",
           "line": 52,
-          "end_line": 67
-        },
-        {
-          "path": "ros2/atl_phone/web/talk.js",
-          "line": 68,
           "end_line": 109
         },
         {
           "path": "ros2/atl_phone/web/talk.js",
           "line": 110,
           "end_line": 133
+        },
+        {
+          "path": "ros2/atl_phone/web/omi.js",
+          "line": 236,
+          "end_line": 295
         }
       ]
     },
@@ -81,12 +86,12 @@
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
           "line": 206,
-          "end_line": 267
+          "end_line": 268
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 431,
-          "end_line": 436
+          "line": 432,
+          "end_line": 442
         },
         {
           "path": "ros2/atl_phone/atl_phone/wsserver.py",
@@ -104,17 +109,17 @@
         {
           "path": "ros2/atl_phone/atl_phone/translate.py",
           "line": 177,
-          "end_line": 215
+          "end_line": 216
         },
         {
           "path": "ros2/atl_phone/atl_phone/translate.py",
-          "line": 216,
-          "end_line": 254
+          "line": 217,
+          "end_line": 255
         },
         {
           "path": "ros2/atl_phone/atl_phone/translate.py",
-          "line": 256,
-          "end_line": 273
+          "line": 257,
+          "end_line": 280
         }
       ]
     },
@@ -126,13 +131,13 @@
       "sources": [
         {
           "path": "ros2/atl_phone/atl_phone/contract.py",
-          "line": 46,
-          "end_line": 46
+          "line": 48,
+          "end_line": 48
         },
         {
           "path": "ros2/atl_phone/atl_phone/bridge_node.py",
-          "line": 269,
-          "end_line": 273
+          "line": 270,
+          "end_line": 274
         }
       ]
     },
@@ -277,6 +282,70 @@
       "y": 1000,
       "label": "{ok, from, to, words, ms}",
       "variant": "emphasis"
+    },
+    {
+      "id": "m-read",
+      "from": "omi",
+      "to": "phone",
+      "y": 1080,
+      "label": "taps Lesen, holds a letter",
+      "note": "deu+fra while Übersetzen is allowed; stop words say: French"
+    },
+    {
+      "id": "m-ask",
+      "from": "phone",
+      "to": "omi",
+      "y": 1160,
+      "label": "“Soll ich es auf Deutsch vorlesen?”",
+      "note": "a card on the robot's phone: Ja, auf Deutsch / Nein, so"
+    },
+    {
+      "id": "m-yes",
+      "from": "omi",
+      "to": "phone",
+      "y": 1240,
+      "label": "Ja, auf Deutsch"
+    },
+    {
+      "id": "m-text",
+      "from": "phone",
+      "to": "bridge",
+      "y": 1290,
+      "label": "{t: translate, text, fr, de, n}",
+      "variant": "security",
+      "note": "≤ 500 characters a piece, one at a time; the same gate as the sound"
+    },
+    {
+      "id": "m-tq",
+      "from": "bridge",
+      "to": "worker",
+      "y": 1370,
+      "label": "Session.text(…, n)"
+    },
+    {
+      "id": "m-tback",
+      "from": "worker",
+      "to": "bridge",
+      "y": 1420,
+      "label": "translated (de), source: text, n",
+      "variant": "dashed"
+    },
+    {
+      "id": "m-tphone",
+      "from": "bridge",
+      "to": "phone",
+      "y": 1470,
+      "label": "the same, to this phone only",
+      "variant": "dashed",
+      "note": "never the guest; the phone says it, then asks for the next piece"
+    },
+    {
+      "id": "m-rcounts",
+      "from": "bridge",
+      "to": "ros",
+      "y": 1550,
+      "label": "read: {lang: fr, translated}",
+      "variant": "emphasis"
     }
   ],
   "cards": [
@@ -285,7 +354,7 @@
       "title": "Two gates for the sound",
       "items": [
         "The facilitator allows Übersetzen (translate:=true, or the setup page's card); off, both workers drop what they were hearing (bridge_node.py 209–218).",
-        "The robot's phone may send sound only over this computer's own link (USB, adb reverse) or https (phone_local, wsserver.py 218–223; refused at bridge_node.py 431–436).",
+        "The robot's phone may send sound only over this computer's own link (USB, adb reverse) or https (phone_local, wsserver.py 218–223; refused at bridge_node.py 432–437).",
         "The guest phone needs the code from the QR code, new each time Übersetzen is allowed or the setup page asks; a new code drops the guest (bridge_node.py 233–238, wsserver.py 522–526)."
       ]
     },
@@ -293,17 +362,27 @@
       "dot": "cyan",
       "title": "Where the words go",
       "items": [
-        "To the phones only: talk_send() writes with send_phone() and to the guest, never to a mirror, ROS, a file or the log (bridge_node.py 240–249, wsserver.py 214–217).",
+        "To the phones only: talk_send() writes with send_phone() and to the guest, never to a mirror, ROS, a file or the log (bridge_node.py 240–250, wsserver.py 214–217).",
         "An error (nothing heard, no models) goes to the one who spoke only.",
         "The phone that listens says the translation; alone, the robot's phone says it itself (talk.js 127–132)."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "A letter in French",
+      "items": [
+        "Reading looks for both languages while Übersetzen is allowed and counts stop words (omi.js 189–196); a German letter is read as before, with no question.",
+        "Ja sends the text in numbered pieces under the same gate as the sound (bridge_node.py 438–442); an answer with another n is dropped (omi.js 246–257).",
+        "Nein, a refusal, a failure or 20 s without an answer: the rest is read as it is, in the letter's own voice; nothing leaves the phone on Nein.",
+        "The German goes to the robot's phone only, never the guest (bridge_node.py 246); ROS gets the language found and whether it was translated, never the text (contract.py 45)."
       ]
     },
     {
       "dot": "violet",
       "title": "What is kept",
       "items": [
-        "Nothing: an utterance's sound is dropped when its text is made, at most 30 s of it (translate.py 216–254).",
-        "ROS and the setup page get counts: which way, how many words, how long (bridge_node.py 269–273)."
+        "Nothing: an utterance's sound is dropped when its text is made, at most 30 s of it (translate.py 217–255).",
+        "ROS and the setup page get counts: which way, how many words, how long (bridge_node.py 270–274)."
       ]
     }
   ]

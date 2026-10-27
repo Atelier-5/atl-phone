@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "c94df28a-e447-4dae-960e-fc17bfd3e2f2",
+  "receiptId": "827c848a-4cf4-4f7e-813a-49392939192e",
   "status": "current",
   "command": "deliver",
   "type": "erd",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/02-bridge-state.erd.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/02-bridge-state.html",
   "specification": {
-    "sha256": "7c06ceb5f2b5ee0325a29d59c1f4a169390a3e0fb7d9e234919438450f3f1fc5",
+    "sha256": "0643c683b82b43b0c62fb9432644ac329d4c68985dac792122c85f0f283b67db",
     "bytes": 17841
   },
   "artifact": {
-    "sha256": "60ac7d46c0738aaa71fcd3585bbd038d877721802be10be29f33f12004a73671",
+    "sha256": "d145c271655ee0322de6325bb1f6cf6ab2aa8c491bad8f94b21cafa0040ac734",
     "bytes": 880113
   }
 }

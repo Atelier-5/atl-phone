@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "362a23e7-6a10-4a5d-aefc-0fde082febce",
+  "receiptId": "88993ccf-2527-44d0-b742-d1b9203d0445",
   "status": "current",
   "command": "deliver",
   "type": "lifecycle",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/04-phone-link.lifecycle.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/04-phone-link.html",
   "specification": {
-    "sha256": "d4765b6dbb7dbeac5a74ce6f82f75e7415c34841b6e882387a381919ffcd4308",
+    "sha256": "cf45f66c88fb5853d6da9463fac404a958f6fd14150f1c2b9665c1f71390d2e3",
     "bytes": 5862
   },
   "artifact": {
-    "sha256": "c2c72eee2acdcf66e8b3952feb1585dfb33d7f91f3160bbf2236e73e0697572b",
+    "sha256": "b51a843f182d916c7910b44fa96acc4d7901817ea7f5146cd4ced7b3601ad1cf",
     "bytes": 827965
   }
 }

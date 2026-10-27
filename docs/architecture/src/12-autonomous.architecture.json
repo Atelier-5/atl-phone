@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "0f475394e4c4a42a1f76570ae82f5964cf385921"
+      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
     },
     "legend": {
       "entries": {
@@ -24,7 +24,7 @@
   "components": [
     {
       "id": "face", "type": "frontend", "label": "face.html", "sublabel": "face, vision, reading", "pos": [40, 220], "size": [150, 64],
-      "sources": [{ "path": "webots/omi_robot.ttl", "line": 118, "end_line": 121 }, { "path": "ros2/atl_phone/web/face.js", "line": 447, "end_line": 460 }]
+      "sources": [{ "path": "webots/omi_robot.ttl", "line": 118, "end_line": 121 }, { "path": "ros2/atl_phone/web/face.js", "line": 448, "end_line": 461 }]
     },
     {
       "id": "adb", "type": "external", "label": "adb on the Pi", "sublabel": "USB, adb reverse", "pos": [280, 220], "size": [150, 64],
@@ -40,7 +40,7 @@
     },
     {
       "id": "topics", "type": "messagebus", "label": "ROS 2 topics", "sublabel": "on the Pi", "pos": [760, 220], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/atl_phone/contract.py", "line": 22, "end_line": 25 }]
+      "sources": [{ "path": "ros2/atl_phone/atl_phone/contract.py", "line": 23, "end_line": 26 }]
     },
     {
       "id": "link", "type": "external", "label": "Thymio link", "sublabel": "atl-bot-thymio", "pos": [1000, 220], "size": [150, 64],
@@ -64,7 +64,7 @@
     },
     {
       "id": "twin", "type": "backend", "label": "atl_phone_twin", "sublabel": "--mirror, on the PC", "pos": [520, 560], "size": [150, 64],
-      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 818, "end_line": 832 }]
+      "sources": [{ "path": "webots/controllers/atl_phone_twin/atl_phone_twin.py", "line": 820, "end_line": 834 }]
     }
   ],
   "boundaries": [
@@ -105,8 +105,8 @@
       "dot": "emerald",
       "title": "What changes from the lab",
       "items": [
-        "Only where things run: the topics, the pages and the programs are the same, so a program tested in the lab runs unchanged on the robot (contract.py 22–25).",
-        "Webots stays on the PC: the twin mirrors the robot through the tunnel and rejoins when the Pi's bridge restarts (atl_phone_twin.py 818–832)."
+        "Only where things run: the topics, the pages and the programs are the same, so a program tested in the lab runs unchanged on the robot (contract.py 23–26).",
+        "Webots stays on the PC: the twin mirrors the robot through the tunnel and rejoins when the Pi's bridge restarts (atl_phone_twin.py 820–834)."
       ]
     }
   ]
