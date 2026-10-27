@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
+      "revision": "47ac234d215ef50d8894021b567d9368adcb9737"
     }
   },
   "mainPath": [
@@ -28,8 +28,8 @@
       "sources": [
         {
           "path": "ros2/atl_phone/web/face.js",
-          "line": 648,
-          "end_line": 663
+          "line": 653,
+          "end_line": 668
         }
       ]
     },

@@ -53,7 +53,7 @@
     twin plug into the bridge, where each part runs in the lab and on the robot with its Pi, and which recognition
     runs on the phone and which on the Pi, and how Übersetzen translates German and French between two phones at the table, and a letter in French for Omi. The bridge serves this pack at <code>/docs/</code>; the setup page's How it
     works view links it.</p>
-  <p class="lead">Every box cites the lines it comes from, at commit <code>548cd4b</code>; the build checked each citation
+  <p class="lead">Every box cites the lines it comes from, at commit <code>47ac234</code>; the build checked each citation
     against that commit.</p>
 
   <h2>Read in this order</h2>
@@ -248,12 +248,12 @@
       setup page, and none at the guest; the browser check reads Ja and Nein.</td>
       <td><code>bridge_node.py</code> 246, 438–442, <code>omi.js</code> 236–257 · <a href="14-translate.html">14</a></td>
       <td><span class="tag ok">by design</span></td></tr>
-    <tr><td>While the phone's voices are not loaded yet, <code>speak()</code> waits up to 2 s and then speaks; a tap that
-      stops reading in that moment does not cancel the waiting sentence, so one sentence can still be said. Seen in
-      headless Chrome (no voices); on a phone the voices are usually loaded before reading starts. Fix: let the
-      deferred call check the reading's run number. Older than the letters.</td>
-      <td><code>face.js</code> 513–518, <code>omi.js</code> 222–227 · <a href="14-translate.html">14</a></td>
-      <td><span class="tag warn">open · minor</span></td></tr>
+    <tr><td>While the phone's voices were not loaded yet, <code>speak()</code> waited up to 2 s (and retried after 3 s
+      more); a tap that stopped reading in that moment did not cancel the waiting sentence, so one sentence could still
+      be said. Each new sentence and <code>hush()</code> now raise a run number, and the waiting call and the retry
+      speak only while it is theirs; the browser check stops a waiting sentence and sees it not said.</td>
+      <td><code>face.js</code> 513–535, <code>omi.js</code> 222–227 · <a href="14-translate.html">14</a></td>
+      <td><span class="tag ok">fixed in 47ac234</span></td></tr>
     <tr><td>Suspected: when a new guest takes over, the old link's close could cancel the new guest's hold. It does not:
       the handler calls <code>on_close</code> only while its link is still the current one, and a takeover replaced it
       first. <em>Read, not reproduced.</em></td>
@@ -270,7 +270,7 @@ python3 build.py            # every diagram; python3 build.py 8- for one
     check and a <code>summary.json</code>. After a code change, update the cited lines and <code>meta.repository.revision</code>
     in the JSON, then rebuild.</p>
 
-  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 548cd4b</footer>
+  <footer>GPL-3.0-or-later · Atelier-5 · generated with Archify from commit 47ac234</footer>
 </main>
 </body>
 </html>

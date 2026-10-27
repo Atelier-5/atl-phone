@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "a15a83b3-0450-43b4-a703-42f9c0b09d38",
+  "receiptId": "51b5592c-3b29-448e-b7ab-a66b562c303a",
   "status": "current",
   "command": "deliver",
   "type": "workflow",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/01-setup-flow.workflow.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/01-setup-flow.html",
   "specification": {
-    "sha256": "3069334f1f29534ca3182430e1c2564664f320812371b305af33384072e57283",
+    "sha256": "bc07101053d0868b121359033cba1d5a12051de49c6913c8982f11b7372ebfe2",
     "bytes": 11848
   },
   "artifact": {
-    "sha256": "c227413a94501409014615869cfa10ecde0706925152518a99f74995de0acd98",
+    "sha256": "824e822c5f5d75fff321ccd7c7000dcb73af098c2085ff99be1879ac5c9dd8d5",
     "bytes": 848774
   }
 }

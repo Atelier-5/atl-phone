@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "df80bb8c-a400-4c37-8851-2a81db9c0c74",
+  "receiptId": "7bfcadfd-e615-40de-bc7e-17029828a4f1",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "/home/autretechlab/atl/atl-phone/docs/architecture/src/11-lab.architecture.json",
   "output": "/home/autretechlab/atl/atl-phone/docs/architecture/11-lab.html",
   "specification": {
-    "sha256": "e157cef08be398dde4fb08ed0a889f5369033fd4977984a745406e8924f4f540",
+    "sha256": "0c4e913d8e63267977fede1ece8648e3e6966eb013442b0496efd1c16340f8cd",
     "bytes": 6274
   },
   "artifact": {
-    "sha256": "68f4064082050fd49037f89cae988c5ae1ca01d24cc9586a11d5bd20ef9395d4",
+    "sha256": "3cca1a03beb99797d9bc16ac02b0bb62461d85060b02e58c7e88a4c8bde33b9b",
     "bytes": 830716
   }
 }

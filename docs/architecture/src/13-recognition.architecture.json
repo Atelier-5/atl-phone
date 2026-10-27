@@ -9,7 +9,7 @@
     "repository": {
       "url": "https://github.com/Atelier-5/atl-phone.git",
       "link_mode": "web",
-      "revision": "548cd4bab2ccb37cf6e1b24fe6b8fcdf539c8f25"
+      "revision": "47ac234d215ef50d8894021b567d9368adcb9737"
     },
     "legend": {
       "entries": {
@@ -24,7 +24,7 @@
   "components": [
     {
       "id": "cams", "type": "external", "label": "Cameras", "sublabel": "front, back", "pos": [40, 300], "size": [150, 64],
-      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 553, "end_line": 566 }]
+      "sources": [{ "path": "ros2/atl_phone/web/face.js", "line": 558, "end_line": 571 }]
     },
     {
       "id": "eyes", "type": "frontend", "label": "Follow", "sublabel": "the eyes, 4/s or 1/s", "pos": [280, 60], "size": [150, 64],
