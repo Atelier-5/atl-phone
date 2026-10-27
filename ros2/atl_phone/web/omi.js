@@ -92,7 +92,7 @@ function tourStop() {
   if (!omi.touring) return;
   omi.touring = false; omi.tour++;
   document.removeEventListener('pointerdown', tourStop, true);
-  speechSynthesis.cancel(); speaking = false; toast('');
+  hush(); toast('');
   [].forEach.call(menuEl.children, function (b) { b.classList.remove('tour'); });
   toastEl.classList.remove('above');
   if (cardId === 'tour') noteCard({ id: 'tour', text: '' });
@@ -223,7 +223,7 @@ function stopReading() {
   omi.reading++; document.removeEventListener('pointerdown', stopReading, true);
   clearTimeout(omi.trOff); omi.tr = null;
   if (cardId === 'readAsk') noteCard({ id: 'readAsk', text: '' });
-  speechSynthesis.cancel(); speaking = false; toast('');
+  hush(); toast('');
 }
 function sayAll(ss, l, run, done) {  // said one after the other, written big; a tap stops it
   document.addEventListener('pointerdown', stopReading, true);

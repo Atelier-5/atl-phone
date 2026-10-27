@@ -69,7 +69,7 @@ function talkStart(l) {
   if (talk.holding) return;
   if (!talk.allowed) { tell(ot(lang, 'talkNo'), lang, 5000); return; }
   if (!talk.ready) { tell(ot(lang, 'talkModels'), lang, 5000); return; }
-  speechSynthesis.cancel();
+  hush();
   talk.holding = true; talk.lang = l; talk.seq = 0;
   talk.last[l] = ['', '']; talk.last[l === 'de' ? 'fr' : 'de'] = ['', ''];
   talkSet('listening', l);

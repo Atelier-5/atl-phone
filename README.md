@@ -46,7 +46,7 @@ docker run ... atl-phone:kilted ros2 launch atl_phone phone.launch.py robot:=thy
     [translate:=true] [models:=/models] [guest_port:=8783 guest_cert:=c.pem guest_cert_key:=k.pem [guest_ca:=ca.crt]]
 ./scripts/usb.sh face.html                                       # USB: adb reverse, then opens the face on the phone
 docker exec <container> /entrypoint.sh python3 -m atl_phone.contract_check     # the contract, with a mock phone: 69 checks, 70 with --wav (--wav: German speech for Übersetzen)
-python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C] [--speech <wav>]   # the pages in headless Chrome: 75 checks
+python3 scripts/browser_check.py --container <container> [--face <picture>] [--fake-adb A:C] [--speech <wav>]   # the pages in headless Chrome: 76 checks
     # (--fake-adb: a fake adb and phone Chrome on the ports the bridge got as ADB_SERVER_PORT, ATL_CDP_PORT; never the real phone)
 ./test.sh                                                        # protocol, WebSocket, check server, guardian, reminders: no ROS, no phone
 ./scripts/phone_tidy.sh [--kill] [--stay-on] [--close-tabs]      # what weighs on the phone (adb); changes only what you confirm

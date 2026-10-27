@@ -510,10 +510,13 @@ function warmVoice() {  // the first words after a load took over 6 s to start o
   if (v) u.voice = v;
   speechSynthesis.speak(u);
 }
+var speakRun = 0;  // raised by each new sentence and by hush(): a sentence still waiting for its voice is dropped
+function hush() { speakRun++; if ('speechSynthesis' in window) speechSynthesis.cancel(); speaking = false; }
 function speak(text, l, again, done) {  // done: called when it was said to its end (reading goes on with the next sentence)
   if (!('speechSynthesis' in window) || !text) return;
+  var run = again ? speakRun : ++speakRun;
   if (!speechSynthesis.getVoices().length && !again) {  // not loaded yet: in a moment, or without a voice after 2 s
-    var go = function () { if (go) { go = null; speak(text, l, true, done); } };
+    var go = function () { if (go) { go = null; if (run === speakRun) speak(text, l, true, done); } };
     voicesWait.push(go); setTimeout(go, 2000); return;
   }
   speechSynthesis.cancel();
@@ -526,7 +529,9 @@ function speak(text, l, again, done) {  // done: called when it was said to its 
   u.onerror = function () { speaking = false; };
   u.onend = function () { speaking = false; if (done) done(); };
   speechSynthesis.speak(u);
-  setTimeout(function () { if (!started && again !== 'retried') { speechSynthesis.cancel(); speak(text, l, 'retried', done); } }, 3000);
+  setTimeout(function () {
+    if (!started && again !== 'retried' && run === speakRun) { speechSynthesis.cancel(); speak(text, l, 'retried', done); }
+  }, 3000);
 }
 
 // ---- the camera: the torch and the setup page's camera test use the back camera; vision (see.js: look, see) the camera

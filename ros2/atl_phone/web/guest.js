@@ -21,6 +21,7 @@ function tell(text, l, ms) {
   toastOff = setTimeout(function () { toastEl.style.display = 'none'; }, ms || 5000);
 }
 var LANG_TAG = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE' };
+function hush() { if ('speechSynthesis' in window) speechSynthesis.cancel(); }  // talk.js: quiet while a half is held
 function speak(text, l) {  // the voice of the language (the country's first, as the face chooses it)
   if (!('speechSynthesis' in window) || !text) return;
   speechSynthesis.cancel();

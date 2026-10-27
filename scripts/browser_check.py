@@ -746,6 +746,17 @@ def main() -> int:
            asis == "fr:Chère maman, nous arrivons demain à midi avec le train. / fr:Je t’embrasse très fort."
            and state().get("translate", {}).get("last", {}).get("at") == tl, asis)
         page.js("stopReading(); speak = window.__spk; delete window.__spk; delete omi.tess['deu+fra']")
+        # a sentence still waiting for its voice (2 s) or its retry (3 s more) is dropped when reading stops
+        page.js("window.__utt = []; window.__ssk = speechSynthesis.speak; speechSynthesis.speak = function (u) {"
+                " window.__utt.push([u.text, performance.now()]); return window.__ssk.call(speechSynthesis, u); };"
+                " speak('Probe eins', 'de')")
+        waited = page.wait_for("window.__utt.some(function (x) { return x[0] === 'Probe eins'; }) && 'said'", 8)
+        page.js("speak('Probe zwei', 'de'); stopReading(); window.__hushAt = performance.now()")
+        time.sleep(5.5)
+        late = page.js("window.__utt.filter(function (x) { return x[0] === 'Probe zwei' && x[1] > window.__hushAt; }).length")
+        page.js("speechSynthesis.speak = window.__ssk; delete window.__ssk; hush()")
+        ok("Reading stopped: a sentence still waiting for the phone's voice is not said afterwards (one not stopped still is)",
+           waited == "said" and late == 0, (waited, late))
         act({"allow_translate": False})
         gone = page.wait_for("!talk.allowed && (showMenu(), !document.querySelector('#menu button[data-mode=translate]')) && 'gone'")
         ok("Übersetzen: not allowed any more, its tile goes", gone == "gone", gone)
